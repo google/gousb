@@ -15,7 +15,7 @@ const (
 func (d BCD) Int() (i int) {
 	ten := 1
 	for o := uint(0); o < 4; o++ {
-		n := ((0xF << (o*4)) & d) >> (o*4)
+		n := ((0xF << (o * 4)) & d) >> (o * 4)
 		i += int(n) * ten
 		ten *= 10
 	}
@@ -23,7 +23,7 @@ func (d BCD) Int() (i int) {
 }
 
 func (d BCD) String() string {
-	return fmt.Sprintf("%02x.%02x", int(d >> 8), int(d & 0xFF))
+	return fmt.Sprintf("%02x.%02x", int(d>>8), int(d&0xFF))
 }
 
 type ID uint16

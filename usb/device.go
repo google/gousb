@@ -6,7 +6,9 @@ import "C"
 
 import (
 	"log"
+	"reflect"
 	"runtime"
+	"unsafe"
 )
 
 type DeviceInfo struct {
@@ -78,6 +80,30 @@ func newDevice(handle *C.libusb_device_handle) *Device {
 
 	log.Printf("device %p initialized", d.handle)
 	return d
+}
+
+func (d *Device) Reset() error {
+	if errno := C.libusb_reset_device(d.handle); errno != 0 {
+		return usbError(errno)
+	}
+	return nil
+}
+
+func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
+	dataSlice := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+	n := C.libusb_control_transfer(
+		d.handle,
+		C.uint8_t(rType),
+		C.uint8_t(request),
+		C.uint16_t(val),
+		C.uint16_t(idx),
+		(*C.uchar)(unsafe.Pointer(dataSlice.Data)),
+		C.uint16_t(len(data)),
+		0)
+	if n < 0 {
+		return int(n), usbError(n)
+	}
+	return int(n), nil
 }
 
 func (d *Device) Close() error {

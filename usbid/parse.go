@@ -72,7 +72,7 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, error) {
 			return
 		}
 		id = usb.ID(i)
-		
+
 		return
 	}
 
@@ -151,7 +151,8 @@ parseLines:
 		}
 
 		switch kind {
-		case "": err = parseVendor(level, id, name)
+		case "":
+			err = parseVendor(level, id, name)
 		}
 		if err != nil {
 			return nil, fmt.Errorf("line %d: %s", lineno, err)

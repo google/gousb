@@ -5,7 +5,7 @@ import (
 )
 
 func TestBCD(t *testing.T) {
-	tests := []struct{
+	tests := []struct {
 		BCD
 		Int int
 		Str string

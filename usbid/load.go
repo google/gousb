@@ -1,9 +1,9 @@
 package usbid
 
 import (
+	"log"
 	"net/http"
 	"strings"
-	"log"
 
 	"github.com/kylelemons/gousb/usb"
 )
