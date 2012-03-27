@@ -8,6 +8,7 @@ import (
 	"log"
 	"reflect"
 	"runtime"
+	"time"
 	"unsafe"
 )
 
@@ -89,6 +90,7 @@ func (d *Device) Reset() error {
 	return nil
 }
 
+var ControlTimeout = 5*time.Second
 func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
 	dataSlice := (*reflect.SliceHeader)(unsafe.Pointer(&data))
 	n := C.libusb_control_transfer(
@@ -99,11 +101,26 @@ func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (in
 		C.uint16_t(idx),
 		(*C.uchar)(unsafe.Pointer(dataSlice.Data)),
 		C.uint16_t(len(data)),
-		0)
+		C.uint(ControlTimeout/time.Millisecond))
 	if n < 0 {
 		return int(n), usbError(n)
 	}
 	return int(n), nil
+}
+
+func (d *Device) ActiveConfig() (int, error) {
+	var cfg C.int
+	if errno := C.libusb_get_configuration(d.handle, &cfg); errno < 0 {
+		return 0, usbError(errno)
+	}
+	return int(cfg), nil
+}
+
+func (d *Device) SetConfig(cfg int) error {
+	if errno := C.libusb_set_configuration(d.handle, C.int(cfg)); errno < 0 {
+		return usbError(errno)
+	}
+	return nil
 }
 
 func (d *Device) Close() error {

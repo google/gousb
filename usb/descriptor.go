@@ -9,9 +9,9 @@ type Descriptor struct {
 
 	Type     DescriptorType // The type of this descriptor
 	Spec     BCD            // USB Specification Release Number
-	Class    Class          // The class of this device
-	SubClass uint8          // The sub-class (within the class) of this device
-	Protocol uint8          // The protocol (within the sub-class) of this device
+	Class    uint8             // The class of this device
+	SubClass uint8             // The sub-class (within the class) of this device
+	Protocol uint8             // The protocol (within the sub-class) of this device
 	Vendor   ID             // The 8-bit Vendor identifer
 	Product  ID             // The 8-bit Product identifier
 	Device   BCD            // The device version
@@ -26,7 +26,7 @@ func newDescriptor(dev *C.libusb_device) (*Descriptor, error) {
 		desc:     &desc,
 		Type:     DescriptorType(desc.bDescriptorType),
 		Spec:     BCD(desc.bcdUSB),
-		Class:    Class(desc.bDeviceClass),
+		Class:    uint8(desc.bDeviceClass),
 		SubClass: uint8(desc.bDeviceSubClass),
 		Protocol: uint8(desc.bDeviceProtocol),
 		Vendor:   ID(desc.idVendor),
@@ -147,13 +147,15 @@ func (dt DescriptorType) String() string {
 type EndpointDirection int
 
 const (
-	ENDPOINT_IN  EndpointDirection = C.LIBUSB_ENDPOINT_IN
-	ENDPOINT_OUT EndpointDirection = C.LIBUSB_ENDPOINT_OUT
+	ENDPOINT_NUM_MASK                   = 0x03
+	ENDPOINT_DIR_IN   EndpointDirection = C.LIBUSB_ENDPOINT_IN
+	ENDPOINT_DIR_OUT  EndpointDirection = C.LIBUSB_ENDPOINT_OUT
+	ENDPOINT_DIR_MASK EndpointDirection = 0x80
 )
 
 var endpointDirectionDescription = map[EndpointDirection]string{
-	ENDPOINT_IN:  "device-to-host",
-	ENDPOINT_OUT: "host-to-device",
+	ENDPOINT_DIR_IN:  "IN",
+	ENDPOINT_DIR_OUT: "OUT",
 }
 
 func (ed EndpointDirection) String() string {
@@ -167,6 +169,7 @@ const (
 	TRANSFER_TYPE_ISOCHRONOUS TransferType = C.LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
 	TRANSFER_TYPE_BULK        TransferType = C.LIBUSB_TRANSFER_TYPE_BULK
 	TRANSFER_TYPE_INTERRUPT   TransferType = C.LIBUSB_TRANSFER_TYPE_INTERRUPT
+	TRANSFER_TYPE_MASK        TransferType = 0x03
 )
 
 var transferTypeDescription = map[TransferType]string{
@@ -183,14 +186,15 @@ func (tt TransferType) String() string {
 type IsoSyncType int
 
 const (
-	ISO_SYNC_TYPE_NONE     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_NONE
-	ISO_SYNC_TYPE_ASYNC    IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ASYNC
-	ISO_SYNC_TYPE_ADAPTIVE IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ADAPTIVE
-	ISO_SYNC_TYPE_SYNC     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_SYNC
+	ISO_SYNC_TYPE_NONE     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_NONE << 2
+	ISO_SYNC_TYPE_ASYNC    IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ASYNC << 2
+	ISO_SYNC_TYPE_ADAPTIVE IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ADAPTIVE << 2
+	ISO_SYNC_TYPE_SYNC     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_SYNC << 2
+	ISO_SYNC_TYPE_MASK     IsoSyncType = 0x0C
 )
 
 var isoSyncTypeDescription = map[IsoSyncType]string{
-	ISO_SYNC_TYPE_NONE:     "no synchronization",
+	ISO_SYNC_TYPE_NONE:     "unsynchronized",
 	ISO_SYNC_TYPE_ASYNC:    "asynchronous",
 	ISO_SYNC_TYPE_ADAPTIVE: "adaptive",
 	ISO_SYNC_TYPE_SYNC:     "synchronous",
@@ -203,9 +207,10 @@ func (ist IsoSyncType) String() string {
 type IsoUsageType int
 
 const (
-	ISO_USAGE_TYPE_DATA     IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_DATA
-	ISO_USAGE_TYPE_FEEDBACK IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_FEEDBACK
-	ISO_USAGE_TYPE_IMPLICIT IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_IMPLICIT
+	ISO_USAGE_TYPE_DATA     IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_DATA << 4
+	ISO_USAGE_TYPE_FEEDBACK IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_FEEDBACK << 4
+	ISO_USAGE_TYPE_IMPLICIT IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_IMPLICIT << 4
+	ISO_USAGE_TYPE_MASK     IsoUsageType = 0x30
 )
 
 var isoUsageTypeDescription = map[IsoUsageType]string{

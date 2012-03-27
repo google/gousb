@@ -12,39 +12,45 @@ import (
 
 type Vendor struct {
 	Name    string
-	Devices map[usb.ID]*Device
+	Product map[usb.ID]*Product
 }
 
 func (v Vendor) String() string {
 	return v.Name
 }
 
-// TODO(kevlar) s/device/
-type Device struct {
+type Product struct {
 	Name       string
-	Interfaces map[usb.ID]string
+	Interface map[usb.ID]string
 }
 
-func (d Device) String() string {
-	return d.Name
+func (p Product) String() string {
+	return p.Name
 }
 
-/*
 type Class struct {
 	Name string
-	SubClass map[usb.ID]*SubClass
+	SubClass map[uint8]*SubClass
+}
+
+func (c Class) String() string {
+	return c.Name
 }
 
 type SubClass struct {
 	Name string
-	Protocol map[usb.ID]string
+	Protocol map[uint8]string
 }
-*/
 
-func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, error) {
+func (s SubClass) String() string {
+	return s.Name
+}
+
+func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[uint8]*Class, error) {
 	vendors := make(map[usb.ID]*Vendor, 2800)
+	classes := make(map[uint8]*Class) // TODO(kevlar): count
 
-	split := func(s string) (kind string, level int, id usb.ID, name string, err error) {
+	split := func(s string) (kind string, level int, id uint64, name string, err error) {
 		pieces := strings.SplitN(s, "  ", 2)
 		if len(pieces) != 2 {
 			err = fmt.Errorf("malformatted line %q", s)
@@ -71,16 +77,18 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, error) {
 			err = fmt.Errorf("malformatted id %q: %s", pieces[0], err)
 			return
 		}
-		id = usb.ID(i)
+		id = i
 
 		return
 	}
 
 	// Hold the interim values
 	var vendor *Vendor
-	var device *Device
+	var device *Product
 
-	parseVendor := func(level int, id usb.ID, name string) error {
+	parseVendor := func(level int, raw uint64, name string) error {
+		id := usb.ID(raw)
+
 		switch level {
 		case 0:
 			vendor = &Vendor{
@@ -93,26 +101,70 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, error) {
 				return fmt.Errorf("product line without vendor line")
 			}
 
-			device = &Device{
+			device = &Product{
 				Name: name,
 			}
-			if vendor.Devices == nil {
-				vendor.Devices = make(map[usb.ID]*Device)
+			if vendor.Product == nil {
+				vendor.Product = make(map[usb.ID]*Product)
 			}
-			vendor.Devices[id] = device
+			vendor.Product[id] = device
 
 		case 2:
 			if device == nil {
 				return fmt.Errorf("interface line without device line")
 			}
 
-			if device.Interfaces == nil {
-				device.Interfaces = make(map[usb.ID]string)
+			if device.Interface == nil {
+				device.Interface = make(map[usb.ID]string)
 			}
-			device.Interfaces[id] = name
+			device.Interface[id] = name
 
 		default:
 			return fmt.Errorf("too many levels of nesting for vendor block")
+		}
+
+		return nil
+	}
+
+	// Hold the interim values
+	var class *Class
+	var subclass *SubClass
+
+	parseClass := func(level int, raw uint64, name string) error {
+		id := uint8(raw)
+
+		switch level {
+		case 0:
+			class = &Class{
+				Name: name,
+			}
+			classes[id] = class
+
+		case 1:
+			if class == nil {
+				return fmt.Errorf("subclass line without class line")
+			}
+
+			subclass = &SubClass{
+				Name: name,
+			}
+			if class.SubClass == nil {
+				class.SubClass = make(map[uint8]*SubClass)
+			}
+			class.SubClass[id] = subclass
+
+		case 2:
+			if subclass == nil {
+				return fmt.Errorf("protocol line without subclass line")
+			}
+
+			if subclass.Protocol == nil {
+				subclass.Protocol = make(map[uint8]string)
+			}
+			subclass.Protocol[id] = name
+
+		default:
+			return fmt.Errorf("too many levels of nesting for class")
 		}
 
 		return nil
@@ -132,9 +184,9 @@ parseLines:
 		case err == io.EOF:
 			break parseLines
 		case err != nil:
-			return nil, err
+			return nil, nil, err
 		case isPrefix:
-			return nil, fmt.Errorf("line %d: line too long", lineno)
+			return nil, nil, fmt.Errorf("line %d: line too long", lineno)
 		}
 		line := string(b)
 
@@ -144,7 +196,7 @@ parseLines:
 
 		k, level, id, name, err := split(line)
 		if err != nil {
-			return nil, fmt.Errorf("line %d: %s", lineno, err)
+			return nil, nil, fmt.Errorf("line %d: %s", lineno, err)
 		}
 		if k != "" {
 			kind = k
@@ -153,11 +205,13 @@ parseLines:
 		switch kind {
 		case "":
 			err = parseVendor(level, id, name)
+		case "C":
+			err = parseClass(level, id, name)
 		}
 		if err != nil {
-			return nil, fmt.Errorf("line %d: %s", lineno, err)
+			return nil, nil, fmt.Errorf("line %d: %s", lineno, err)
 		}
 	}
 
-	return vendors, nil
+	return vendors, classes, nil
 }

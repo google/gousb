@@ -45,14 +45,8 @@ func TestEnum(t *testing.T) {
 		bus := dev.BusNumber()
 		addr := dev.Address()
 
-		t.Logf("%03d:%03d %+v", bus, addr, desc)
-		if v, ok := usbid.Vendors[desc.Vendor]; ok {
-			if p, ok := v.Devices[desc.Product]; ok {
-				t.Logf(" - %s (%s) %s (%s)", v, desc.Vendor, p, desc.Product)
-			} else {
-				t.Logf(" - %s (%s) Unknown", v, desc.Vendor)
-			}
-		}
+		t.Logf("%03d:%03d %s", bus, addr, usbid.Describe(desc))
+		t.Logf("- Protocol: %s", usbid.Classify(desc))
 
 		cfgs, err := dev.Configurations()
 		defer func() {
@@ -61,21 +55,23 @@ func TestEnum(t *testing.T) {
 			}
 		}()
 		if err != nil {
-			t.Errorf("   - configs: %s", err)
+			t.Errorf("  - configs: %s", err)
 			continue
 		}
 
 		for _, cfg := range cfgs {
-			t.Logf("   - %#v", cfg)
+			t.Logf("- %s:", cfg)
 			for _, alt := range cfg.Interfaces {
+				t.Logf("  --------------")
 				for _, iface := range alt {
-					t.Logf("     - %#v", iface)
+					t.Logf("  - %s", iface)
+					t.Logf("    - %s", usbid.Classify(iface))
 					for _, end := range iface.Endpoints {
-						t.Logf("       - %#v", end)
+						t.Logf("    - %s", end)
 					}
 				}
-				t.Logf("     -----")
 			}
+			t.Logf("  --------------")
 		}
 	}
 }

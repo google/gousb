@@ -5,6 +5,7 @@ package usb
 import "C"
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"runtime"
@@ -13,38 +14,64 @@ import (
 
 type Endpoint struct {
 	Type          DescriptorType
-	Address       ID
+	Address       uint8
+	Attributes    uint8
 	MaxPacketSize uint16
 	PollInterval  uint8
 	RefreshRate   uint8
-	SynchAddress  ID
+	SynchAddress  uint8
+}
+
+func (e Endpoint) Number() int {
+	return int(e.Address) & ENDPOINT_NUM_MASK
+}
+
+func (e Endpoint) Direction() EndpointDirection {
+	return EndpointDirection(e.Address) & ENDPOINT_DIR_MASK
+}
+
+func (e Endpoint) String() string {
+	return fmt.Sprintf("Endpoint %d %-3s %s - %s %s",
+		e.Number(), e.Direction(),
+		TransferType(e.Attributes) & TRANSFER_TYPE_MASK,
+		IsoSyncType(e.Attributes) & ISO_SYNC_TYPE_MASK,
+		IsoUsageType(e.Attributes) & ISO_USAGE_TYPE_MASK,
+	)
 }
 
 type Interface struct {
 	Type       DescriptorType
-	Number     ID
-	Alternate  ID
-	IfClass    Class
+	Number     uint8
+	Alternate  uint8
+	IfClass    uint8
 	IfSubClass uint8
 	IfProtocol uint8
 	Endpoints  []*Endpoint
+}
+
+func (i Interface) String() string {
+	return fmt.Sprintf("Interface %02x (config %02x)", i.Number, i.Alternate)
 }
 
 type Config struct {
 	cfg *C.struct_libusb_config_descriptor
 
 	Type       DescriptorType
-	Config     ID
+	Config     uint8
 	Attributes uint8
 	MaxPower   uint8
 	Interfaces [][]*Interface
+}
+
+func (c Config) String() string {
+	return fmt.Sprintf("Config %02x", c.Config)
 }
 
 func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 	c := &Config{
 		cfg:        cfg,
 		Type:       DescriptorType(cfg.bDescriptorType),
-		Config:     ID(cfg.bConfigurationValue),
+		Config:     uint8(cfg.bConfigurationValue),
 		Attributes: uint8(cfg.bmAttributes),
 		MaxPower:   uint8(cfg.MaxPower),
 	}
@@ -67,9 +94,9 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 		for _, alt := range alts {
 			i := &Interface{
 				Type:       DescriptorType(alt.bDescriptorType),
-				Number:     ID(alt.bInterfaceNumber),
-				Alternate:  ID(alt.bAlternateSetting),
-				IfClass:    Class(alt.bInterfaceClass),
+				Number:     uint8(alt.bInterfaceNumber),
+				Alternate:  uint8(alt.bAlternateSetting),
+				IfClass:    uint8(alt.bInterfaceClass),
 				IfSubClass: uint8(alt.bInterfaceSubClass),
 				IfProtocol: uint8(alt.bInterfaceProtocol),
 			}
@@ -83,11 +110,12 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 			for _, end := range ends {
 				i.Endpoints = append(i.Endpoints, &Endpoint{
 					Type:          DescriptorType(end.bDescriptorType),
-					Address:       ID(end.bEndpointAddress),
+					Address:       uint8(end.bEndpointAddress),
+					Attributes:    uint8(end.bmAttributes),
 					MaxPacketSize: uint16(end.wMaxPacketSize),
 					PollInterval:  uint8(end.bInterval),
 					RefreshRate:   uint8(end.bRefresh),
-					SynchAddress:  ID(end.bSynchAddress),
+					SynchAddress:  uint8(end.bSynchAddress),
 				})
 			}
 			descs = append(descs, i)

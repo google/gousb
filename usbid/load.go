@@ -13,6 +13,7 @@ const (
 )
 
 var Vendors map[usb.ID]*Vendor
+var Classes map[uint8]*Class
 
 func LoadFromURL(url string) error {
 	resp, err := http.Get(url)
@@ -21,21 +22,23 @@ func LoadFromURL(url string) error {
 	}
 	defer resp.Body.Close()
 
-	ids, err := ParseIDs(resp.Body)
+	ids, cls, err := ParseIDs(resp.Body)
 	if err != nil {
 		return err
 	}
 
 	Vendors = ids
+	Classes = cls
 	return nil
 }
 
 func init() {
-	ids, err := ParseIDs(strings.NewReader(usbIdListData))
+	ids, cls, err := ParseIDs(strings.NewReader(usbIdListData))
 	if err != nil {
 		log.Printf("usbid: failed to parse: %s", err)
 		return
 	}
 
 	Vendors = ids
+	Classes = cls
 }
