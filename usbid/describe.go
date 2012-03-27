@@ -1,3 +1,12 @@
+// Package usbid provides human-readable text output for the usb package.
+//
+// On load, the usbid package parses an embedded mapping of vendors/products
+// and class/subclass/protocols.  They can also be loaded from a URL or from
+// a reader.
+//
+// The bread and butter of this package are the following two functions:
+//   Describe - Pretty-print the vendor and product of a device descriptor
+//   Classify - Pretty-print the class/protocol info for a device/interface
 package usbid
 
 import (
