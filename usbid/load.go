@@ -9,12 +9,24 @@ import (
 )
 
 const (
+	// LinuxUsbDotOrg is one source of files in the format used by this package.
 	LinuxUsbDotOrg = "http://www.linux-usb.org/usb.ids"
 )
 
-var Vendors map[usb.ID]*Vendor
-var Classes map[uint8]*Class
+var (
+	// Vendors stores the vendor and product ID mappings.
+	Vendors map[usb.ID]*Vendor
 
+	// Classes stores the class, subclass and protocol mappings.
+	Classes map[uint8]*Class
+)
+
+// LoadFromURL replaces the built-in vendor and class mappings with ones loaded
+// from the given URL.
+//
+// This should usually only be necessary if the mappings in the library are
+// stale.  The contents of this file as of February 2012 are embedded in the
+// library itself.
 func LoadFromURL(url string) error {
 	resp, err := http.Get(url)
 	if err != nil {

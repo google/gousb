@@ -10,42 +10,56 @@ import (
 	"github.com/kylelemons/gousb/usb"
 )
 
+// A Vendor contains the name of the vendor and mappings corresponding to all
+// known products by their ID.
 type Vendor struct {
 	Name    string
 	Product map[usb.ID]*Product
 }
 
+// String returns the name of the vendor.
 func (v Vendor) String() string {
 	return v.Name
 }
 
+// A Product contains the name of the product (from a particular vendor) and
+// the names of any interfaces that were specified.
 type Product struct {
 	Name      string
 	Interface map[usb.ID]string
 }
 
+// String returns the name of the product.
 func (p Product) String() string {
 	return p.Name
 }
 
+// A Class contains the name of the class and mappings for each subclass.
 type Class struct {
 	Name     string
 	SubClass map[uint8]*SubClass
 }
 
+// String returns the name of the class.
 func (c Class) String() string {
 	return c.Name
 }
 
+// A SubClass contains the name of the subclass and any associated protocols.
 type SubClass struct {
 	Name     string
 	Protocol map[uint8]string
 }
 
+// String returns the name of the SubClass.
 func (s SubClass) String() string {
 	return s.Name
 }
 
+// ParseIDs parses and returns mappings from the given reader.  In general, this
+// should not be necessary, as a set of mappings is already embedded in the library.
+// If a new or specialized file is obtained, this can be used to retrieve the mappings,
+// which can be stored in the global Vendors and Classes map.
 func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[uint8]*Class, error) {
 	vendors := make(map[usb.ID]*Vendor, 2800)
 	classes := make(map[uint8]*Class) // TODO(kevlar): count

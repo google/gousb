@@ -6,8 +6,11 @@ import (
 	"github.com/kylelemons/gousb/usb"
 )
 
-// Describe one of the following:
-//   - *usb.Descriptor       Product (Vendor)
+// Describe returns a human readable string describing the vendor and product
+// of the given device.
+//
+// The given val must be one of the following:
+//   - *usb.Descriptor       "Product (Vendor)"
 func Describe(val interface{}) string {
 	switch val := val.(type) {
 	case *usb.Descriptor:
@@ -22,8 +25,12 @@ func Describe(val interface{}) string {
 	return fmt.Sprintf("Unknown (%T)", val)
 }
 
-// Classify one of the following:
-//   - *usb.Descriptor       Class SubClass Protocol
+// Classify returns a human-readable string describing the class, subclass,
+// and protocol associated with a device or interface.
+//
+// The given val must be one of the following:
+//   - *usb.Descriptor       "Class (SubClass Protocol"
+//   - *usb.Interface        "IfClass (IfSubClass) IfProtocol"
 func Classify(val interface{}) string {
 	var class, sub, proto uint8
 	switch val := val.(type) {

@@ -10,8 +10,9 @@ import (
 
 func TestParse(t *testing.T) {
 	tests := []struct {
-		Input  string
-		Output map[usb.ID]*Vendor
+		Input   string
+		Vendors map[usb.ID]*Vendor
+		Classes map[uint8]*Class
 	}{{
 		Input: `
 # Skip comment
@@ -43,28 +44,61 @@ C 02  Communications
 		fe  Defined by command set descriptor
 		ff  Vendor Specific (MSFT RNDIS?)
 `,
-		Output: map[usb.ID]*Vendor{
+		Vendors: map[usb.ID]*Vendor{
 			0xabcd: {
 				Name: "Vendor One",
-				Devices: map[usb.ID]*Device{
+				Product: map[usb.ID]*Product{
 					0x0123: {Name: "Product One"},
 					0x0124: {Name: "Product Two"},
 				},
 			},
 			0xefef: {
 				Name: "Vendor Two",
-				Devices: map[usb.ID]*Device{
+				Product: map[usb.ID]*Product{
 					0x0aba: {
 						Name: "Product",
-						Interfaces: map[usb.ID]string{
+						Interface: map[usb.ID]string{
 							0x12: "Interface One",
 							0x24: "Interface Two",
 						},
 					},
 					0x0abb: {
 						Name: "Product",
-						Interfaces: map[usb.ID]string{
+						Interface: map[usb.ID]string{
 							0x12: "Interface",
+						},
+					},
+				},
+			},
+		},
+		Classes: map[uint8]*Class{
+			0x00: {
+				Name: "(Defined at Interface level)",
+			},
+			0x01: {
+				Name: "Audio",
+				SubClass: map[uint8]*SubClass{
+					0x01: {Name: "Control Device"},
+					0x02: {Name: "Streaming"},
+					0x03: {Name: "MIDI Streaming"},
+				},
+			},
+			0x02: {
+				Name: "Communications",
+				SubClass: map[uint8]*SubClass{
+					0x01: {Name: "Direct Line"},
+					0x02: {
+						Name: "Abstract (modem)",
+						Protocol: map[uint8]string{
+							0x00: "None",
+							0x01: "AT-commands (v.25ter)",
+							0x02: "AT-commands (PCCA101)",
+							0x03: "AT-commands (PCCA101 + wakeup)",
+							0x04: "AT-commands (GSM)",
+							0x05: "AT-commands (3G)",
+							0x06: "AT-commands (CDMA)",
+							0xfe: "Defined by command set descriptor",
+							0xff: "Vendor Specific (MSFT RNDIS?)",
 						},
 					},
 				},
@@ -73,15 +107,21 @@ C 02  Communications
 	}}
 
 	for idx, test := range tests {
-		vendors, err := ParseIDs(strings.NewReader(test.Input))
+		vendors, classes, err := ParseIDs(strings.NewReader(test.Input))
 		if err != nil {
 			t.Errorf("%d. ParseIDs: %s", idx, err)
 			continue
 		}
-		if got, want := vendors, test.Output; !reflect.DeepEqual(got, want) {
-			t.Errorf("%d. Parse mismatch", idx)
-			t.Errorf(" - got:  %v", idx, got)
-			t.Errorf(" - want: %v", idx, want)
+		if got, want := vendors, test.Vendors; !reflect.DeepEqual(got, want) {
+			t.Errorf("%d. Vendor parse mismatch", idx)
+			t.Errorf(" - got:  %+v", got)
+			t.Errorf(" - want: %+v", want)
+			continue
+		}
+		if got, want := classes, test.Classes; !reflect.DeepEqual(got, want) {
+			t.Errorf("%d. Classes parse mismatch", idx)
+			t.Errorf(" - got:  %+v", got)
+			t.Errorf(" - want: %+v", want)
 			continue
 		}
 	}
