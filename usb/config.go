@@ -131,6 +131,9 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 
 // Close decrements the reference count for the device in the libusb driver
 // code.  It should be called exactly once!
+//
+// TODO(kevlar): This information can probably be cached at creation time
+// and then immediately closed.
 func (c *Config) Close() error {
 	if c.cfg != nil {
 		//log.Printf("config %p closed", c.cfg)
