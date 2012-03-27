@@ -6,7 +6,6 @@ import "C"
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"runtime"
 	"unsafe"
@@ -126,7 +125,7 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 	// *sigh*
 	runtime.SetFinalizer(c, (*Config).Close)
 
-	log.Printf("config %p initialized", c.cfg)
+	//log.Printf("config %p initialized", c.cfg)
 	return c
 }
 
@@ -134,7 +133,7 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 // code.  It should be called exactly once!
 func (c *Config) Close() error {
 	if c.cfg != nil {
-		log.Printf("config %p closed", c.cfg)
+		//log.Printf("config %p closed", c.cfg)
 		C.libusb_free_config_descriptor(c.cfg)
 	}
 	c.cfg = nil

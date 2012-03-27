@@ -5,7 +5,6 @@ package usb
 import "C"
 
 import (
-	"log"
 	"reflect"
 	"runtime"
 	"unsafe"
@@ -22,7 +21,7 @@ func (c *Context) Debug(level int) {
 func NewContext() *Context {
 	c := new(Context)
 
-	log.Printf("gousb initialized")
+	//log.Printf("gousb initialized")
 	if errno := C.libusb_init(&c.ctx); errno != 0 {
 		panic(usbError(errno))
 	}
@@ -69,7 +68,7 @@ func (c *Context) ListDevices(each func(bus, addr int, desc *Descriptor) bool) (
 func (c *Context) Close() error {
 	if c.ctx != nil {
 		C.libusb_exit(c.ctx)
-		log.Printf("gousb finished")
+		//log.Printf("gousb finished")
 	}
 	c.ctx = nil
 	return nil
