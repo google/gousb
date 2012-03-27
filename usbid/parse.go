@@ -20,7 +20,7 @@ func (v Vendor) String() string {
 }
 
 type Product struct {
-	Name       string
+	Name      string
 	Interface map[usb.ID]string
 }
 
@@ -29,7 +29,7 @@ func (p Product) String() string {
 }
 
 type Class struct {
-	Name string
+	Name     string
 	SubClass map[uint8]*SubClass
 }
 
@@ -38,7 +38,7 @@ func (c Class) String() string {
 }
 
 type SubClass struct {
-	Name string
+	Name     string
 	Protocol map[uint8]string
 }
 

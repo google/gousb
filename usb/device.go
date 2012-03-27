@@ -89,7 +89,8 @@ func (d *Device) Reset() error {
 	return nil
 }
 
-var ControlTimeout = 5*time.Second
+var ControlTimeout = 5 * time.Second
+
 func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
 	dataSlice := (*reflect.SliceHeader)(unsafe.Pointer(&data))
 	n := C.libusb_control_transfer(

@@ -9,9 +9,9 @@ type Descriptor struct {
 
 	Type     DescriptorType // The type of this descriptor
 	Spec     BCD            // USB Specification Release Number
-	Class    uint8             // The class of this device
-	SubClass uint8             // The sub-class (within the class) of this device
-	Protocol uint8             // The protocol (within the sub-class) of this device
+	Class    uint8          // The class of this device
+	SubClass uint8          // The sub-class (within the class) of this device
+	Protocol uint8          // The protocol (within the sub-class) of this device
 	Vendor   ID             // The 8-bit Vendor identifer
 	Product  ID             // The 8-bit Product identifier
 	Device   BCD            // The device version

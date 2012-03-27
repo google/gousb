@@ -32,9 +32,9 @@ func (e Endpoint) Direction() EndpointDirection {
 func (e Endpoint) String() string {
 	return fmt.Sprintf("Endpoint %d %-3s %s - %s %s",
 		e.Number(), e.Direction(),
-		TransferType(e.Attributes) & TRANSFER_TYPE_MASK,
-		IsoSyncType(e.Attributes) & ISO_SYNC_TYPE_MASK,
-		IsoUsageType(e.Attributes) & ISO_USAGE_TYPE_MASK,
+		TransferType(e.Attributes)&TRANSFER_TYPE_MASK,
+		IsoSyncType(e.Attributes)&ISO_SYNC_TYPE_MASK,
+		IsoUsageType(e.Attributes)&ISO_USAGE_TYPE_MASK,
 	)
 }
 
