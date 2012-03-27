@@ -29,7 +29,7 @@ func Describe(val interface{}) string {
 // and protocol associated with a device or interface.
 //
 // The given val must be one of the following:
-//   - *usb.Descriptor       "Class (SubClass Protocol"
+//   - *usb.Descriptor       "Class (SubClass) Protocol"
 //   - *usb.Interface        "IfClass (IfSubClass) IfProtocol"
 func Classify(val interface{}) string {
 	var class, sub, proto uint8
