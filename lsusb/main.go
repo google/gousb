@@ -17,14 +17,14 @@ func main() {
 	flag.Parse()
 
 	// Only one context should be needed for an application.  It should always be closed.
-	ctx = usb.NewContext()
+	ctx := usb.NewContext()
 	defer ctx.Close()
 
 	// Debugging can be turned on; this shows some of the inner workings of the libusb package.
 	ctx.Debug(*debug)
 
 	// ListDevices is used to find the devices to open.
-	devs, err := ctx.ListDevices(func(bus, addr int, desc *usb.Descriptor) bool { 
+	devs, err := ctx.ListDevices(func(bus, addr int, desc *usb.Descriptor) bool {
 		// After inspecting the descriptor, return true or false depending on whether
 		// the device is "interesting" or not.  Any descriptor for which true is returned
 		// generates a DeviceInfo which is retuned in a slice.

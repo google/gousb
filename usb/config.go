@@ -11,7 +11,7 @@ import (
 	"unsafe"
 )
 
-type Endpoint struct {
+type EndpointInfo struct {
 	Type          DescriptorType
 	Address       uint8
 	Attributes    uint8
@@ -21,15 +21,15 @@ type Endpoint struct {
 	SynchAddress  uint8
 }
 
-func (e Endpoint) Number() int {
+func (e EndpointInfo) Number() int {
 	return int(e.Address) & ENDPOINT_NUM_MASK
 }
 
-func (e Endpoint) Direction() EndpointDirection {
+func (e EndpointInfo) Direction() EndpointDirection {
 	return EndpointDirection(e.Address) & ENDPOINT_DIR_MASK
 }
 
-func (e Endpoint) String() string {
+func (e EndpointInfo) String() string {
 	return fmt.Sprintf("Endpoint %d %-3s %s - %s %s",
 		e.Number(), e.Direction(),
 		TransferType(e.Attributes)&TRANSFER_TYPE_MASK,
@@ -38,17 +38,17 @@ func (e Endpoint) String() string {
 	)
 }
 
-type Interface struct {
+type InterfaceInfo struct {
 	Type       DescriptorType
 	Number     uint8
 	Alternate  uint8
 	IfClass    uint8
 	IfSubClass uint8
 	IfProtocol uint8
-	Endpoints  []*Endpoint
+	Endpoints  []*EndpointInfo
 }
 
-func (i Interface) String() string {
+func (i InterfaceInfo) String() string {
 	return fmt.Sprintf("Interface %02x (config %02x)", i.Number, i.Alternate)
 }
 
@@ -59,7 +59,7 @@ type Config struct {
 	Config     uint8
 	Attributes uint8
 	MaxPower   uint8
-	Interfaces [][]*Interface
+	Interfaces [][]*InterfaceInfo
 }
 
 func (c Config) String() string {
@@ -81,7 +81,7 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 		Len:  int(cfg.bNumInterfaces),
 		Cap:  int(cfg.bNumInterfaces),
 	}
-	c.Interfaces = make([][]*Interface, 0, len(ifaces))
+	c.Interfaces = make([][]*InterfaceInfo, 0, len(ifaces))
 	for _, iface := range ifaces {
 		var alts []C.struct_libusb_interface_descriptor
 		*(*reflect.SliceHeader)(unsafe.Pointer(&alts)) = reflect.SliceHeader{
@@ -89,9 +89,9 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 			Len:  int(iface.num_altsetting),
 			Cap:  int(iface.num_altsetting),
 		}
-		descs := make([]*Interface, 0, len(alts))
+		descs := make([]*InterfaceInfo, 0, len(alts))
 		for _, alt := range alts {
-			i := &Interface{
+			i := &InterfaceInfo{
 				Type:       DescriptorType(alt.bDescriptorType),
 				Number:     uint8(alt.bInterfaceNumber),
 				Alternate:  uint8(alt.bAlternateSetting),
@@ -105,9 +105,9 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 				Len:  int(alt.bNumEndpoints),
 				Cap:  int(alt.bNumEndpoints),
 			}
-			i.Endpoints = make([]*Endpoint, 0, len(ends))
+			i.Endpoints = make([]*EndpointInfo, 0, len(ends))
 			for _, end := range ends {
-				i.Endpoints = append(i.Endpoints, &Endpoint{
+				i.Endpoints = append(i.Endpoints, &EndpointInfo{
 					Type:          DescriptorType(end.bDescriptorType),
 					Address:       uint8(end.bEndpointAddress),
 					Attributes:    uint8(end.bmAttributes),
