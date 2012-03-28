@@ -13,6 +13,8 @@ import (
 	"unsafe"
 )
 
+var DefaultReadTimeout = 1 * time.Second
+var DefaultWriteTimeout = 1 * time.Second
 var DefaultControlTimeout = 5 * time.Second
 
 type Device struct {
@@ -22,6 +24,8 @@ type Device struct {
 	*Descriptor
 
 	// Timeouts
+	ReadTimeout time.Duration
+	WriteTimeout time.Duration
 	ControlTimeout time.Duration
 
 	// Claimed interfaces
@@ -34,6 +38,8 @@ func newDevice(handle *C.libusb_device_handle, desc *Descriptor) *Device {
 	d := &Device{
 		handle:         handle,
 		Descriptor:     desc,
+		ReadTimeout:    DefaultReadTimeout,
+		WriteTimeout:   DefaultWriteTimeout,
 		ControlTimeout: DefaultControlTimeout,
 		lock:           new(sync.Mutex),
 		claimed:        make(map[uint8]int, ifaces),
@@ -94,6 +100,8 @@ func (d *Device) Close() error {
 	if d.handle == nil {
 		return fmt.Errorf("usb: double close on device")
 	}
+	d.lock.Lock()
+	defer d.lock.Unlock()
 	for iface := range d.claimed {
 		C.libusb_release_interface(d.handle, C.int(iface))
 	}
@@ -102,12 +110,68 @@ func (d *Device) Close() error {
 	return nil
 }
 
-type Interface struct {
-}
-
-func (d *Device) OpenInterface(id uint8) (*Interface, error) {
-	if errno := C.libusb_claim_interface(d.handle, C.int(id)); errno < 0 {
-		return nil, usbError(errno)
+func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error) {
+	end := &endpoint{
+		Device: d,
 	}
-	return &Interface{}, nil
+
+	for _, c := range d.Configs {
+		if c.Config != conf {
+			continue
+		}
+		for _, i := range c.Interfaces {
+			if i.Number != iface {
+				continue
+			}
+			for _, s := range i.Setups {
+				if s.Alternate != setup {
+					continue
+				}
+				for _, e := range s.Endpoints {
+					if e.Address != epoint {
+						continue
+					}
+					end.InterfaceSetup = s
+					end.EndpointInfo = e
+					switch tt := TransferType(e.Attributes) & TRANSFER_TYPE_MASK; tt {
+					case TRANSFER_TYPE_BULK:
+						end.xfer = bulk_xfer
+					case TRANSFER_TYPE_INTERRUPT:
+						end.xfer = interrupt_xfer
+					default:
+						return nil, fmt.Errorf("usb: %s transfer is unsupported", tt)
+					}
+					goto found
+				}
+				return nil, fmt.Errorf("usb: unknown endpoint %02x", epoint)
+			}
+			return nil, fmt.Errorf("usb: unknown setup %02x", setup)
+		}
+		return nil, fmt.Errorf("usb: unknown interface %02x", iface)
+	}
+	return nil, fmt.Errorf("usb: unknown configuration %02x", conf)
+
+	found:
+
+	// Claim the interface
+	if errno := C.libusb_claim_interface(d.handle, C.int(iface)); errno < 0 {
+		return nil, fmt.Errorf("usb: claim: %s", usbError(errno))
+	}
+
+	// Increment the claim count
+	d.lock.Lock()
+	d.claimed[iface]++
+	d.lock.Unlock() // unlock immediately because the next calls may block
+
+	// Set the configuration
+	if errno := C.libusb_set_configuration(d.handle, C.int(conf)); errno < 0 {
+		return nil, fmt.Errorf("usb: setcfg: %s", usbError(errno))
+	}
+
+	// Choose the alternate
+	if errno := C.libusb_set_interface_alt_setting(d.handle, C.int(iface), C.int(setup)); errno < 0 {
+		return nil, fmt.Errorf("usb: setalt: %s", usbError(errno))
+	}
+
+	return end, nil
 }
