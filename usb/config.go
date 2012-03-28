@@ -44,27 +44,27 @@ type InterfaceInfo struct {
 	IfClass    uint8
 	IfSubClass uint8
 	IfProtocol uint8
-	Endpoints  []*EndpointInfo
+	Endpoints  []EndpointInfo
 }
 
 func (i InterfaceInfo) String() string {
 	return fmt.Sprintf("Interface %02x (config %02x)", i.Number, i.Alternate)
 }
 
-type Config struct {
+type ConfigInfo struct {
 	Type       DescriptorType
 	Config     uint8
 	Attributes uint8
 	MaxPower   uint8
-	Interfaces [][]*InterfaceInfo
+	Interfaces [][]InterfaceInfo
 }
 
-func (c Config) String() string {
+func (c ConfigInfo) String() string {
 	return fmt.Sprintf("Config %02x", c.Config)
 }
 
-func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
-	c := &Config{
+func newConfig(cfg *C.struct_libusb_config_descriptor) ConfigInfo {
+	c := ConfigInfo{
 		Type:       DescriptorType(cfg.bDescriptorType),
 		Config:     uint8(cfg.bConfigurationValue),
 		Attributes: uint8(cfg.bmAttributes),
@@ -77,7 +77,7 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 		Len:  int(cfg.bNumInterfaces),
 		Cap:  int(cfg.bNumInterfaces),
 	}
-	c.Interfaces = make([][]*InterfaceInfo, 0, len(ifaces))
+	c.Interfaces = make([][]InterfaceInfo, 0, len(ifaces))
 	for _, iface := range ifaces {
 		var alts []C.struct_libusb_interface_descriptor
 		*(*reflect.SliceHeader)(unsafe.Pointer(&alts)) = reflect.SliceHeader{
@@ -85,9 +85,9 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 			Len:  int(iface.num_altsetting),
 			Cap:  int(iface.num_altsetting),
 		}
-		descs := make([]*InterfaceInfo, 0, len(alts))
+		descs := make([]InterfaceInfo, 0, len(alts))
 		for _, alt := range alts {
-			i := &InterfaceInfo{
+			i := InterfaceInfo{
 				Type:       DescriptorType(alt.bDescriptorType),
 				Number:     uint8(alt.bInterfaceNumber),
 				Alternate:  uint8(alt.bAlternateSetting),
@@ -101,9 +101,9 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 				Len:  int(alt.bNumEndpoints),
 				Cap:  int(alt.bNumEndpoints),
 			}
-			i.Endpoints = make([]*EndpointInfo, 0, len(ends))
+			i.Endpoints = make([]EndpointInfo, 0, len(ends))
 			for _, end := range ends {
-				i.Endpoints = append(i.Endpoints, &EndpointInfo{
+				i.Endpoints = append(i.Endpoints, EndpointInfo{
 					Type:          DescriptorType(end.bDescriptorType),
 					Address:       uint8(end.bEndpointAddress),
 					Attributes:    uint8(end.bmAttributes),

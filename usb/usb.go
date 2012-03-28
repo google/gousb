@@ -21,7 +21,6 @@ func (c *Context) Debug(level int) {
 func NewContext() *Context {
 	c := new(Context)
 
-	//log.Printf("gousb initialized")
 	if errno := C.libusb_init(&c.ctx); errno != 0 {
 		panic(usbError(errno))
 	}
@@ -32,10 +31,12 @@ func NewContext() *Context {
 	return c
 }
 
-// ListDevices calls each with each enumerated device.  If the function returns
-// true, the device is added to the list of *DeviceInfo to return.  All of
-// these must be Closed, even if an error is also returned.
-func (c *Context) ListDevices(each func(bus, addr int, desc *Descriptor) bool) ([]*DeviceInfo, error) {
+// ListDevices calls each with each enumerated device.
+// If the function returns true, the device is opened and a Device is returned if the operation succeeds.
+// Every Device returned (whether an error is also returned or not) must be closed.
+// If there are any errors enumerating the devices,
+// the final one is returned along with any successfully opened devices.
+func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, error) {
 	var list **C.libusb_device
 	cnt := C.libusb_get_device_list(c.ctx, &list)
 	if cnt < 0 {
@@ -50,25 +51,30 @@ func (c *Context) ListDevices(each func(bus, addr int, desc *Descriptor) bool) (
 		Cap:  int(cnt),
 	}
 
-	ret := []*DeviceInfo{}
+	var reterr error
+	ret := []*Device{}
 	for _, dev := range slice {
-		bus := int(C.libusb_get_bus_number(dev))
-		addr := int(C.libusb_get_device_address(dev))
 		desc, err := newDescriptor(dev)
 		if err != nil {
-			return ret, err
+			reterr = err
+			continue
 		}
-		if each(bus, addr, desc) {
-			ret = append(ret, newDeviceInfo(dev))
+
+		if each(desc) {
+			var handle *C.libusb_device_handle
+			if errno := C.libusb_open(dev, &handle); errno != 0 {
+				reterr = err
+				continue
+			}
+			ret = append(ret, newDevice(handle, desc))
 		}
 	}
-	return ret, nil
+	return ret, reterr
 }
 
 func (c *Context) Close() error {
 	if c.ctx != nil {
 		C.libusb_exit(c.ctx)
-		//log.Printf("gousb finished")
 	}
 	c.ctx = nil
 	return nil
