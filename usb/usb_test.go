@@ -26,7 +26,7 @@ func TestEnum(t *testing.T) {
 			t.Logf("- %s:", cfg)
 			for _, alt := range cfg.Interfaces {
 				t.Logf("  --------------")
-				for _, iface := range alt {
+				for _, iface := range alt.Setups {
 					t.Logf("  - %s", iface)
 					t.Logf("    - %s", usbid.Classify(iface))
 					for _, end := range iface.Endpoints {

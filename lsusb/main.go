@@ -38,7 +38,7 @@ func main() {
 			fmt.Printf("  %s:\n", cfg)
 			for _, alt := range cfg.Interfaces {
 				fmt.Printf("    --------------\n")
-				for _, iface := range alt {
+				for _, iface := range alt.Setups {
 					fmt.Printf("    %s\n", iface)
 					fmt.Printf("      %s\n", usbid.Classify(iface))
 					for _, end := range iface.Endpoints {

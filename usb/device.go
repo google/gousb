@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"sync"
 	"time"
 	"unsafe"
 )
@@ -22,13 +23,20 @@ type Device struct {
 
 	// Timeouts
 	ControlTimeout time.Duration
+
+	// Claimed interfaces
+	lock    *sync.Mutex
+	claimed map[uint8]int
 }
 
 func newDevice(handle *C.libusb_device_handle, desc *Descriptor) *Device {
+	ifaces := 0
 	d := &Device{
 		handle:         handle,
 		Descriptor:     desc,
 		ControlTimeout: DefaultControlTimeout,
+		lock:           new(sync.Mutex),
+		claimed:        make(map[uint8]int, ifaces),
 	}
 
 	// This doesn't seem to actually get called
@@ -86,7 +94,20 @@ func (d *Device) Close() error {
 	if d.handle == nil {
 		return fmt.Errorf("usb: double close on device")
 	}
+	for iface := range d.claimed {
+		C.libusb_release_interface(d.handle, C.int(iface))
+	}
 	C.libusb_close(d.handle)
 	d.handle = nil
 	return nil
+}
+
+type Interface struct {
+}
+
+func (d *Device) OpenInterface(id uint8) (*Interface, error) {
+	if errno := C.libusb_claim_interface(d.handle, C.int(id)); errno < 0 {
+		return nil, usbError(errno)
+	}
+	return &Interface{}, nil
 }
