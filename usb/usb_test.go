@@ -49,11 +49,6 @@ func TestEnum(t *testing.T) {
 		t.Logf("- Protocol: %s", usbid.Classify(desc))
 
 		cfgs, err := dev.Configurations()
-		defer func() {
-			for _, cfg := range cfgs {
-				cfg.Close()
-			}
-		}()
 		if err != nil {
 			t.Errorf("  - configs: %s", err)
 			continue

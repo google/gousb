@@ -37,27 +37,20 @@ func newDescriptor(dev *C.libusb_device) (*Descriptor, error) {
 
 // Configurations returns a list of configurations configured on this
 // device.  Each config must be Closed.
-func (d *DeviceInfo) Configurations() (_c []*Config, _e error) {
+func (d *DeviceInfo) Configurations() ([]*Config, error) {
 	var desc C.struct_libusb_device_descriptor
 	if errno := C.libusb_get_device_descriptor(d.dev, &desc); errno < 0 {
 		return nil, usbError(errno)
 	}
 
 	var cfgs []*Config
-	defer func() {
-		if _e != nil {
-			for _, c := range cfgs {
-				c.Close()
-			}
-		}
-	}()
-
 	for i := 0; i < int(desc.bNumConfigurations); i++ {
 		var cfg *C.struct_libusb_config_descriptor
 		if errno := C.libusb_get_config_descriptor(d.dev, C.uint8_t(i), &cfg); errno < 0 {
 			return nil, usbError(errno)
 		}
 		cfgs = append(cfgs, newConfig(cfg))
+		C.libusb_free_config_descriptor(cfg)
 	}
 	return cfgs, nil
 }

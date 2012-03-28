@@ -64,11 +64,6 @@ func main() {
 		// be set once the device is opened.  All configuration references must be closed,
 		// to free up the memory in libusb.
 		cfgs, err := dev.Configurations()
-		defer func() {
-			for _, cfg := range cfgs {
-				cfg.Close()
-			}
-		}()
 		if err != nil {
 			log.Printf("  - configs: %s", err)
 			continue

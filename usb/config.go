@@ -7,7 +7,6 @@ import "C"
 import (
 	"fmt"
 	"reflect"
-	"runtime"
 	"unsafe"
 )
 
@@ -53,8 +52,6 @@ func (i InterfaceInfo) String() string {
 }
 
 type Config struct {
-	cfg *C.struct_libusb_config_descriptor
-
 	Type       DescriptorType
 	Config     uint8
 	Attributes uint8
@@ -68,7 +65,6 @@ func (c Config) String() string {
 
 func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 	c := &Config{
-		cfg:        cfg,
 		Type:       DescriptorType(cfg.bDescriptorType),
 		Config:     uint8(cfg.bConfigurationValue),
 		Attributes: uint8(cfg.bmAttributes),
@@ -121,24 +117,5 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) *Config {
 		}
 		c.Interfaces = append(c.Interfaces, descs)
 	}
-
-	// *sigh*
-	runtime.SetFinalizer(c, (*Config).Close)
-
-	//log.Printf("config %p initialized", c.cfg)
 	return c
-}
-
-// Close decrements the reference count for the device in the libusb driver
-// code.  It should be called exactly once!
-//
-// TODO(kevlar): This information can probably be cached at creation time
-// and then immediately closed.
-func (c *Config) Close() error {
-	if c.cfg != nil {
-		//log.Printf("config %p closed", c.cfg)
-		C.libusb_free_config_descriptor(c.cfg)
-	}
-	c.cfg = nil
-	return nil
 }
