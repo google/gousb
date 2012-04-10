@@ -1,6 +1,5 @@
 package usb
 
-// #cgo LDFLAGS: -lusb-1.0
 // #include <libusb-1.0/libusb.h>
 import "C"
 
