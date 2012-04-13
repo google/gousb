@@ -6,8 +6,8 @@ import "C"
 import (
 	"fmt"
 	"reflect"
-	"unsafe"
 	"time"
+	"unsafe"
 )
 
 type Endpoint interface {
@@ -25,7 +25,7 @@ type endpoint struct {
 }
 
 func (e *endpoint) Read(buf []byte) (int, error) {
-	if EndpointDirection(e.Address) & ENDPOINT_DIR_MASK != ENDPOINT_DIR_OUT {
+	if EndpointDirection(e.Address)&ENDPOINT_DIR_MASK != ENDPOINT_DIR_OUT {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
 	}
 
@@ -33,7 +33,7 @@ func (e *endpoint) Read(buf []byte) (int, error) {
 }
 
 func (e *endpoint) Write(buf []byte) (int, error) {
-	if EndpointDirection(e.Address) & ENDPOINT_DIR_MASK != ENDPOINT_DIR_OUT {
+	if EndpointDirection(e.Address)&ENDPOINT_DIR_MASK != ENDPOINT_DIR_OUT {
 		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
 	}
 
@@ -41,7 +41,7 @@ func (e *endpoint) Write(buf []byte) (int, error) {
 }
 
 func (e *endpoint) Interface() InterfaceSetup { return InterfaceSetup{} }
-func (e *endpoint) Info() EndpointInfo { return EndpointInfo{} }
+func (e *endpoint) Info() EndpointInfo        { return EndpointInfo{} }
 
 // TODO(kevlar): (*Endpoint).Close
 

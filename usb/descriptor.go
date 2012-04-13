@@ -38,7 +38,7 @@ func newDescriptor(dev *C.libusb_device) (*Descriptor, error) {
 		if errno := C.libusb_get_config_descriptor(dev, C.uint8_t(i), &cfg); errno < 0 {
 			return nil, usbError(errno)
 		}
-		cfgs = append(cfgs, newConfig(cfg))
+		cfgs = append(cfgs, newConfig(dev, cfg))
 		C.libusb_free_config_descriptor(cfg)
 	}
 

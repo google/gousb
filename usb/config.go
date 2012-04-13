@@ -13,6 +13,7 @@ type EndpointInfo struct {
 	Address       uint8
 	Attributes    uint8
 	MaxPacketSize uint16
+	MaxIsoPacket  uint32
 	PollInterval  uint8
 	RefreshRate   uint8
 	SynchAddress  uint8
@@ -27,11 +28,12 @@ func (e EndpointInfo) Direction() EndpointDirection {
 }
 
 func (e EndpointInfo) String() string {
-	return fmt.Sprintf("Endpoint %d %-3s %s - %s %s",
+	return fmt.Sprintf("Endpoint %d %-3s %s - %s %s [%d %d]",
 		e.Number(), e.Direction(),
 		TransferType(e.Attributes)&TRANSFER_TYPE_MASK,
 		IsoSyncType(e.Attributes)&ISO_SYNC_TYPE_MASK,
 		IsoUsageType(e.Attributes)&ISO_USAGE_TYPE_MASK,
+		e.MaxPacketSize, e.MaxIsoPacket,
 	)
 }
 
@@ -68,7 +70,7 @@ func (c ConfigInfo) String() string {
 	return fmt.Sprintf("Config %02x", c.Config)
 }
 
-func newConfig(cfg *C.struct_libusb_config_descriptor) ConfigInfo {
+func newConfig(dev *C.libusb_device, cfg *C.struct_libusb_config_descriptor) ConfigInfo {
 	c := ConfigInfo{
 		Config:     uint8(cfg.bConfigurationValue),
 		Attributes: uint8(cfg.bmAttributes),
@@ -114,6 +116,7 @@ func newConfig(cfg *C.struct_libusb_config_descriptor) ConfigInfo {
 					Address:       uint8(end.bEndpointAddress),
 					Attributes:    uint8(end.bmAttributes),
 					MaxPacketSize: uint16(end.wMaxPacketSize),
+					//MaxIsoPacket:  uint32(C.libusb_get_max_iso_packet_size(dev, C.uchar(end.bEndpointAddress))),
 					PollInterval:  uint8(end.bInterval),
 					RefreshRate:   uint8(end.bRefresh),
 					SynchAddress:  uint8(end.bSynchAddress),
