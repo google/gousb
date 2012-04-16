@@ -15,7 +15,7 @@ import (
 
 var DefaultReadTimeout = 1 * time.Second
 var DefaultWriteTimeout = 1 * time.Second
-var DefaultControlTimeout = 5 * time.Second
+var DefaultControlTimeout = 250 * time.Millisecond //5 * time.Second
 
 type Device struct {
 	handle *C.libusb_device_handle
