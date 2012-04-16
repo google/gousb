@@ -5,7 +5,6 @@ import "C"
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"runtime"
 	"sync"
@@ -159,6 +158,11 @@ func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error
 
 found:
 
+	// Set the configuration
+	if errno := C.libusb_set_configuration(d.handle, C.int(conf)); errno < 0 {
+		return nil, fmt.Errorf("usb: setcfg: %s", usbError(errno))
+	}
+
 	// Claim the interface
 	if errno := C.libusb_claim_interface(d.handle, C.int(iface)); errno < 0 {
 		return nil, fmt.Errorf("usb: claim: %s", usbError(errno))
@@ -169,16 +173,11 @@ found:
 	d.claimed[iface]++
 	d.lock.Unlock() // unlock immediately because the next calls may block
 
-	// Set the configuration
-	if errno := C.libusb_set_configuration(d.handle, C.int(conf)); errno < 0 {
-		return nil, fmt.Errorf("usb: setcfg: %s", usbError(errno))
-	}
-
 	// Choose the alternate
 	// This doesn't seem to work...
 	if errno := C.libusb_set_interface_alt_setting(d.handle, C.int(iface), C.int(setup)); errno < 0 {
-		log.Printf("ignoring altsetting error: %s", usbError(errno))
-		//return nil, fmt.Errorf("usb: setalt: %s", usbError(errno))
+		//log.Printf("ignoring altsetting error: %s", usbError(errno))
+		return nil, fmt.Errorf("usb: setalt: %s", usbError(errno))
 	}
 
 	return end, nil

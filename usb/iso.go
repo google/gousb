@@ -26,7 +26,7 @@ func (end *endpoint) allocTransfer() *Transfer {
 	// Use libusb_get_max_iso_packet_size ?
 	const (
 		iso_packets = 8 // 128 // 242
-		packet_size = 2048 // 1760
+		packet_size = 2*960 // 1760
 	)
 
 	xfer := C.libusb_alloc_transfer(C.int(iso_packets))
