@@ -5,13 +5,15 @@ package usb
 import "C"
 
 import (
+	"log"
 	"reflect"
 	"runtime"
 	"unsafe"
 )
 
 type Context struct {
-	ctx *C.libusb_context
+	ctx  *C.libusb_context
+	done chan struct{}
 }
 
 func (c *Context) Debug(level int) {
@@ -19,11 +21,28 @@ func (c *Context) Debug(level int) {
 }
 
 func NewContext() *Context {
-	c := new(Context)
+	c := &Context{
+		done: make(chan struct{}),
+	}
 
 	if errno := C.libusb_init(&c.ctx); errno != 0 {
 		panic(usbError(errno))
 	}
+
+	go func() {
+		for {
+			select {
+			case <-c.done:
+				return
+			default:
+			}
+			if errno := C.libusb_handle_events(c.ctx); errno < 0 {
+				log.Printf("handle_events: error: %s", usbError(errno))
+				continue
+			}
+			log.Printf("handle_events returned")
+		}
+	}()
 
 	// This doesn't seem to actually get called.  Sigh.
 	runtime.SetFinalizer(c, (*Context).Close)
@@ -73,6 +92,7 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 }
 
 func (c *Context) Close() error {
+	close(c.done)
 	if c.ctx != nil {
 		C.libusb_exit(c.ctx)
 	}
