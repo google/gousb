@@ -28,20 +28,20 @@ void print_xfer(struct libusb_transfer *xfer) {
 	int i;
 
 	printf("Transfer:\n");
-	//printf("  dev_handle:   %p\n", xfer->dev_handle);
-	//printf("  flags:        %08x\n", xfer->flags);
+	printf("  dev_handle:   %p\n", xfer->dev_handle);
+	printf("  flags:        %08x\n", xfer->flags);
 	printf("  endpoint:     %x\n", xfer->endpoint);
-	//printf("  type:         %x\n", xfer->type);
+	printf("  type:         %x\n", xfer->type);
 	printf("  timeout:      %dms\n", xfer->timeout);
 	printf("  status:       %x\n", xfer->status);
-	printf("  length:       %d (%d)\n", xfer->length, xfer->actual_length);
-	//printf("  callback:     %p\n", xfer->callback);
-	//printf("  user_data:    %p\n", xfer->user_data);
-	//printf("  buffer:       %p\n", xfer->buffer);
+	printf("  length:       %d (act: %d)\n", xfer->length, xfer->actual_length);
+	printf("  callback:     %p\n", xfer->callback);
+	printf("  user_data:    %p\n", xfer->user_data);
+	printf("  buffer:       %p\n", xfer->buffer);
 	printf("  num_iso_pkts: %d\n", xfer->num_iso_packets);
 	printf("  packets:\n");
 	for (i = 0; i < xfer->num_iso_packets; i++) {
-		printf("    [%04d] %d (%d) %x\n", i,
+		printf("    [%04d] %d (act: %d) %x\n", i,
 			xfer->iso_packet_desc[i].length,
 			xfer->iso_packet_desc[i].actual_length,
 			xfer->iso_packet_desc[i].status);

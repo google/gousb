@@ -7,7 +7,6 @@ import "C"
 import (
 	"log"
 	"reflect"
-	"runtime"
 	"unsafe"
 )
 
@@ -43,9 +42,6 @@ func NewContext() *Context {
 			log.Printf("handle_events returned")
 		}
 	}()
-
-	// This doesn't seem to actually get called.  Sigh.
-	runtime.SetFinalizer(c, (*Context).Close)
 
 	return c
 }

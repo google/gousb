@@ -11,7 +11,6 @@ import (
 	"log"
 	"fmt"
 	"reflect"
-	"runtime"
 	"time"
 	"unsafe"
 )
@@ -61,8 +60,6 @@ func (end *endpoint) allocTransfer() *Transfer {
 		done: done,
 		buf:  buf,
 	}
-
-	runtime.SetFinalizer(t, (*Transfer).Close)
 
 	return t
 }

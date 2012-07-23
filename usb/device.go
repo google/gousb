@@ -7,7 +7,6 @@ import (
 	"log"
 	"fmt"
 	"reflect"
-	"runtime"
 	"sync"
 	"time"
 	"unsafe"
@@ -44,9 +43,6 @@ func newDevice(handle *C.libusb_device_handle, desc *Descriptor) *Device {
 		lock:           new(sync.Mutex),
 		claimed:        make(map[uint8]int, ifaces),
 	}
-
-	// This doesn't seem to actually get called
-	runtime.SetFinalizer(d, (*Device).Close)
 
 	return d
 }
