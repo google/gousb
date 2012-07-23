@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	device = flag.String("device", "vend:prod", "Device to which to connect")
-	config = flag.Int("config", 1, "Endpoint to which to connect")
-	iface = flag.Int("interface", 0, "Endpoint to which to connect")
-	setup = flag.Int("setup", 0, "Endpoint to which to connect")
+	device   = flag.String("device", "vend:prod", "Device to which to connect")
+	config   = flag.Int("config", 1, "Endpoint to which to connect")
+	iface    = flag.Int("interface", 0, "Endpoint to which to connect")
+	setup    = flag.Int("setup", 0, "Endpoint to which to connect")
 	endpoint = flag.Int("endpoint", 1, "Endpoint to which to connect")
-	debug = flag.Int("debug", 3, "Debug level for libusb")
+	debug    = flag.Int("debug", 3, "Debug level for libusb")
 )
 
 func main() {
@@ -81,7 +81,7 @@ func main() {
 
 	log.Printf("Connecting to endpoint...")
 	log.Printf("- %#v", dev.Descriptor)
-	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint) | uint8(usb.ENDPOINT_DIR_IN))
+	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint)|uint8(usb.ENDPOINT_DIR_IN))
 	if err != nil {
 		log.Fatalf("open: %s", err)
 	}

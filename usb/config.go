@@ -117,9 +117,9 @@ func newConfig(dev *C.libusb_device, cfg *C.struct_libusb_config_descriptor) Con
 					Attributes:    uint8(end.bmAttributes),
 					MaxPacketSize: uint16(end.wMaxPacketSize),
 					//MaxIsoPacket:  uint32(C.libusb_get_max_iso_packet_size(dev, C.uchar(end.bEndpointAddress))),
-					PollInterval:  uint8(end.bInterval),
-					RefreshRate:   uint8(end.bRefresh),
-					SynchAddress:  uint8(end.bSynchAddress),
+					PollInterval: uint8(end.bInterval),
+					RefreshRate:  uint8(end.bRefresh),
+					SynchAddress: uint8(end.bSynchAddress),
 				})
 			}
 			descs = append(descs, i)

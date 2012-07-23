@@ -8,8 +8,8 @@ int submit(struct libusb_transfer *xfer);
 import "C"
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"reflect"
 	"time"
 	"unsafe"
@@ -24,8 +24,8 @@ func iso_callback(cptr unsafe.Pointer) {
 func (end *endpoint) allocTransfer() *Transfer {
 	// Use libusb_get_max_iso_packet_size ?
 	const (
-		iso_packets = 8 // 128 // 242
-		packet_size = 2*960 // 1760
+		iso_packets = 8       // 128 // 242
+		packet_size = 2 * 960 // 1760
 	)
 
 	xfer := C.libusb_alloc_transfer(C.int(iso_packets))
@@ -82,16 +82,16 @@ func (t *Transfer) Submit(timeout time.Duration) error {
 
 func (t *Transfer) Wait(b []byte) (n int, err error) {
 	select {
-	case <-time.After(10*time.Second):
+	case <-time.After(10 * time.Second):
 		return 0, fmt.Errorf("wait timed out after 10s")
 	case <-t.done:
 	}
 	n = int(t.xfer.actual_length)
-	copy(b, ((*[1<<16]byte)(unsafe.Pointer(t.xfer.buffer)))[:n])
+	copy(b, ((*[1 << 16]byte)(unsafe.Pointer(t.xfer.buffer)))[:n])
 	/*
-	for i, pkt := range t.pkts {
-		log.Printf("PACKET[%4d] - %#v", i, pkt)
-	}*/
+		for i, pkt := range t.pkts {
+			log.Printf("PACKET[%4d] - %#v", i, pkt)
+		}*/
 	return n, err
 }
 

@@ -4,8 +4,8 @@ package usb
 import "C"
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"reflect"
 	"sync"
 	"time"
