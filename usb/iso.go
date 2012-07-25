@@ -45,8 +45,6 @@ func (end *endpoint) allocTransfer() *Transfer {
 	xfer.length = C.int(len(buf))
 	xfer.num_iso_packets = iso_packets
 
-	xfer.user_data = (unsafe.Pointer)(&done)
-
 	C.libusb_set_iso_packet_lengths(xfer, packet_size)
 	pkts := *(*[]C.struct_libusb_packet_descriptor)(unsafe.Pointer(&reflect.SliceHeader{
 		Data: uintptr(unsafe.Pointer(&xfer.iso_packet_desc)),
@@ -60,6 +58,7 @@ func (end *endpoint) allocTransfer() *Transfer {
 		done: done,
 		buf:  buf,
 	}
+	xfer.user_data = (unsafe.Pointer)(&t.done)
 
 	return t
 }
