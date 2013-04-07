@@ -4,13 +4,14 @@ package usb
 #include <libusb-1.0/libusb.h>
 
 int submit(struct libusb_transfer *xfer);
+void print_xfer(struct libusb_transfer *xfer);
+int extract_data(struct libusb_transfer *xfer, void *data, int max, unsigned char *status);
 */
 import "C"
 
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"time"
 	"unsafe"
 )
@@ -46,15 +47,16 @@ func (end *endpoint) allocTransfer() *Transfer {
 	xfer.num_iso_packets = iso_packets
 
 	C.libusb_set_iso_packet_lengths(xfer, packet_size)
+	/*
 	pkts := *(*[]C.struct_libusb_packet_descriptor)(unsafe.Pointer(&reflect.SliceHeader{
 		Data: uintptr(unsafe.Pointer(&xfer.iso_packet_desc)),
 		Len:  iso_packets,
 		Cap:  iso_packets,
 	}))
+	*/
 
 	t := &Transfer{
 		xfer: xfer,
-		pkts: pkts,
 		done: done,
 		buf:  buf,
 	}
@@ -65,13 +67,13 @@ func (end *endpoint) allocTransfer() *Transfer {
 
 type Transfer struct {
 	xfer *C.struct_libusb_transfer
-	pkts []C.struct_libusb_packet_descriptor
+	pkts []*C.struct_libusb_packet_descriptor
 	done chan struct{}
 	buf  []byte
 }
 
 func (t *Transfer) Submit(timeout time.Duration) error {
-	log.Printf("iso: submitting %#v", t.xfer)
+	//log.Printf("iso: submitting %#v", t.xfer)
 	t.xfer.timeout = C.uint(timeout / time.Millisecond)
 	if errno := C.submit(t.xfer); errno < 0 {
 		return usbError(errno)
@@ -85,12 +87,27 @@ func (t *Transfer) Wait(b []byte) (n int, err error) {
 		return 0, fmt.Errorf("wait timed out after 10s")
 	case <-t.done:
 	}
-	n = int(t.xfer.actual_length)
-	copy(b, ((*[1 << 16]byte)(unsafe.Pointer(t.xfer.buffer)))[:n])
+	// Non-iso transfers:
+	//n = int(t.xfer.actual_length)
+	//copy(b, ((*[1 << 16]byte)(unsafe.Pointer(t.xfer.buffer)))[:n])
+
+	//C.print_xfer(t.xfer)
 	/*
-		for i, pkt := range t.pkts {
-			log.Printf("PACKET[%4d] - %#v", i, pkt)
-		}*/
+	buf, offset := ((*[1 << 16]byte)(unsafe.Pointer(t.xfer.buffer))), 0
+	for i, pkt := range *t.pkts {
+		log.Printf("Type is %T", t.pkts)
+		n += copy(b[n:], buf[offset:][:pkt.actual_length])
+		offset += pkt.Length
+		if pkt.status != 0 && err == nil {
+			err = error(TransferStatus(pkt.status))
+		}
+	}
+	*/
+	var status uint8
+	n = int(C.extract_data(t.xfer, unsafe.Pointer(&b[0]), C.int(len(b)), (*C.uchar)(unsafe.Pointer(&status))))
+	if status != 0 {
+		err = TransferStatus(status)
+	}
 	return n, err
 }
 

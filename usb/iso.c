@@ -5,8 +5,8 @@
 void print_xfer(struct libusb_transfer *xfer);
 
 void callback(struct libusb_transfer *xfer) {
-	printf("Callback!\n");
-	print_xfer(xfer);
+	//printf("Callback!\n");
+	//print_xfer(xfer);
 	iso_callback(xfer->user_data);
 }
 
@@ -14,7 +14,7 @@ int submit(struct libusb_transfer *xfer) {
 	xfer->callback = &callback;
 	xfer->status = -1;
 	//print_xfer(xfer);
-	printf("Transfer submitted\n");
+	//printf("Transfer submitted\n");
 
 	/* fake
 	strcpy(xfer->buffer, "hello");
@@ -46,4 +46,33 @@ void print_xfer(struct libusb_transfer *xfer) {
 			xfer->iso_packet_desc[i].actual_length,
 			xfer->iso_packet_desc[i].status);
 	}
+}
+
+int extract_data(struct libusb_transfer *xfer, void *raw, int max, unsigned char *status) {
+	int i;
+	int copied = 0;
+	unsigned char *in = xfer->buffer;
+	unsigned char *out = raw;
+	for (i = 0; i < xfer->num_iso_packets; i++) {
+		struct libusb_iso_packet_descriptor pkt = xfer->iso_packet_desc[i];
+
+		// Copy the data
+		int len = pkt.actual_length;
+		if (len > max) {
+			len = max;
+		}
+		memcpy(out, in, len);
+		copied += len;
+
+		// Increment offsets
+		in += pkt.length;
+		out += len;
+
+		// Extract first error
+		if (pkt.status == 0 || *status != 0) {
+			continue;
+		}	
+		*status = pkt.status;
+	}
+	return copied;
 }

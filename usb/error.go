@@ -42,3 +42,33 @@ var usbErrorString = map[usbError]string{
 	C.LIBUSB_ERROR_NOT_SUPPORTED: "not supported",
 	C.LIBUSB_ERROR_OTHER:         "unknown error",
 }
+
+type TransferStatus uint8
+
+const (
+	LIBUSB_TRANSFER_COMPLETED TransferStatus = C.LIBUSB_TRANSFER_COMPLETED
+	LIBUSB_TRANSFER_ERROR     TransferStatus = C.LIBUSB_TRANSFER_ERROR
+	LIBUSB_TRANSFER_TIMED_OUT TransferStatus = C.LIBUSB_TRANSFER_TIMED_OUT
+	LIBUSB_TRANSFER_CANCELLED TransferStatus = C.LIBUSB_TRANSFER_CANCELLED
+	LIBUSB_TRANSFER_STALL     TransferStatus = C.LIBUSB_TRANSFER_STALL
+	LIBUSB_TRANSFER_NO_DEVICE TransferStatus = C.LIBUSB_TRANSFER_NO_DEVICE
+	LIBUSB_TRANSFER_OVERFLOW  TransferStatus = C.LIBUSB_TRANSFER_OVERFLOW
+)
+
+var transferStatusDescription = map[TransferStatus]string{
+	LIBUSB_TRANSFER_COMPLETED: "transfer completed without error",
+	LIBUSB_TRANSFER_ERROR:     "transfer failed",
+	LIBUSB_TRANSFER_TIMED_OUT: "transfer timed out",
+	LIBUSB_TRANSFER_CANCELLED: "transfer was cancelled",
+	LIBUSB_TRANSFER_STALL:     "halt condition detected (endpoint stalled) or control request not supported",
+	LIBUSB_TRANSFER_NO_DEVICE: "device was disconnected",
+	LIBUSB_TRANSFER_OVERFLOW:  "device sent more data than requested",
+}
+
+func (ts TransferStatus) String() string {
+	return transferStatusDescription[ts]
+}
+
+func (ts TransferStatus) Error() string {
+	return "libusb: " + ts.String()
+}

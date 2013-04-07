@@ -39,7 +39,7 @@ func NewContext() *Context {
 				log.Printf("handle_events: error: %s", usbError(errno))
 				continue
 			}
-			log.Printf("handle_events returned")
+			//log.Printf("handle_events returned")
 		}
 	}()
 

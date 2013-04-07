@@ -5,7 +5,7 @@ import "C"
 
 import (
 	"fmt"
-	"log"
+	//"log" // TODO(kevlar): make a logger
 	"reflect"
 	"sync"
 	"time"
@@ -55,7 +55,7 @@ func (d *Device) Reset() error {
 }
 
 func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
-	log.Printf("control xfer: %d:%d/%d:%d %x", idx, rType, request, val, string(data))
+	//log.Printf("control xfer: %d:%d/%d:%d %x", idx, rType, request, val, string(data))
 	dataSlice := (*reflect.SliceHeader)(unsafe.Pointer(&data))
 	n := C.libusb_control_transfer(
 		d.handle,
