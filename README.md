@@ -29,11 +29,11 @@ If you installed the lsusb example, both libraries below are already installed.
 
 Installing the primary gousb package is really easy:
 
-    go get -v github.com/kylelemons.net/gousb/usb
+    go get -v github.com/kylelemons/gousb/usb
 
 There is also a `usbid` package that will not be installed by default by this command, but which provides useful information including the human-readable vendor and product codes for detected hardware.  It's not installed by default and not linked into the `usb` package by default because it adds ~400kb to the resulting binary.  If you want both, they can be installed thus:
 
-    go get -v github.com/kylelemons.net/gousb/usb{,id}
+    go get -v github.com/kylelemons/gousb/usb{,id}
 
 Documentation
 =============
