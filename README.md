@@ -39,7 +39,7 @@ There is also a `usbid` package that will not be installed by default by this co
 
 Documentation
 =============
-The documentation can be viewed via local godoc or via Gary Burd's excellent [GoPkgDoc](http://gopkgdoc.appspot.com):
+The documentation can be viewed via local godoc or via Gary Burd's excellent [godoc.org](http://godoc.org/):
 
-- [usb](http://gopkgdoc.appspot.com/pkg/github.com/kylelemons/gousb/usb)
-- [usbid](http://gopkgdoc.appspot.com/pkg/github.com/kylelemons/gousb/usbid)
+- [usb](http://godoc.org/github.com/kylelemons/gousb/usb)
+- [usbid](http://godoc.org/pkg/github.com/kylelemons/gousb/usbid)
