@@ -157,8 +157,14 @@ func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error
 found:
 
 	// Set the configuration
-	if errno := C.libusb_set_configuration(d.handle, C.int(conf)); errno < 0 {
-		return nil, fmt.Errorf("usb: setcfg: %s", usbError(errno))
+	var activeConf C.int
+	if errno := C.libusb_get_configuration(d.handle, &activeConf); errno < 0 {
+		return nil, fmt.Errorf("usb: getcfg: %s", usbError(errno))
+	}
+	if int(activeConf) != int(conf) {
+		if errno := C.libusb_set_configuration(d.handle, C.int(conf)); errno < 0 {
+			return nil, fmt.Errorf("usb: setcfg: %s", usbError(errno))
+		}
 	}
 
 	// Claim the interface
