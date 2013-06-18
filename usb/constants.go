@@ -147,3 +147,23 @@ var isoUsageTypeDescription = map[IsoUsageType]string{
 func (iut IsoUsageType) String() string {
 	return isoUsageTypeDescription[iut]
 }
+
+type RequestType uint8
+
+const (
+	REQUEST_TYPE_STANDARD = C.LIBUSB_REQUEST_TYPE_STANDARD
+	REQUEST_TYPE_CLASS    = C.LIBUSB_REQUEST_TYPE_CLASS
+	REQUEST_TYPE_VENDOR   = C.LIBUSB_REQUEST_TYPE_VENDOR
+	REQUEST_TYPE_RESERVED = C.LIBUSB_REQUEST_TYPE_RESERVED
+)
+
+var requestTypeDescription = map[RequestType]string{
+	REQUEST_TYPE_STANDARD: "standard",
+	REQUEST_TYPE_CLASS:    "class",
+	REQUEST_TYPE_VENDOR:   "vendor",
+	REQUEST_TYPE_RESERVED: "reserved",
+}
+
+func (rt RequestType) String() string {
+	return requestTypeDescription[rt]
+}
