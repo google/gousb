@@ -5,7 +5,6 @@ import "C"
 
 import (
 	"fmt"
-	//"log" // TODO(kevlar): make a logger
 	"reflect"
 	"sync"
 	"time"
@@ -112,23 +111,26 @@ func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error
 		Device: d,
 	}
 
+	var setAlternate bool
 	for _, c := range d.Configs {
 		if c.Config != conf {
 			continue
 		}
-		fmt.Printf("found conf: %#v\n", c)
+		debug.Printf("found conf: %#v\n", c)
 		for _, i := range c.Interfaces {
 			if i.Number != iface {
 				continue
 			}
-			fmt.Printf("found iface: %#v\n", i)
-			for _, s := range i.Setups {
+			debug.Printf("found iface: %#v\n", i)
+			for i, s := range i.Setups {
 				if s.Alternate != setup {
 					continue
 				}
-				fmt.Printf("found setup: %#v\n", s)
+				setAlternate = i != 0
+
+				debug.Printf("found setup: %#v [default: %v]\n", s, !setAlternate)
 				for _, e := range s.Endpoints {
-					fmt.Printf("ep %02x search: %#v\n", epoint, s)
+					debug.Printf("ep %02x search: %#v\n", epoint, s)
 					if e.Address != epoint {
 						continue
 					}
@@ -178,10 +180,11 @@ found:
 	d.lock.Unlock() // unlock immediately because the next calls may block
 
 	// Choose the alternate
-	// This doesn't seem to work...
-	if errno := C.libusb_set_interface_alt_setting(d.handle, C.int(iface), C.int(setup)); errno < 0 {
-		//log.Printf("ignoring altsetting error: %s", usbError(errno))
-		return nil, fmt.Errorf("usb: setalt: %s", usbError(errno))
+	if setAlternate {
+		if errno := C.libusb_set_interface_alt_setting(d.handle, C.int(iface), C.int(setup)); errno < 0 {
+			debug.Printf("altsetting error: %s", usbError(errno))
+			return nil, fmt.Errorf("usb: setalt: %s", usbError(errno))
+		}
 	}
 
 	return end, nil

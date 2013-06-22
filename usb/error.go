@@ -1,12 +1,16 @@
 package usb
 
+import (
+	"fmt"
+)
+
 // #include <libusb-1.0/libusb.h>
 import "C"
 
 type usbError C.int
 
 func (e usbError) Error() string {
-	return "libusb: " + usbErrorString[e]
+	return fmt.Sprintf("libusb: %s [code %d]", usbErrorString[e], int(e))
 }
 
 const (
