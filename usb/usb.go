@@ -12,7 +12,7 @@ import (
 
 type Context struct {
 	ctx  *C.libusb_context
-	done chan struct{}
+	done chan bool
 }
 
 func (c *Context) Debug(level int) {
@@ -21,7 +21,7 @@ func (c *Context) Debug(level int) {
 
 func NewContext() *Context {
 	c := &Context{
-		done: make(chan struct{}),
+		done: make(chan bool),
 	}
 
 	if errno := C.libusb_init(&c.ctx); errno != 0 {
@@ -29,13 +29,14 @@ func NewContext() *Context {
 	}
 
 	go func() {
+		tv := C.struct_timeval{0, 100000}
 		for {
 			select {
 			case <-c.done:
 				return
 			default:
 			}
-			if errno := C.libusb_handle_events(c.ctx); errno < 0 {
+			if errno := C.libusb_handle_events_timeout_completed(c.ctx, &tv, nil); errno < 0 {
 				log.Printf("handle_events: error: %s", usbError(errno))
 				continue
 			}
@@ -88,6 +89,7 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 }
 
 func (c *Context) Close() error {
+	c.done <- true
 	close(c.done)
 	if c.ctx != nil {
 		C.libusb_exit(c.ctx)
