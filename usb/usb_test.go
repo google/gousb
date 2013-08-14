@@ -1,6 +1,9 @@
 package usb_test
 
 import (
+	"bytes"
+	"log"
+	"os"
 	"testing"
 
 	. "github.com/kylelemons/gousb/usb"
@@ -61,5 +64,24 @@ func TestEnum(t *testing.T) {
 		if got, want := devs[i].Descriptor, descs[i]; got != want {
 			t.Errorf("dev[%d].Descriptor = %p, want %p", i, got, want)
 		}
+	}
+}
+
+func TestMultipleContexts(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	for i := 0; i < 10; i++ {
+		ctx := NewContext()
+		_, err := ctx.ListDevices(func(desc *Descriptor) bool {
+			return false
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ctx.Close()
+	}
+	log.SetOutput(os.Stderr)
+	if buf.Len() > 0 {
+		t.Errorf("Non zero output to log, while testing:  %s", buf.String())
 	}
 }
