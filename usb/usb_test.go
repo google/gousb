@@ -84,7 +84,7 @@ func TestEnum(t *testing.T) {
 func TestMultipleContexts(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 2; i++ {
 		ctx := NewContext()
 		_, err := ctx.ListDevices(func(desc *Descriptor) bool {
 			return false

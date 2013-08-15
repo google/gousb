@@ -27,7 +27,7 @@ import (
 
 type Context struct {
 	ctx  *C.libusb_context
-	done chan bool
+	done chan struct{}
 }
 
 func (c *Context) Debug(level int) {
@@ -36,7 +36,7 @@ func (c *Context) Debug(level int) {
 
 func NewContext() *Context {
 	c := &Context{
-		done: make(chan bool),
+		done: make(chan struct{}),
 	}
 
 	if errno := C.libusb_init(&c.ctx); errno != 0 {
@@ -44,7 +44,10 @@ func NewContext() *Context {
 	}
 
 	go func() {
-		tv := C.struct_timeval{0, 100000}
+		tv := C.struct_timeval{
+			tv_sec:  0,
+			tv_usec: 100000,
+		}
 		for {
 			select {
 			case <-c.done:
@@ -104,7 +107,6 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 }
 
 func (c *Context) Close() error {
-	c.done <- true
 	close(c.done)
 	if c.ctx != nil {
 		C.libusb_exit(c.ctx)
