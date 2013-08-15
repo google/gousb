@@ -1,3 +1,17 @@
+// Copyright 2013 Google Inc.  All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package usb
 
 /*
@@ -48,11 +62,11 @@ func (end *endpoint) allocTransfer() *Transfer {
 
 	C.libusb_set_iso_packet_lengths(xfer, packet_size)
 	/*
-	pkts := *(*[]C.struct_libusb_packet_descriptor)(unsafe.Pointer(&reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(&xfer.iso_packet_desc)),
-		Len:  iso_packets,
-		Cap:  iso_packets,
-	}))
+		pkts := *(*[]C.struct_libusb_packet_descriptor)(unsafe.Pointer(&reflect.SliceHeader{
+			Data: uintptr(unsafe.Pointer(&xfer.iso_packet_desc)),
+			Len:  iso_packets,
+			Cap:  iso_packets,
+		}))
 	*/
 
 	t := &Transfer{
@@ -93,15 +107,15 @@ func (t *Transfer) Wait(b []byte) (n int, err error) {
 
 	//C.print_xfer(t.xfer)
 	/*
-	buf, offset := ((*[1 << 16]byte)(unsafe.Pointer(t.xfer.buffer))), 0
-	for i, pkt := range *t.pkts {
-		log.Printf("Type is %T", t.pkts)
-		n += copy(b[n:], buf[offset:][:pkt.actual_length])
-		offset += pkt.Length
-		if pkt.status != 0 && err == nil {
-			err = error(TransferStatus(pkt.status))
+		buf, offset := ((*[1 << 16]byte)(unsafe.Pointer(t.xfer.buffer))), 0
+		for i, pkt := range *t.pkts {
+			log.Printf("Type is %T", t.pkts)
+			n += copy(b[n:], buf[offset:][:pkt.actual_length])
+			offset += pkt.Length
+			if pkt.status != 0 && err == nil {
+				err = error(TransferStatus(pkt.status))
+			}
 		}
-	}
 	*/
 	var status uint8
 	n = int(C.extract_data(t.xfer, unsafe.Pointer(&b[0]), C.int(len(b)), (*C.uchar)(unsafe.Pointer(&status))))
