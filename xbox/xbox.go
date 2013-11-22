@@ -15,6 +15,9 @@
 package main
 
 import (
+	"encoding/binary"
+	"flag"
+	"fmt"
 	"log"
 	"math"
 	"time"
@@ -22,15 +25,26 @@ import (
 	"github.com/kylelemons/gousb/usb"
 )
 
+var (
+	readonly = flag.Bool("readonly", false, "Only read from the controller")
+	debug    = flag.Int("debug", 0, "USB debugging control")
+)
+
+type modelInfo struct {
+	config, iface, setup, endIn, endOut uint8
+	kind                                string
+}
+
 func main() {
+	flag.Parse()
+
 	ctx := usb.NewContext()
 	defer ctx.Close()
 
-	//ctx.Debug(10)
-
-	type modelInfo struct {
-		config, iface, setup, endIn, endOut uint8
+	if *debug != 0 {
+		ctx.Debug(*debug)
 	}
+
 	var model modelInfo
 
 	devs, err := ctx.ListDevices(func(desc *usb.Descriptor) bool {
@@ -62,7 +76,37 @@ func main() {
 			         Vendor Specific Class
 			       --------------
 			*/
-			model = modelInfo{1, 0, 0, 1, 1}
+			model = modelInfo{1, 0, 0, 1, 1, "360"}
+
+		case desc.Vendor == 0x045e && desc.Product == 0x02d1:
+			log.Printf("Found Microsoft Xbox One controller")
+			/*
+			   250.006 045e:02d1 Unknown (Microsoft Corp.)
+			     Protocol: Vendor Specific Class
+			     Config 01:
+			       --------------
+			       Interface 00 Setup 00
+			         Vendor Specific Class
+			         Endpoint 1 OUT interrupt - unsynchronized data [64 0]
+			         Endpoint 1 IN  interrupt - unsynchronized data [64 0]
+			       --------------
+			       Interface 01 Setup 00
+			         Vendor Specific Class
+			       Interface 01 Setup 01
+			         Vendor Specific Class
+			         Endpoint 2 OUT isochronous - unsynchronized data [228 0]
+			         Endpoint 2 IN  isochronous - unsynchronized data [228 0]
+			       --------------
+			       Interface 02 Setup 00
+			         Vendor Specific Class
+			       Interface 02 Setup 01
+			         Vendor Specific Class
+			         Endpoint 3 OUT bulk - unsynchronized data [64 0]
+			         Endpoint 3 IN  bulk - unsynchronized data [64 0]
+			       --------------
+			*/
+			model = modelInfo{1, 0, 0, 1, 1, "one"}
+
 		case desc.Vendor == 0x1689 && desc.Product == 0xfd00:
 			log.Printf("Found Razer Onza Tournament controller")
 			/*
@@ -90,7 +134,7 @@ func main() {
 				      Vendor Specific Class
 				    --------------
 			*/
-			model = modelInfo{1, 0, 0, 1, 2}
+			model = modelInfo{1, 0, 0, 1, 2, "360"}
 		default:
 			return false
 		}
@@ -131,16 +175,25 @@ func main() {
 		log.Fatalf("out: openendpoint: %s", err)
 	}
 
-	// https://github.com/Grumbel/xboxdrv/blob/master/PROTOCOL
-
-	var b [32]byte
-	for {
-		n, err := in.Read(b[:])
-		log.Printf("read %d bytes: % x [err: %v]", n, b[:n], err)
-		if err != nil {
-			break
+	switch {
+	case *readonly:
+		var b [512]byte
+		for {
+			n, err := in.Read(b[:])
+			log.Printf("read %d bytes: % x [err: %v]", n, b[:n], err)
+			if err != nil {
+				break
+			}
 		}
+	case model.kind == "360":
+		XBox360(controller, in, out)
+	case model.kind == "one":
+		XBoxOne(controller, in, out)
 	}
+}
+
+func XBox360(controller *usb.Device, in, out usb.Endpoint) {
+	// https://github.com/Grumbel/xboxdrv/blob/master/PROTOCOL
 
 	const (
 		Empty      byte = iota // 00000000 ( 0) no LEDs
@@ -195,6 +248,15 @@ func main() {
 	time.Sleep(1 * time.Second)
 	setPlayer(Player1)
 
+	var b [512]byte
+	for {
+		n, err := in.Read(b[:])
+		log.Printf("read %d bytes: % x [err: %v]", n, b[:n], err)
+		if err != nil {
+			break
+		}
+	}
+
 	/*
 		time.Sleep(1 * time.Second)
 		setPlayer(Player2)
@@ -206,7 +268,7 @@ func main() {
 		led(Waiting)
 	*/
 
-	var last, cur [32]byte
+	var last, cur [512]byte
 	decode := func() {
 		n, err := in.Read(cur[:])
 		if err != nil || n != 20 {
@@ -326,5 +388,97 @@ func main() {
 	controller.ReadTimeout = 60 * time.Second
 	for {
 		decode()
+	}
+}
+
+func XBoxOne(controller *usb.Device, in, out usb.Endpoint) {
+	read := func() (tag, code byte, data []byte, err error) {
+		var b [64]byte
+
+		n, err := in.Read(b[:])
+		log.Printf("read %d bytes: % x [err: %v]", n, b[:n], err)
+
+		if err != nil {
+			return 0, 0, nil, err
+		}
+		if n < 2 {
+			return 0, 0, nil, fmt.Errorf("only read %d bytes", n)
+		}
+
+		return b[0], b[1], b[2:], nil
+	}
+
+	write := func(data ...byte) error {
+		n, err := out.Write(data)
+		log.Printf("sent %d bytes: % x [err: %v]", n, data, err)
+		if n < len(data) {
+			return fmt.Errorf("only sent %d of %d bytes", n, len(data))
+		}
+		return err
+	}
+
+	dieIf := func(err error, format string, args ...interface{}) {
+		if err == nil {
+			return
+		}
+		msg := fmt.Sprintf(format, args...)
+		log.Fatalf("%s: %s", msg, err)
+	}
+
+	var err error
+
+	// Initializ
+	err = write(0x05, 0x20)
+	dieIf(err, "initialization")
+
+	decode := func(data []byte) {
+		if len(data) != 16 {
+			log.Printf("Only got %d bytes (want 16)", len(data))
+		}
+		var (
+			_    = data[0] // sequence number
+			_    = data[1] // unknown
+			btn1 = data[2] // ybxaSM?N S=share, M=Menu, N=Sync
+			btn2 = data[3] // ?lr?RLDU r=R-Thumb, l=L-Thumb, R=D-Right, L=D-Left, D=D-Down, U=D-Up
+
+			lt = binary.LittleEndian.Uint16(data[4:6]) // left trigger, 0..1024
+			rt = binary.LittleEndian.Uint16(data[6:8]) // right trigger, 0..1024
+
+			lx = int16(binary.LittleEndian.Uint16(data[8:10]))  // right stick X
+			ly = int16(binary.LittleEndian.Uint16(data[10:12])) // right stick X
+			rx = int16(binary.LittleEndian.Uint16(data[12:14])) // right stick X
+			ry = int16(binary.LittleEndian.Uint16(data[14:16])) // right stick X
+		)
+
+		// btn1, least to most significant
+		for i, btn := range []string{
+			"SYNC", "BTN1|0x02", "MENU", "SHARE",
+			"A", "X", "B", "Y",
+		} {
+			if btn1&(1<<uint(i)) != 0 {
+				log.Print(btn)
+			}
+		}
+
+		// btn2, least to most significant
+		for i, btn := range []string{
+			"D-Up", "D-Down", "D-Left", "D-Right",
+			"L-Trigger", "R-Trigger", "L-Stick", "R-Stick",
+		} {
+			if btn2&(1<<uint(i)) != 0 {
+				log.Print(btn)
+			}
+		}
+
+		log.Print(lt, rt)
+		log.Print(lx, ly, " | ", rx, ry)
+	}
+
+	for {
+		tag, _, data, _ := read()
+		switch tag {
+		case 0x20:
+			decode(data)
+		}
 	}
 }
