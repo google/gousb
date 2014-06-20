@@ -10,6 +10,15 @@ Supported platforms include:
 
 Windows support is unconfirmed, but should work via cgo and [libusb-win32](http://sourceforge.net/apps/trac/libusb-win32/wiki).
 
+Contributing
+============
+Because I am a Google employee, contributing to this project will require signing the [Google CLA](https://developers.google.com/open-source/cla/individual?csw=1).
+This is the same agreement that is required for contributing to Go itself, so if you have
+already filled it out for that, you needn't fill it out again.
+You will need to send me the email address that you used to sign the agreement
+so that I can verify that it is on file before I can accept pull requests.
+
+
 Installation
 ============
 
