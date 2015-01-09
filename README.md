@@ -8,7 +8,6 @@ Supported platforms include:
 - linux
 - darwin
 
-Windows support is unconfirmed, but should work via cgo and [libusb-win32](http://sourceforge.net/apps/trac/libusb-win32/wiki).
 
 Contributing
 ============
@@ -19,8 +18,8 @@ You will need to send me the email address that you used to sign the agreement
 so that I can verify that it is on file before I can accept pull requests.
 
 
-Installation
-============
+Installation on Linux
+=====================
 
 Dependencies
 ------------
@@ -45,6 +44,38 @@ Installing the primary gousb package is really easy:
 There is also a `usbid` package that will not be installed by default by this command, but which provides useful information including the human-readable vendor and product codes for detected hardware.  It's not installed by default and not linked into the `usb` package by default because it adds ~400kb to the resulting binary.  If you want both, they can be installed thus:
 
     go get -v github.com/kylelemons/gousb/usb{,id}
+
+Installation on Window7
+=======================
+Dependencies
+------------
+- Gcc (only tested on [Win-Builds](http://win-builds.org/), but any MSYS, CYGWIN, MINGW should be worked
+- [libusb-1.0](http://sourceforge.net/projects/libusb/files/libusb-1.0/)
+
+Build
+-----
+- After downloaded, extract them to some directory; such as D:\lib\libusb-1.0.xx\
+- Remember two path which "libusb.h" file and "libusb-1.0.a" inside
+*Note* For MinGW32, use MinGW32/static/libusb-1.0.a while MinGW64 use MinGW64/static/libusb-1.0.a for linker
+
+- Open $(GOPATH)/src/github.com/.../gousb/usb/usb.go. Then inject
+    // #cgo CFLAGS: -ID:/lib/libusbx-1.0.xx/include
+    // #cgo LDFLAGS: D:/lib/libusbx-1.0.xx/MinGW64/static/libusb-1.0.a
+    
+before the line:
+    // #include <libusb-1.0/libusb.h>
+    
+This flag will tell the linker the exact path of static library
+
+- Go to $(GOPATH)/src/github.com/.../gousb/usb/. Run
+    // go install
+- Go to $(GOPATH)/src/github.com/.../gousb/usbid/. Run
+    // go install
+
+Example: lsusb
+--------------
+- Go to $(GOPATH)/src/github.com/.../gousb/lsusb/. Run
+    // go run main.go
 
 Documentation
 =============
