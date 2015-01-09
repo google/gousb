@@ -7,7 +7,7 @@ Supported platforms include:
 
 - linux
 - darwin
-
+- window
 
 Contributing
 ============
@@ -45,7 +45,7 @@ There is also a `usbid` package that will not be installed by default by this co
 
     go get -v github.com/kylelemons/gousb/usb{,id}
 
-Installation on Window7
+Installation on Window
 =======================
 Dependencies
 ------------
@@ -54,28 +54,38 @@ Dependencies
 
 Build
 -----
+
 - After downloaded, extract them to some directory; such as D:\lib\libusb-1.0.xx\
 - Remember two path which "libusb.h" file and "libusb-1.0.a" inside
-*Note* For MinGW32, use MinGW32/static/libusb-1.0.a while MinGW64 use MinGW64/static/libusb-1.0.a for linker
 
-- Open $(GOPATH)/src/github.com/.../gousb/usb/usb.go. Then inject
-    // #cgo CFLAGS: -ID:/lib/libusbx-1.0.xx/include
-    // #cgo LDFLAGS: D:/lib/libusbx-1.0.xx/MinGW64/static/libusb-1.0.a
-    
+*Note* For MinGW32, use **MinGW32/static/libusb-1.0.a** while MinGW64 use **MinGW64/static/libusb-1.0.a** for linker
+
+- Open `$(GOPATH)/src/github.com/.../gousb/usb/usb.go`. Then inject:
+
+        // #cgo CFLAGS: -ID:/lib/libusbx-1.0.xx/include
+        // #cgo LDFLAGS: D:/lib/libusbx-1.0.xx/MinGW64/static/libusb-1.0.a
+
+
 before the line:
+
     // #include <libusb-1.0/libusb.h>
-    
+
 This flag will tell the linker the exact path of static library
 
-- Go to $(GOPATH)/src/github.com/.../gousb/usb/. Run
-    // go install
-- Go to $(GOPATH)/src/github.com/.../gousb/usbid/. Run
-    // go install
+- Go to `$(GOPATH)/src/github.com/.../gousb/usb/`. Run:
+
+        $ go install
+
+    
+- Go to `$(GOPATH)/src/github.com/.../gousb/usbid/`. Run:
+
+        $ go install
 
 Example: lsusb
 --------------
-- Go to $(GOPATH)/src/github.com/.../gousb/lsusb/. Run
-    // go run main.go
+- Go to `$(GOPATH)/src/github.com/.../gousb/lsusb/`. Run:
+
+        $ go run main.go
 
 Documentation
 =============
