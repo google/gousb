@@ -127,7 +127,7 @@ func TestMultipleContexts(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		ctx := NewContext()
 		_, err := ctx.ListDevices(func(desc *Descriptor) bool {
-			return true
+			return false
 		})
 		if err != nil {
 			t.Fatal(err)
