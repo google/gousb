@@ -15,7 +15,10 @@
 // Package usb provides a wrapper around libusb-1.0.
 package usb
 
-// #cgo LDFLAGS: -lusb-1.0
+// #cgo windows CFLAGS: -ID:/lib/libusb-1.0.19/include
+// #cgo windows amd64 LDFLAGS: D:/lib/libusb-1.0.19/MinGW64/static/libusb-1.0.a
+// #cgo windows 386 LDFLAGS: D:/lib/libusb-1.0.19/MinGW32/static/libusb-1.0.a
+// #cgo !windows LDFLAGS: -lusb-1.0
 // #include <libusb-1.0/libusb.h>
 import "C"
 
@@ -104,6 +107,22 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 		}
 	}
 	return ret, reterr
+}
+
+// OpenDeviceWithVidPid opens Device from specific VendorId and ProductId.
+// If there are any errors, it'll returns at second value.
+func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
+	handle := C.libusb_open_device_with_vid_pid(c.ctx, (C.uint16_t)(vid), (C.uint16_t)(pid))
+	dev := C.libusb_get_device(handle)
+	desc, err := newDescriptor(dev)
+
+	// return an error from nil-handle and nil-device
+	if err != nil {
+		return nil, err
+	}
+
+	device := newDevice(handle, desc)
+	return device, nil
 }
 
 func (c *Context) Close() error {

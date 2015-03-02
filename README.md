@@ -60,32 +60,25 @@ Build
 
 *Note* For MinGW32, use **MinGW32/static/libusb-1.0.a** while MinGW64 use **MinGW64/static/libusb-1.0.a** for linker
 
-- Open `$(GOPATH)/src/github.com/.../gousb/usb/usb.go`. Then inject:
+- Open `$(GOPATH)/src/github.com/kylelemons/gousb/usb/usb.go`. 
+
+Then edit `#cgo` directive, such as
 
         // #cgo CFLAGS: -ID:/lib/libusbx-1.0.xx/include
         // #cgo LDFLAGS: D:/lib/libusbx-1.0.xx/MinGW64/static/libusb-1.0.a
 
 
-before the line:
+to your `libusb-1.0` installed path before the line:
 
     // #include <libusb-1.0/libusb.h>
 
 This flag will tell the linker the exact path of static library
 
-- Go to `$(GOPATH)/src/github.com/.../gousb/usb/`. Run:
+- Go to `$(GOPATH)/src/github.com/kylelemons/gousb/`. Run:
 
-        $ go install
-
-    
-- Go to `$(GOPATH)/src/github.com/.../gousb/usbid/`. Run:
-
-        $ go install
-
-Example: lsusb
---------------
-- Go to `$(GOPATH)/src/github.com/.../gousb/lsusb/`. Run:
-
-        $ go run main.go
+        $ go install ./...
+		
+	`lsusb` can run under `$GOBIN/lsusb`
 
 Documentation
 =============
