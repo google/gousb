@@ -203,3 +203,19 @@ found:
 
 	return end, nil
 }
+
+func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
+	goBuffer := make([]byte, 200)
+	errno := C.libusb_get_string_descriptor_ascii(
+		d.handle,
+		C.uint8_t(desc_index),
+		(*C.uchar)(unsafe.Pointer(&goBuffer[0])),
+		200)
+
+	if errno < 0 {
+		return "", fmt.Errorf("usb: getstr: %s", usbError(errno))
+	}
+	stringDescriptor := string(goBuffer[:errno])
+
+	return stringDescriptor, nil
+}

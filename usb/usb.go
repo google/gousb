@@ -112,8 +112,17 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 // OpenDeviceWithVidPid opens Device from specific VendorId and ProductId.
 // If there are any errors, it'll returns at second value.
 func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
+
 	handle := C.libusb_open_device_with_vid_pid(c.ctx, (C.uint16_t)(vid), (C.uint16_t)(pid))
+	if handle == nil {
+		return nil, ERROR_NOT_FOUND
+	}
+
 	dev := C.libusb_get_device(handle)
+	if dev == nil {
+		return nil, ERROR_NO_DEVICE
+	}
+
 	desc, err := newDescriptor(dev)
 
 	// return an error from nil-handle and nil-device
