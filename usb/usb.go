@@ -16,8 +16,8 @@
 package usb
 
 // #cgo windows CFLAGS: -ID:/lib/libusb-1.0.19/include
-// #cgo windows amd64 LDFLAGS: D:/lib/libusb-1.0.19/MinGW64/static/libusb-1.0.a
-// #cgo windows 386 LDFLAGS: D:/lib/libusb-1.0.19/MinGW32/static/libusb-1.0.a
+// #cgo windows,amd64 LDFLAGS: D:/lib/libusb-1.0.19/MinGW64/static/libusb-1.0.a
+// #cgo windows,386 LDFLAGS: D:/lib/libusb-1.0.19/MinGW32/static/libusb-1.0.a
 // #cgo !windows LDFLAGS: -lusb-1.0
 // #include <libusb-1.0/libusb.h>
 import "C"

@@ -205,16 +205,23 @@ found:
 }
 
 func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
+
+	// allocate 200-byte array limited the length of string descriptor
 	goBuffer := make([]byte, 200)
+
+	// get string descriptor from libusb. if errno < 0 then there are any errors.
+	// if errno >= 0; it is a length of result string descriptor
 	errno := C.libusb_get_string_descriptor_ascii(
 		d.handle,
 		C.uint8_t(desc_index),
 		(*C.uchar)(unsafe.Pointer(&goBuffer[0])),
 		200)
 
+	// if any errors occur
 	if errno < 0 {
 		return "", fmt.Errorf("usb: getstr: %s", usbError(errno))
 	}
+	// convert slice of byte to string with limited length from errno
 	stringDescriptor := string(goBuffer[:errno])
 
 	return stringDescriptor, nil
