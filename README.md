@@ -7,7 +7,7 @@ Supported platforms include:
 
 - linux
 - darwin
-- window
+- windows
 
 Contributing
 ============
@@ -45,7 +45,7 @@ There is also a `usbid` package that will not be installed by default by this co
 
     go get -v github.com/kylelemons/gousb/usb{,id}
 
-Installation on Window
+Installation on Windows
 =======================
 Dependencies
 ------------
@@ -72,7 +72,8 @@ to your `libusb-1.0` installed path before the line:
 
     // #include <libusb-1.0/libusb.h>
 
-This flag will tell the linker the exact path of static library
+This flag will tell the linker the exact path of static library.
+Then install `gousb`:
 
 - Go to `$(GOPATH)/src/github.com/kylelemons/gousb/`. Run:
 
