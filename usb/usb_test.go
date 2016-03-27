@@ -81,6 +81,46 @@ func TestEnum(t *testing.T) {
 	}
 }
 
+func TestOpenDeviceWithVidPid(t *testing.T) {
+	c := NewContext()
+	defer c.Close()
+	c.Debug(0)
+
+	// Accept for all device
+	devs, err := c.ListDevices(func(desc *Descriptor) bool {
+		return true
+	})
+	defer func() {
+		for _, d := range devs {
+			d.Close()
+		}
+	}()
+
+	if err != nil {
+		t.Fatalf("list: %s", err)
+	}
+
+	for i := range devs {
+		vid := devs[i].Vendor
+		pid := devs[i].Product
+		device, err := c.OpenDeviceWithVidPid((int)(vid), (int)(pid))
+
+		// if the context failed to open device
+		if err != nil {
+			t.Fail()
+		}
+
+		// if opened device was not valid
+		if device.Descriptor.Bus != devs[i].Bus ||
+			device.Descriptor.Address != devs[i].Address ||
+			device.Vendor != devs[i].Vendor ||
+			device.Product != devs[i].Product {
+			t.Fail()
+		}
+
+	}
+}
+
 func TestMultipleContexts(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
