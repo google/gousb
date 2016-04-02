@@ -89,7 +89,7 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 	}
 
 	var reterr error
-	ret := []*Device{}
+	var ret []*Device
 	for _, dev := range slice {
 		desc, err := newDescriptor(dev)
 		if err != nil {
