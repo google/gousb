@@ -100,7 +100,7 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 		if each(desc) {
 			var handle *C.libusb_device_handle
 			if errno := C.libusb_open(dev, &handle); errno != 0 {
-				reterr = err
+				reterr = usbError(errno)
 				continue
 			}
 			ret = append(ret, newDevice(handle, desc))
