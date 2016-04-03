@@ -1,6 +1,9 @@
 Introduction
 ============
 
+[![Build Status][ciimg]][ci]
+[![GoDoc][docimg]][doc]
+
 The gousb package is an attempt at wrapping the libusb library into a Go-like binding.
 
 Supported platforms include:
@@ -9,14 +12,20 @@ Supported platforms include:
 - darwin
 - windows
 
+[ciimg]:  https://travis-ci.org/kylelemons/gousb.svg?branch=master
+[ci]:     https://travis-ci.org/kylelemons/gousb
+[docimg]: https://godoc.org/github.com/kylelemons/gousb?status.svg
+[doc]:    https://godoc.org/github.com/kylelemons/gousb
+
 Contributing
 ============
-Because I am a Google employee, contributing to this project will require signing the [Google CLA](https://developers.google.com/open-source/cla/individual?csw=1).
+Because I am a Google employee, contributing to this project will require signing the [Google CLA][cla].
 This is the same agreement that is required for contributing to Go itself, so if you have
 already filled it out for that, you needn't fill it out again.
 You will need to send me the email address that you used to sign the agreement
 so that I can verify that it is on file before I can accept pull requests.
 
+[cla]: https://cla.developers.google.com/
 
 Installation on Linux
 =====================
@@ -47,6 +56,7 @@ There is also a `usbid` package that will not be installed by default by this co
 
 Installation on Windows
 =======================
+
 Dependencies
 ------------
 - Gcc (only tested on [Win-Builds](http://win-builds.org/), but any MSYS, CYGWIN, MINGW should be worked
@@ -83,7 +93,7 @@ Then install `gousb`:
 
 Documentation
 =============
-The documentation can be viewed via local godoc or via Gary Burd's excellent [godoc.org](http://godoc.org/):
+The documentation can be viewed via local godoc or via the excellent [godoc.org](http://godoc.org/):
 
 - [usb](http://godoc.org/github.com/kylelemons/gousb/usb)
 - [usbid](http://godoc.org/pkg/github.com/kylelemons/gousb/usbid)
