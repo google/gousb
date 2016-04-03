@@ -4,7 +4,7 @@ go:
   - 1.6
   - tip
 
-script: go test -v -test.run='BCD|Noop|Parse' ./...
+script: go test -v -test.run='BCD|Parse' ./...
 
 addons:
   apt:
