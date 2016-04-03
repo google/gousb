@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.6
+  - tip
+
+addons:
+  apt:
+    packages:
+      libusb-1.0-0-dev
