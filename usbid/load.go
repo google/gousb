@@ -60,6 +60,8 @@ func LoadFromURL(url string) error {
 	return nil
 }
 
+//go:generate go run regen/regen.go --template regen/load_data.go.tpl -o load_data.go
+
 func init() {
 	ids, cls, err := ParseIDs(strings.NewReader(usbIdListData))
 	if err != nil {
