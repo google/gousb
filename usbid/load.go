@@ -18,6 +18,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/kylelemons/gousb/usb"
 )
@@ -55,6 +56,7 @@ func LoadFromURL(url string) error {
 
 	Vendors = ids
 	Classes = cls
+	LastUpdate = time.Now()
 	return nil
 }
 
