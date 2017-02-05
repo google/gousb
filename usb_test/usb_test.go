@@ -20,22 +20,22 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/kylelemons/gousb/usb"
+	"github.com/kylelemons/gousb/usb"
 	"github.com/kylelemons/gousb/usbid"
 )
 
 func TestNoop(t *testing.T) {
-	c := NewContext()
+	c := usb.NewContext()
 	defer c.Close()
 	c.Debug(0)
 }
 
 func TestEnum(t *testing.T) {
-	c := NewContext()
+	c := usb.NewContext()
 	defer c.Close()
 	c.Debug(0)
 
-	logDevice := func(t *testing.T, desc *Descriptor) {
+	logDevice := func(t *testing.T, desc *usb.Descriptor) {
 		t.Logf("%03d.%03d %s", desc.Bus, desc.Address, usbid.Describe(desc))
 		t.Logf("- Protocol: %s", usbid.Classify(desc))
 
@@ -55,8 +55,8 @@ func TestEnum(t *testing.T) {
 		}
 	}
 
-	descs := []*Descriptor{}
-	devs, err := c.ListDevices(func(desc *Descriptor) bool {
+	descs := []*usb.Descriptor{}
+	devs, err := c.ListDevices(func(desc *usb.Descriptor) bool {
 		logDevice(t, desc)
 		descs = append(descs, desc)
 		return true
@@ -82,12 +82,12 @@ func TestEnum(t *testing.T) {
 }
 
 func TestOpenDeviceWithVidPid(t *testing.T) {
-	c := NewContext()
+	c := usb.NewContext()
 	defer c.Close()
 	c.Debug(0)
 
 	// Accept for all device
-	devs, err := c.ListDevices(func(desc *Descriptor) bool {
+	devs, err := c.ListDevices(func(desc *usb.Descriptor) bool {
 		return true
 	})
 	defer func() {
@@ -125,8 +125,8 @@ func TestMultipleContexts(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 	for i := 0; i < 2; i++ {
-		ctx := NewContext()
-		_, err := ctx.ListDevices(func(desc *Descriptor) bool {
+		ctx := usb.NewContext()
+		_, err := ctx.ListDevices(func(desc *usb.Descriptor) bool {
 			return false
 		})
 		if err != nil {
