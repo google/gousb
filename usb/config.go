@@ -139,6 +139,7 @@ func newConfig(dev *C.libusb_device, cfg *C.struct_libusb_config_descriptor) Con
 					// Don't use libusb_get_max_iso_packet_size, as it has a bug where it returns the same value
 					// regardless of alternative setting used, where different alternative settings might define different
 					// max packet sizes.
+					// See http://libusb.org/ticket/77 for more background.
 					ei.MaxIsoPacket = uint32(end.wMaxPacketSize) & 0x07ff * (uint32(end.wMaxPacketSize)>>11&3 + 1)
 				}
 				i.Endpoints = append(i.Endpoints, ei)
