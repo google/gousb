@@ -37,8 +37,10 @@ func iso_callback(cptr unsafe.Pointer) {
 }
 
 func (end *endpoint) allocTransfer() *Transfer {
+	// Use libusb_get_max_iso_packet_size ?
 	const (
-		iso_packets = 8 // 128 // 242
+		iso_packets = 8       // 128 // 242
+		packet_size = 2 * 960 // 1760
 	)
 
 	xfer := C.libusb_alloc_transfer(C.int(iso_packets))
@@ -46,22 +48,11 @@ func (end *endpoint) allocTransfer() *Transfer {
 		log.Printf("usb: transfer allocation failed?!")
 		return nil
 	}
-	handle := end.Device.handle
-	dev := C.libusb_get_device(handle)
-	packet_size := C.libusb_get_max_iso_packet_size(dev, C.uchar(end.Address))
-	switch packet_size {
-	case C.LIBUSB_ERROR_NOT_FOUND:
-		log.Printf("usb: get_max_iso_packet_size: endpoint does not exist")
-		return nil
-	case C.LIBUSB_ERROR_OTHER:
-		log.Printf("usb: get_max_iso_packet_size: unknown failure")
-		return nil
-	}
 
 	buf := make([]byte, iso_packets*packet_size)
 	done := make(chan struct{}, 1)
 
-	xfer.dev_handle = handle
+	xfer.dev_handle = end.Device.handle
 	xfer.endpoint = C.uchar(end.Address)
 	xfer._type = C.LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
 
@@ -69,7 +60,7 @@ func (end *endpoint) allocTransfer() *Transfer {
 	xfer.length = C.int(len(buf))
 	xfer.num_iso_packets = iso_packets
 
-	C.libusb_set_iso_packet_lengths(xfer, C.uint(packet_size))
+	C.libusb_set_iso_packet_lengths(xfer, packet_size)
 	/*
 		pkts := *(*[]C.struct_libusb_packet_descriptor)(unsafe.Pointer(&reflect.SliceHeader{
 			Data: uintptr(unsafe.Pointer(&xfer.iso_packet_desc)),
