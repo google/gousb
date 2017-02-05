@@ -126,15 +126,22 @@ func newConfig(dev *C.libusb_device, cfg *C.struct_libusb_config_descriptor) Con
 			}
 			i.Endpoints = make([]EndpointInfo, 0, len(ends))
 			for _, end := range ends {
-				i.Endpoints = append(i.Endpoints, EndpointInfo{
+				ei := EndpointInfo{
 					Address:       uint8(end.bEndpointAddress),
 					Attributes:    uint8(end.bmAttributes),
 					MaxPacketSize: uint16(end.wMaxPacketSize),
-					//MaxIsoPacket:  uint32(C.libusb_get_max_iso_packet_size(dev, C.uchar(end.bEndpointAddress))),
-					PollInterval: uint8(end.bInterval),
-					RefreshRate:  uint8(end.bRefresh),
-					SynchAddress: uint8(end.bSynchAddress),
-				})
+					PollInterval:  uint8(end.bInterval),
+					RefreshRate:   uint8(end.bRefresh),
+					SynchAddress:  uint8(end.bSynchAddress),
+				}
+				if TransferType(ei.Attributes)&TRANSFER_TYPE_MASK == TRANSFER_TYPE_ISOCHRONOUS {
+					// bits 0-10 identify the packet size, bits 11-12 are the number of additional transactions per microframe.
+					// Don't use libusb_get_max_iso_packet_size, as it has a bug where it returns the same value
+					// regardless of alternative setting used, where different alternative settings might define different
+					// max packet sizes.
+					ei.MaxIsoPacket = uint32(end.wMaxPacketSize) & 0x07ff * (uint32(end.wMaxPacketSize)>>11&3 + 1)
+				}
+				i.Endpoints = append(i.Endpoints, ei)
 			}
 			descs = append(descs, i)
 		}
