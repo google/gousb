@@ -18,6 +18,7 @@
 #include <string.h>
 
 void print_xfer(struct libusb_transfer *xfer);
+void iso_callback(void *);
 
 void callback(struct libusb_transfer *xfer) {
 	//printf("Callback!\n");
