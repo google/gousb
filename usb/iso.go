@@ -45,10 +45,6 @@ func (end *endpoint) allocTransfer(maxLen int) *Transfer {
 	if numIsoPackets*int(isoPacketSize) < maxLen {
 		numIsoPackets++
 	}
-	// arbitrary limit
-	if numIsoPackets > 200 {
-		numIsoPackets = 200
-	}
 	xfer := C.libusb_alloc_transfer(C.int(numIsoPackets))
 	if xfer == nil {
 		log.Printf("usb: transfer allocation failed?!")
