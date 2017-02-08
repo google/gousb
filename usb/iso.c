@@ -74,8 +74,8 @@ int extract_data(struct libusb_transfer *xfer, void *raw, int max, unsigned char
 
 		// Copy the data
 		int len = pkt.actual_length;
-		if (len > max) {
-			len = max;
+		if (copied + len > max) {
+			len = max - copied;
 		}
 		memcpy(out, in, len);
 		copied += len;
@@ -84,10 +84,14 @@ int extract_data(struct libusb_transfer *xfer, void *raw, int max, unsigned char
 		in += pkt.length;
 		out += len;
 
+        if (copied == max) {
+                break;
+        }
+
 		// Extract first error
 		if (pkt.status == 0 || *status != 0) {
 			continue;
-		}	
+		}
 		*status = pkt.status;
 	}
 	return copied;
