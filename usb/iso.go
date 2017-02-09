@@ -75,14 +75,14 @@ func (end *endpoint) allocTransfer() *usbTransfer {
 
 func isochronous_xfer(e *endpoint, buf []byte, timeout time.Duration) (int, error) {
 	t := e.allocTransfer()
-	defer t.Close()
+	defer t.free()
 
-	if err := t.Submit(timeout); err != nil {
+	if err := t.submit(timeout); err != nil {
 		log.Printf("iso: xfer failed to submit: %s", err)
 		return 0, err
 	}
 
-	n, err := t.Wait(buf)
+	n, err := t.wait(buf)
 	if err != nil {
 		log.Printf("iso: xfer failed: %s", err)
 		return 0, err

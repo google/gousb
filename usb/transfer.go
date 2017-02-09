@@ -35,7 +35,7 @@ type usbTransfer struct {
 	buf  []byte
 }
 
-func (t *usbTransfer) Submit(timeout time.Duration) error {
+func (t *usbTransfer) submit(timeout time.Duration) error {
 	t.xfer.timeout = C.uint(timeout / time.Millisecond)
 	if errno := C.submit(t.xfer); errno < 0 {
 		return usbError(errno)
@@ -43,7 +43,7 @@ func (t *usbTransfer) Submit(timeout time.Duration) error {
 	return nil
 }
 
-func (t *usbTransfer) Wait(b []byte) (n int, err error) {
+func (t *usbTransfer) wait(b []byte) (n int, err error) {
 	select {
 	case <-time.After(10 * time.Second):
 		return 0, fmt.Errorf("wait timed out after 10s")
@@ -57,7 +57,7 @@ func (t *usbTransfer) Wait(b []byte) (n int, err error) {
 	return n, err
 }
 
-func (t *usbTransfer) Close() error {
+func (t *usbTransfer) free() error {
 	C.libusb_free_transfer(t.xfer)
 	return nil
 }
