@@ -87,7 +87,7 @@ func (dt DescriptorType) String() string {
 type EndpointDirection uint8
 
 const (
-	ENDPOINT_NUM_MASK                   = 0x03
+	ENDPOINT_NUM_MASK                   = 0x0f
 	ENDPOINT_DIR_IN   EndpointDirection = C.LIBUSB_ENDPOINT_IN
 	ENDPOINT_DIR_OUT  EndpointDirection = C.LIBUSB_ENDPOINT_OUT
 	ENDPOINT_DIR_MASK EndpointDirection = 0x80
