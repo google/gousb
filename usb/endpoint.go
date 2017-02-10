@@ -74,7 +74,7 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 		return 0, err
 	}
 
-	n, err := t.wait(buf)
+	n, err := t.wait()
 	if err != nil {
 		log.Printf("bulk: %s failed: %s", tt, err)
 		return 0, err

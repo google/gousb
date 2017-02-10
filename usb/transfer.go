@@ -50,7 +50,7 @@ func (t *usbTransfer) submit(timeout time.Duration) error {
 	return nil
 }
 
-func (t *usbTransfer) wait(b []byte) (n int, err error) {
+func (t *usbTransfer) wait() (n int, err error) {
 	select {
 	case <-time.After(10 * time.Second):
 		return 0, fmt.Errorf("wait timed out after 10s")
@@ -59,9 +59,9 @@ func (t *usbTransfer) wait(b []byte) (n int, err error) {
 	var status uint8
 	switch TransferType(t.xfer._type) {
 	case TRANSFER_TYPE_ISOCHRONOUS:
-		n = int(C.extract_iso_data(t.xfer, unsafe.Pointer(&b[0]), C.int(len(b)), (*C.uchar)(unsafe.Pointer(&status))))
+		n = int(C.extract_iso_data(t.xfer, unsafe.Pointer(&t.buf[0]), C.int(len(t.buf)), (*C.uchar)(unsafe.Pointer(&status))))
 	default:
-		n = int(C.extract_data(t.xfer, unsafe.Pointer(&b[0]), C.int(len(b)), (*C.uchar)(unsafe.Pointer(&status))))
+		n = int(C.extract_data(t.xfer, unsafe.Pointer(&t.buf[0]), C.int(len(t.buf)), (*C.uchar)(unsafe.Pointer(&status))))
 	}
 	if status != 0 {
 		err = TransferStatus(status)
