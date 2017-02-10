@@ -21,7 +21,6 @@ import "C"
 import (
 	"fmt"
 	"log"
-	"reflect"
 	"time"
 	"unsafe"
 )
@@ -37,7 +36,6 @@ type endpoint struct {
 	*Device
 	InterfaceSetup
 	EndpointInfo
-	xfer func(*endpoint, []byte, time.Duration) (int, error)
 }
 
 func (e *endpoint) Read(buf []byte) (int, error) {
@@ -45,7 +43,7 @@ func (e *endpoint) Read(buf []byte) (int, error) {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
 	}
 
-	return e.xfer(e, buf, e.ReadTimeout)
+	return e.transfer(buf, e.ReadTimeout)
 }
 
 func (e *endpoint) Write(buf []byte) (int, error) {
@@ -53,56 +51,35 @@ func (e *endpoint) Write(buf []byte) (int, error) {
 		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
 	}
 
-	return e.xfer(e, buf, e.WriteTimeout)
+	return e.transfer(buf, e.WriteTimeout)
 }
 
 func (e *endpoint) Interface() InterfaceSetup { return e.InterfaceSetup }
 func (e *endpoint) Info() EndpointInfo        { return e.EndpointInfo }
 
-// TODO(kevlar): (*Endpoint).Close
-
-func bulk_xfer(e *endpoint, buf []byte, timeout time.Duration) (int, error) {
+func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
 
-	t, err := e.newUSBTransfer(TRANSFER_TYPE_BULK, buf)
+	tt := e.TransferType()
+	t, err := e.newUSBTransfer(tt, buf)
 	if err != nil {
 		return 0, err
 	}
 	defer t.free()
 
 	if err := t.submit(timeout); err != nil {
-		log.Printf("bulk: xfer failed to submit: %s", err)
+		log.Printf("bulk: %s failed to submit: %s", tt, err)
 		return 0, err
 	}
 
 	n, err := t.wait(buf)
 	if err != nil {
-		log.Printf("bulk: xfer failed: %s", err)
+		log.Printf("bulk: %s failed: %s", tt, err)
 		return 0, err
 	}
 	return n, err
-}
-
-func interrupt_xfer(e *endpoint, buf []byte, timeout time.Duration) (int, error) {
-	if len(buf) == 0 {
-		return 0, nil
-	}
-
-	data := (*reflect.SliceHeader)(unsafe.Pointer(&buf)).Data
-
-	var cnt C.int
-	if errno := C.libusb_interrupt_transfer(
-		e.handle,
-		C.uchar(e.Address),
-		(*C.uchar)(unsafe.Pointer(data)),
-		C.int(len(buf)),
-		&cnt,
-		C.uint(timeout/time.Millisecond)); errno < 0 {
-		return 0, usbError(errno)
-	}
-	return int(cnt), nil
 }
 
 func (e *endpoint) newUSBTransfer(tt TransferType, buf []byte) (*usbTransfer, error) {

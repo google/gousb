@@ -151,16 +151,6 @@ func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error
 					}
 					end.InterfaceSetup = s
 					end.EndpointInfo = e
-					switch tt := TransferType(e.Attributes) & TRANSFER_TYPE_MASK; tt {
-					case TRANSFER_TYPE_BULK:
-						end.xfer = bulk_xfer
-					case TRANSFER_TYPE_INTERRUPT:
-						end.xfer = interrupt_xfer
-					case TRANSFER_TYPE_ISOCHRONOUS:
-						end.xfer = isochronous_xfer
-					default:
-						return nil, fmt.Errorf("usb: %s transfer is unsupported", tt)
-					}
 					goto found
 				}
 				return nil, fmt.Errorf("usb: unknown endpoint %02x", epoint)
