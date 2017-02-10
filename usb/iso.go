@@ -23,14 +23,7 @@ import "C"
 import (
 	"log"
 	"time"
-	"unsafe"
 )
-
-//export transfer_callback
-func transfer_callback(cptr unsafe.Pointer) {
-	ch := *(*chan struct{})(cptr)
-	close(ch)
-}
 
 func isochronous_xfer(e *endpoint, buf []byte, timeout time.Duration) (int, error) {
 	t, err := e.newUSBTransfer(TRANSFER_TYPE_ISOCHRONOUS, buf)

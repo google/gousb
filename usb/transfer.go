@@ -29,6 +29,12 @@ import (
 	"unsafe"
 )
 
+//export xfer_callback
+func xfer_callback(cptr unsafe.Pointer) {
+	ch := *(*chan struct{})(cptr)
+	close(ch)
+}
+
 type usbTransfer struct {
 	xfer *C.struct_libusb_transfer
 	pkts []*C.struct_libusb_packet_descriptor

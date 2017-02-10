@@ -18,25 +18,15 @@
 #include <string.h>
 
 void print_xfer(struct libusb_transfer *xfer);
-void transfer_callback(void *);
+void xfer_callback(void *);
 
 void callback(struct libusb_transfer *xfer) {
-	//printf("Callback!\n");
-	//print_xfer(xfer);
-	transfer_callback(xfer->user_data);
+	xfer_callback(xfer->user_data);
 }
 
 int submit(struct libusb_transfer *xfer) {
 	xfer->callback = &callback;
 	xfer->status = -1;
-	//print_xfer(xfer);
-	//printf("Transfer submitted\n");
-
-	/* fake
-	strcpy(xfer->buffer, "hello");
-	xfer->actual_length = 5;
-	callback(xfer);
-	return 0; */
 	return libusb_submit_transfer(xfer);
 }
 
