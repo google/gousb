@@ -37,18 +37,21 @@ func iso_callback(cptr unsafe.Pointer) {
 	close(ch)
 }
 
-func (end *endpoint) allocTransfer() *Transfer {
-	const (
-		iso_packets = 8 // 128 // 242
-	)
-
-	xfer := C.libusb_alloc_transfer(C.int(iso_packets))
+func (end *endpoint) allocTransfer(maxLen int) *Transfer {
+	isoPacketSize := end.EndpointInfo.MaxIsoPacket
+	// the larget the input buffer, the more packets we use in a single
+	// transfer.
+	numIsoPackets := maxLen / int(isoPacketSize)
+	if numIsoPackets*int(isoPacketSize) < maxLen {
+		numIsoPackets++
+	}
+	xfer := C.libusb_alloc_transfer(C.int(numIsoPackets))
 	if xfer == nil {
 		log.Printf("usb: transfer allocation failed?!")
 		return nil
 	}
 
-	buf := make([]byte, iso_packets*end.EndpointInfo.MaxIsoPacket)
+	buf := make([]byte, numIsoPackets*int(end.EndpointInfo.MaxIsoPacket))
 	done := make(chan struct{}, 1)
 
 	xfer.dev_handle = end.Device.handle
@@ -57,7 +60,7 @@ func (end *endpoint) allocTransfer() *Transfer {
 
 	xfer.buffer = (*C.uchar)((unsafe.Pointer)(&buf[0]))
 	xfer.length = C.int(len(buf))
-	xfer.num_iso_packets = iso_packets
+	xfer.num_iso_packets = C.int(numIsoPackets)
 
 	C.libusb_set_iso_packet_lengths(xfer, C.uint(end.EndpointInfo.MaxIsoPacket))
 	/*
@@ -130,7 +133,7 @@ func (t *Transfer) Close() error {
 }
 
 func isochronous_xfer(e *endpoint, buf []byte, timeout time.Duration) (int, error) {
-	t := e.allocTransfer()
+	t := e.allocTransfer(len(buf))
 	defer t.Close()
 
 	if err := t.Submit(timeout); err != nil {
