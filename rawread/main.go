@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -29,10 +31,8 @@ import (
 )
 
 var (
-	vid      = flag.Uint("vid", 0, "VID of the device to which to connect. Exclusive with bus/addr flags.")
-	pid      = flag.Uint("pid", 0, "PID of the device to which to connect. Exclusive with bus/addr flags.")
-	bus      = flag.Uint("bus", 0, "Bus number for the device to which to connect. Exclusive with vid/pid flags.")
-	addr     = flag.Uint("addr", 0, "Address of the device to which to connect. Exclusive with vid/pid flags.")
+	vidPID   = flag.String("vidpid", "", "VID:PID of the device to which to connect. Exclusive with busaddr flag.")
+	busAddr  = flag.String("busaddr", "", "Bus:address of the device to which to connect. Exclusive with vidpid flag.")
 	config   = flag.Uint("config", 1, "Endpoint to which to connect")
 	iface    = flag.Uint("interface", 0, "Endpoint to which to connect")
 	setup    = flag.Uint("setup", 0, "Endpoint to which to connect")
@@ -41,6 +41,38 @@ var (
 	size     = flag.Uint("read_size", 1024, "Number of bytes of data to read in a single transaction.")
 	bench    = flag.Bool("benchmark", false, "When true, keep reading from the endpoint and periodically report the measured throughput. If false,  only one read operation is performed and obtained data is printed to STDOUT.")
 )
+
+func parseVIDPID(vidPid string) (usb.ID, usb.ID, error) {
+	s := strings.Split(vidPid, ":")
+	if len(s) != 2 {
+		return 0, 0, fmt.Errorf("want VID:PID, two 32-bit hex numbers separated by colon, e.g. 1d6b:0002")
+	}
+	vid, err := strconv.ParseUint(s[0], 16, 32)
+	if err != nil {
+		return 0, 0, fmt.Errorf("VID must be a hexadecimal 32-bit number, e.g. 1d6b")
+	}
+	pid, err := strconv.ParseUint(s[1], 16, 32)
+	if err != nil {
+		return 0, 0, fmt.Errorf("PID must be a hexadecimal 32-bit number, e.g. 1d6b")
+	}
+	return usb.ID(vid), usb.ID(pid), nil
+}
+
+func parseBusAddr(busAddr string) (uint8, uint8, error) {
+	s := strings.Split(busAddr, ":")
+	if len(s) != 2 {
+		return 0, 0, fmt.Errorf("want bus:addr, two 8-bit decimal unsigned integers separated by colon, e.g. 1:1")
+	}
+	bus, err := strconv.ParseUint(s[0], 10, 8)
+	if err != nil {
+		return 0, 0, fmt.Errorf("bus number must be an 8-bit decimal unsigned integer")
+	}
+	addr, err := strconv.ParseUint(s[1], 10, 8)
+	if err != nil {
+		return 0, 0, fmt.Errorf("device address must be an 8-bit decimal unsigned integer")
+	}
+	return uint8(bus), uint8(addr), nil
+}
 
 func main() {
 	flag.Parse()
@@ -52,24 +84,34 @@ func main() {
 	ctx.Debug(*debug)
 
 	var devName string
+	var vid, pid usb.ID
+	var bus, addr uint8
 	switch {
-	case *vid == 0 && *pid == 0 && *bus == 0 && *addr == 0:
-		log.Fatal("You need to specify the device, either through --vid/--pid flags or through --bus/--addr flags.")
-	case (*vid > 0 || *pid > 0) && (*bus > 0 || *addr > 0):
-		log.Fatal("You can't use --vid/--pid flags at the same time as --bus/--addr.")
-	case *vid > 0 || *pid > 0:
-		devName = fmt.Sprintf("VID:PID %04x:%04x", *vid, *pid)
+	case *vidPID == "" && *busAddr == "":
+		log.Fatal("You need to specify the device through a --vidpid flag or through a --busaddr flag.")
+	case *vidPID != "" && *busAddr != "":
+		log.Fatal("You can't use --vidpid flag together with --busaddr. Pick one.")
+	case *vidPID != "":
+		vid, pid, err := parseVIDPID(*vidPID)
+		if err != nil {
+			log.Fatalf("Invalid value for --vidpid (%q): %v", *vidPID, err)
+		}
+		devName = fmt.Sprintf("VID:PID %s:%s", vid, pid)
 	default:
-		devName = fmt.Sprintf("bus:addr %d:%d", *bus, *addr)
+		bus, addr, err := parseBusAddr(*busAddr)
+		if err != nil {
+			log.Fatalf("Invalid value for --busaddr (%q): %v", *busAddr, err)
+		}
+		devName = fmt.Sprintf("bus:addr %d:%d", bus, addr)
 	}
 
 	log.Printf("Scanning for device %q...", devName)
 	// ListDevices is used to find the devices to open.
 	devs, err := ctx.ListDevices(func(desc *usb.Descriptor) bool {
 		switch {
-		case usb.ID(*vid) == desc.Vendor && usb.ID(*pid) == desc.Product:
+		case vid == desc.Vendor && pid == desc.Product:
 			return true
-		case uint8(*bus) == desc.Bus && uint8(*addr) == desc.Address:
+		case bus == desc.Bus && addr == desc.Address:
 			return true
 		}
 		return false
