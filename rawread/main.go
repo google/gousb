@@ -23,8 +23,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync/atomic"
-	"time"
 
 	"github.com/kylelemons/gousb/usb"
 	"github.com/kylelemons/gousb/usbid"
@@ -39,7 +37,7 @@ var (
 	endpoint = flag.Uint("endpoint", 1, "Endpoint to which to connect")
 	debug    = flag.Int("debug", 3, "Debug level for libusb")
 	size     = flag.Uint("read_size", 1024, "Number of bytes of data to read in a single transaction.")
-	bench    = flag.Bool("benchmark", false, "When true, keep reading from the endpoint and periodically report the measured throughput. If false,  only one read operation is performed and obtained data is printed to STDOUT.")
+	num      = flag.Uint("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
 )
 
 func parseVIDPID(vidPid string) (usb.ID, usb.ID, error) {
@@ -92,13 +90,15 @@ func main() {
 	case *vidPID != "" && *busAddr != "":
 		log.Fatal("You can't use --vidpid flag together with --busaddr. Pick one.")
 	case *vidPID != "":
-		vid, pid, err := parseVIDPID(*vidPID)
+		var err error
+		vid, pid, err = parseVIDPID(*vidPID)
 		if err != nil {
 			log.Fatalf("Invalid value for --vidpid (%q): %v", *vidPID, err)
 		}
 		devName = fmt.Sprintf("VID:PID %s:%s", vid, pid)
 	default:
-		bus, addr, err := parseBusAddr(*busAddr)
+		var err error
+		bus, addr, err = parseBusAddr(*busAddr)
 		if err != nil {
 			log.Fatalf("Invalid value for --busaddr (%q): %v", *busAddr, err)
 		}
@@ -162,41 +162,19 @@ func main() {
 		log.Printf("    --------------\n")
 	}
 
-	log.Print("Connecting to endpoint...")
+	log.Printf("Connecting to endpoint %d...", *endpoint)
 	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint)|uint8(usb.ENDPOINT_DIR_IN))
 	if err != nil {
 		log.Fatalf("open: %s", err)
 	}
 	log.Print("Reading...")
 
-	var total uint64
-	if *bench {
-		go func() {
-			var last uint64
-			var before = time.Now()
-			for {
-				time.Sleep(4 * time.Second)
-				cur := atomic.LoadUint64(&total)
-				now := time.Now()
-				dur := now.Sub(before)
-				log.Printf("%.2f B/s\n", float64(cur-last)/(float64(dur)/float64(time.Second)))
-				before = now
-				last = cur
-			}
-		}()
-	}
-
-	for {
-		buf := make([]byte, *size)
+	buf := make([]byte, *size)
+	for i := uint(0); *num == 0 || i < *num; i++ {
 		num, err := ep.Read(buf)
 		if err != nil {
 			log.Fatalf("Reading from device failed: %v", err)
 		}
-		if !*bench {
-			log.Printf("Read %d bytes of data", num)
-			os.Stdout.Write(buf[:num])
-			return
-		}
-		atomic.AddUint64(&total, uint64(num))
+		os.Stdout.Write(buf[:num])
 	}
 }
