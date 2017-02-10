@@ -20,6 +20,7 @@ import "C"
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"time"
 	"unsafe"
@@ -65,19 +66,23 @@ func bulk_xfer(e *endpoint, buf []byte, timeout time.Duration) (int, error) {
 		return 0, nil
 	}
 
-	data := (*reflect.SliceHeader)(unsafe.Pointer(&buf)).Data
-
-	var cnt C.int
-	if errno := C.libusb_bulk_transfer(
-		e.handle,
-		C.uchar(e.Address),
-		(*C.uchar)(unsafe.Pointer(data)),
-		C.int(len(buf)),
-		&cnt,
-		C.uint(timeout/time.Millisecond)); errno < 0 {
-		return 0, usbError(errno)
+	t, err := e.newUSBTransfer(TRANSFER_TYPE_BULK, buf)
+	if err != nil {
+		return 0, err
 	}
-	return int(cnt), nil
+	defer t.free()
+
+	if err := t.submit(timeout); err != nil {
+		log.Printf("bulk: xfer failed to submit: %s", err)
+		return 0, err
+	}
+
+	n, err := t.wait(buf)
+	if err != nil {
+		log.Printf("bulk: xfer failed: %s", err)
+		return 0, err
+	}
+	return n, err
 }
 
 func interrupt_xfer(e *endpoint, buf []byte, timeout time.Duration) (int, error) {
