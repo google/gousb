@@ -26,8 +26,8 @@ import (
 	"unsafe"
 )
 
-//export iso_callback
-func iso_callback(cptr unsafe.Pointer) {
+//export transfer_callback
+func transfer_callback(cptr unsafe.Pointer) {
 	ch := *(*chan struct{})(cptr)
 	close(ch)
 }
