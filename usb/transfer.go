@@ -18,6 +18,7 @@ package usb
 #include <libusb-1.0/libusb.h>
 
 int extract_data(struct libusb_transfer *xfer, void *data, int max, unsigned char *status);
+int extract_iso_data(struct libusb_transfer *xfer, void *data, int max, unsigned char *status);
 int submit(struct libusb_transfer *xfer);
 */
 import "C"
@@ -50,7 +51,12 @@ func (t *usbTransfer) wait(b []byte) (n int, err error) {
 	case <-t.done:
 	}
 	var status uint8
-	n = int(C.extract_data(t.xfer, unsafe.Pointer(&b[0]), C.int(len(b)), (*C.uchar)(unsafe.Pointer(&status))))
+	switch TransferType(t.xfer._type) {
+	case TRANSFER_TYPE_ISOCHRONOUS:
+		n = int(C.extract_iso_data(t.xfer, unsafe.Pointer(&b[0]), C.int(len(b)), (*C.uchar)(unsafe.Pointer(&status))))
+	default:
+		n = int(C.extract_data(t.xfer, unsafe.Pointer(&b[0]), C.int(len(b)), (*C.uchar)(unsafe.Pointer(&status))))
+	}
 	if status != 0 {
 		err = TransferStatus(status)
 	}
