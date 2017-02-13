@@ -36,9 +36,8 @@ func xfer_callback(cptr unsafe.Pointer) {
 
 type usbTransfer struct {
 	xfer *C.struct_libusb_transfer
-	pkts []*C.struct_libusb_packet_descriptor
-	done chan struct{}
 	buf  []byte
+	done chan struct{}
 }
 
 type deviceHandle *C.libusb_device_handle
@@ -48,8 +47,8 @@ func (t *usbTransfer) attach(dev deviceHandle) {
 }
 
 func (t *usbTransfer) submit() error {
-	done := make(chan struct{}, 1)
-	t.xfer.user_data = (unsafe.Pointer)(&done)
+	t.done = make(chan struct{})
+	t.xfer.user_data = (unsafe.Pointer)(&t.done)
 	if errno := C.submit(t.xfer); errno < 0 {
 		return usbError(errno)
 	}
