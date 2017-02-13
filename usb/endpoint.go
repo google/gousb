@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"log"
 	"time"
-	"unsafe"
 )
 
 type Endpoint interface {
@@ -63,13 +62,13 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	}
 
 	tt := e.TransferType()
-	t, err := e.newUSBTransfer(tt, buf)
+	t, err := newUSBTransfer(e.EndpointInfo, buf, timeout)
 	if err != nil {
 		return 0, err
 	}
 	defer t.free()
 
-	if err := t.submit(timeout); err != nil {
+	if err := t.submit(); err != nil {
 		log.Printf("bulk: %s failed to submit: %s", tt, err)
 		return 0, err
 	}
@@ -80,37 +79,4 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 		return 0, err
 	}
 	return n, err
-}
-
-func (e *endpoint) newUSBTransfer(tt TransferType, buf []byte) (*usbTransfer, error) {
-	var isoPackets int
-	if tt == TRANSFER_TYPE_ISOCHRONOUS {
-		isoPackets = len(buf) / int(e.EndpointInfo.MaxIsoPacket)
-	}
-
-	xfer := C.libusb_alloc_transfer(C.int(isoPackets))
-	if xfer == nil {
-		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
-	}
-
-	done := make(chan struct{}, 1)
-	xfer.user_data = (unsafe.Pointer)(&done)
-
-	xfer.dev_handle = e.Device.handle
-	xfer.endpoint = C.uchar(e.Address)
-	xfer._type = C.uchar(tt)
-
-	xfer.buffer = (*C.uchar)((unsafe.Pointer)(&buf[0]))
-	xfer.length = C.int(len(buf))
-
-	if tt == TRANSFER_TYPE_ISOCHRONOUS {
-		xfer.num_iso_packets = C.int(isoPackets)
-		C.libusb_set_iso_packet_lengths(xfer, C.uint(e.EndpointInfo.MaxIsoPacket))
-	}
-
-	return &usbTransfer{
-		xfer: xfer,
-		done: done,
-		buf:  buf,
-	}, nil
 }
