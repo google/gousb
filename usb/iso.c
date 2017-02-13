@@ -27,7 +27,7 @@ void callback(struct libusb_transfer *xfer) {
 }
 
 int submit(struct libusb_transfer *xfer) {
-	xfer->callback = &callback;
+	xfer->callback = (libusb_transfer_cb_fn)(&callback);
 	xfer->status = -1;
 	//print_xfer(xfer);
 	//printf("Transfer submitted\n");
