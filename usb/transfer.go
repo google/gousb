@@ -41,8 +41,15 @@ type usbTransfer struct {
 	buf  []byte
 }
 
-func (t *usbTransfer) submit(timeout time.Duration) error {
-	t.xfer.timeout = C.uint(timeout / time.Millisecond)
+type deviceHandle *C.libusb_device_handle
+
+func (t *usbTransfer) attach(dev deviceHandle) {
+	t.xfer.dev_handle = dev
+}
+
+func (t *usbTransfer) submit() error {
+	done := make(chan struct{}, 1)
+	t.xfer.user_data = (unsafe.Pointer)(&done)
 	if errno := C.submit(t.xfer); errno < 0 {
 		return usbError(errno)
 	}
@@ -72,4 +79,34 @@ func (t *usbTransfer) wait() (n int, err error) {
 func (t *usbTransfer) free() error {
 	C.libusb_free_transfer(t.xfer)
 	return nil
+}
+
+func newUSBTransfer(ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
+	var isoPackets int
+	tt := ei.TransferType()
+	if tt == TRANSFER_TYPE_ISOCHRONOUS {
+		isoPackets = len(buf) / int(ei.MaxIsoPacket)
+	}
+
+	xfer := C.libusb_alloc_transfer(C.int(isoPackets))
+	if xfer == nil {
+		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
+	}
+
+	xfer.timeout = C.uint(timeout / time.Millisecond)
+	xfer.endpoint = C.uchar(ei.Address)
+	xfer._type = C.uchar(tt)
+
+	xfer.buffer = (*C.uchar)((unsafe.Pointer)(&buf[0]))
+	xfer.length = C.int(len(buf))
+
+	if tt == TRANSFER_TYPE_ISOCHRONOUS {
+		xfer.num_iso_packets = C.int(isoPackets)
+		C.libusb_set_iso_packet_lengths(xfer, C.uint(ei.MaxIsoPacket))
+	}
+
+	return &usbTransfer{
+		xfer: xfer,
+		buf:  buf,
+	}, nil
 }
