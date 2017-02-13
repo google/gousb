@@ -66,6 +66,7 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	t.attach(e.Device.handle)
 	defer t.free()
 
 	if err := t.submit(); err != nil {
