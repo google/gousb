@@ -54,54 +54,27 @@ void print_xfer(struct libusb_transfer *xfer) {
 	}
 }
 
-// extract data from a non-isochronous transfer.
-int extract_data(struct libusb_transfer *xfer, void *raw, int max, unsigned char *status) {
+// compact the data in an isochronous transfer. The contents of individual
+// iso packets are shifted left, so that no gaps are left between them.
+// Status is set to the first non-zero status of an iso packet.
+int compact_iso_data(struct libusb_transfer *xfer, unsigned char *status) {
 	int i;
+	int sum = 0;
 	unsigned char *in = xfer->buffer;
-	unsigned char *out = raw;
-
-    int len = xfer->actual_length;
-    if (len > max) {
-            len = max;
-    }
-    memcpy(out, in, len);
-   	if (xfer->status != 0 && *status == 0) {
-            *status = xfer->status;
-   	}
-    return len;
-}
-
-// extract data from an isochronous transfer. Very similar to extract_data, but
-// acquires data from xfer->iso_packet_desc array instead of xfer attributes.
-int extract_iso_data(struct libusb_transfer *xfer, void *raw, int max, unsigned char *status) {
-	int i;
-	int copied = 0;
-	unsigned char *in = xfer->buffer;
-	unsigned char *out = raw;
+	unsigned char *out = xfer->buffer;
 	for (i = 0; i < xfer->num_iso_packets; i++) {
 		struct libusb_iso_packet_descriptor pkt = xfer->iso_packet_desc[i];
-
+		if (pkt.status != 0) {
+		    *status = pkt.status;
+			break;
+		}
 		// Copy the data
 		int len = pkt.actual_length;
-		if (copied + len > max) {
-			len = max - copied;
-		}
-		memcpy(out, in, len);
-		copied += len;
-
+		memmove(out, in, len);
 		// Increment offsets
+		sum += len;
 		in += pkt.length;
 		out += len;
-
-        if (copied == max) {
-                break;
-        }
-
-		// Extract first error
-		if (pkt.status == 0 || *status != 0) {
-			continue;
-		}
-		*status = pkt.status;
 	}
-	return copied;
+	return sum;
 }
