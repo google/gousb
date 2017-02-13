@@ -16,7 +16,7 @@
 package usb
 
 /*
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 
 int submit(struct libusb_transfer *xfer);
 void print_xfer(struct libusb_transfer *xfer);
