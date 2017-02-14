@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -25,7 +25,7 @@ void callback(struct libusb_transfer *xfer) {
 }
 
 int submit(struct libusb_transfer *xfer) {
-	xfer->callback = &callback;
+	xfer->callback = (libusb_transfer_cb_fn)(&callback);
 	xfer->status = -1;
 	return libusb_submit_transfer(xfer);
 }

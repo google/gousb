@@ -15,7 +15,7 @@
 package usb
 
 /*
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 
 int compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
 int submit(struct libusb_transfer *xfer);
