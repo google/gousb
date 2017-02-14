@@ -62,11 +62,10 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	}
 
 	tt := e.TransferType()
-	t, err := newUSBTransfer(e.EndpointInfo, buf, timeout)
+	t, err := newUSBTransfer(e.Device.handle, e.EndpointInfo, buf, timeout)
 	if err != nil {
 		return 0, err
 	}
-	t.attach(e.Device.handle)
 	defer t.free()
 
 	if err := t.submit(); err != nil {

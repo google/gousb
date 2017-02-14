@@ -35,15 +35,14 @@ func xfer_callback(cptr unsafe.Pointer) {
 }
 
 type usbTransfer struct {
+	// xfer is the allocated libusb_transfer.
 	xfer *C.struct_libusb_transfer
-	buf  []byte
+	// buf is the buffer allocated for the transfer. Both buf and xfer.buffer
+	// point to the same piece of memory.
+	buf []byte
+	// done is blocking until the transfer is complete and data and transfer
+	// status are available.
 	done chan struct{}
-}
-
-type deviceHandle *C.libusb_device_handle
-
-func (t *usbTransfer) attach(dev deviceHandle) {
-	t.xfer.dev_handle = dev
 }
 
 func (t *usbTransfer) submit() error {
@@ -80,7 +79,9 @@ func (t *usbTransfer) free() error {
 	return nil
 }
 
-func newUSBTransfer(ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
+type deviceHandle *C.libusb_device_handle
+
+func newUSBTransfer(dev deviceHandle, ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets int
 	tt := ei.TransferType()
 	if tt == TRANSFER_TYPE_ISOCHRONOUS {
@@ -92,6 +93,7 @@ func newUSBTransfer(ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTra
 		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
 	}
 
+	xfer.dev_handle = dev
 	xfer.timeout = C.uint(timeout / time.Millisecond)
 	xfer.endpoint = C.uchar(ei.Address)
 	xfer._type = C.uchar(tt)
