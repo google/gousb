@@ -45,6 +45,9 @@ type usbTransfer struct {
 	done chan struct{}
 }
 
+// submits the transfer. After submit() the transfer is in flight and is owned by libusb.
+// It's not safe to access the contents of the transfer until wait() returns.
+// Once wait() returns, it's ok to re-use the same transfer structure by calling submit() again.
 func (t *usbTransfer) submit() error {
 	t.done = make(chan struct{})
 	t.xfer.user_data = (unsafe.Pointer)(&t.done)
@@ -54,6 +57,11 @@ func (t *usbTransfer) submit() error {
 	return nil
 }
 
+// wait waits for libusb to signal the release of transfer data.
+// After wait returns, the transfer contents are safe to access
+// via t.buf. The number returned by wait indicates how many bytes
+// of the buffer were read or written by libusb, and it can be
+// smaller than the length of t.buf.
 func (t *usbTransfer) wait() (n int, err error) {
 	select {
 	case <-time.After(10 * time.Second):
@@ -74,13 +82,21 @@ func (t *usbTransfer) wait() (n int, err error) {
 	return n, err
 }
 
+// free releases the memory allocated for the transfer.
+// free should be called only if the transfer is not used by libusb,
+// i.e. it should not be called after submit() and before wait() returns.
 func (t *usbTransfer) free() error {
 	C.libusb_free_transfer(t.xfer)
+	t.xfer = nil
+	t.buf = nil
+	t.done = nil
 	return nil
 }
 
 type deviceHandle *C.libusb_device_handle
 
+// newUSBTransfer allocates a new transfer structure for communication with a
+// given device/endpoint, with buf as the underlying transfer buffer.
 func newUSBTransfer(dev deviceHandle, ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets int
 	tt := ei.TransferType()
