@@ -38,14 +38,17 @@ func (e EndpointInfo) Number() int {
 	return int(e.Address) & ENDPOINT_NUM_MASK
 }
 
+func (e EndpointInfo) TransferType() TransferType {
+	return TransferType(e.Attributes) & TRANSFER_TYPE_MASK
+}
+
 func (e EndpointInfo) Direction() EndpointDirection {
 	return EndpointDirection(e.Address) & ENDPOINT_DIR_MASK
 }
 
 func (e EndpointInfo) String() string {
 	return fmt.Sprintf("Endpoint %d %-3s %s - %s %s [%d %d]",
-		e.Number(), e.Direction(),
-		TransferType(e.Attributes)&TRANSFER_TYPE_MASK,
+		e.Number(), e.Direction(), e.TransferType(),
 		IsoSyncType(e.Attributes)&ISO_SYNC_TYPE_MASK,
 		IsoUsageType(e.Attributes)&ISO_USAGE_TYPE_MASK,
 		e.MaxPacketSize, e.MaxIsoPacket,
@@ -135,7 +138,7 @@ func newConfig(dev *C.libusb_device, cfg *C.struct_libusb_config_descriptor) Con
 					RefreshRate:   uint8(end.bRefresh),
 					SynchAddress:  uint8(end.bSynchAddress),
 				}
-				if TransferType(ei.Attributes)&TRANSFER_TYPE_MASK == TRANSFER_TYPE_ISOCHRONOUS {
+				if ei.TransferType() == TRANSFER_TYPE_ISOCHRONOUS {
 					// bits 0-10 identify the packet size, bits 11-12 are the number of additional transactions per microframe.
 					// Don't use libusb_get_max_iso_packet_size, as it has a bug where it returns the same value
 					// regardless of alternative setting used, where different alternative settings might define different
