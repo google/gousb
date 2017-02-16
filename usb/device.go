@@ -218,7 +218,7 @@ func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
 	return stringDescriptor, nil
 }
 
-// SetAutoDetach Enable/disable libusb's automatic kernel driver detachment.
+// SetAutoDetach Enables/disables libusb's automatic kernel driver detachment.
 // When autodetach is enabled libusb will automatically detach the kernel driver
 // on the interface and reattach it when releasing the interface.
 // Automatic kernel driver detachment is disabled on newly opened device handles by default.
