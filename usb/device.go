@@ -174,6 +174,11 @@ found:
 		}
 	}
 
+	// Detach the interface
+	if errno := C.libusb_detach_kernel_driver(d.handle, C.int(iface)); errno < 0 {
+		fmt.Errorf("usb: detach: %s", usbError(errno))
+	}
+
 	// Claim the interface
 	if errno := C.libusb_claim_interface(d.handle, C.int(iface)); errno < 0 {
 		return nil, fmt.Errorf("usb: claim: %s", usbError(errno))
