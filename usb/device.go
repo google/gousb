@@ -174,11 +174,6 @@ found:
 		}
 	}
 
-	// Detach the interface
-	if errno := C.libusb_detach_kernel_driver(d.handle, C.int(iface)); errno < 0 {
-		fmt.Errorf("usb: detach: %s", usbError(errno))
-	}
-
 	// Claim the interface
 	if errno := C.libusb_claim_interface(d.handle, C.int(iface)); errno < 0 {
 		return nil, fmt.Errorf("usb: claim: %s", usbError(errno))
@@ -221,4 +216,22 @@ func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
 	stringDescriptor := string(goBuffer[:errno])
 
 	return stringDescriptor, nil
+}
+
+// SetAutoDetach Enable/disable libusb's automatic kernel driver detachment.
+// When this is enabled libusb will automatically detach the kernel driver
+// on an interface when claiming the interface, and attach it when releasing the interface.
+// Automatic kernel driver detachment is disabled on newly opened device handles by default.
+func (d *Device) SetAutoDetach(autodetach int) error {
+	errno := C.libusb_set_auto_detach_kernel_driver(
+		d.handle,
+		C.int(autodetach),
+	)
+
+	// TODO LIBUSB_ERROR_NOT_SUPPORTED (-12) handling
+	// if any errors occur
+	if errno < 0 {
+		return fmt.Errorf("usb: setautodetach: %s", usbError(errno))
+	}
+	return nil
 }
