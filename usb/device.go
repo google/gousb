@@ -228,15 +228,15 @@ func (d *Device) SetAutoDetach(autodetach bool) error {
 		autodetachInt = 1
 	}
 
-	errno := C.libusb_set_auto_detach_kernel_driver(
+	err := C.libusb_set_auto_detach_kernel_driver(
 		d.handle,
-		C.int(autodetach),
+		C.int(autodetachInt),
 	)
 
 	// TODO LIBUSB_ERROR_NOT_SUPPORTED (-12) handling
 	// if any errors occur
-	if errno < 0 {
-		return fmt.Errorf("usb: setautodetach: %s", usbError(errno))
+	if err != C.int(SUCCESS) {
+		return fmt.Errorf("usb: setautodetach: %s", usbError(err))
 	}
 	return nil
 }
