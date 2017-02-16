@@ -15,9 +15,6 @@
 
 package usb
 
-// #include <libusb.h>
-import "C"
-
 import (
 	"fmt"
 	"log"
