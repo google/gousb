@@ -222,7 +222,12 @@ func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
 // When this is enabled libusb will automatically detach the kernel driver
 // on an interface when claiming the interface, and attach it when releasing the interface.
 // Automatic kernel driver detachment is disabled on newly opened device handles by default.
-func (d *Device) SetAutoDetach(autodetach int) error {
+func (d *Device) SetAutoDetach(autodetach bool) error {
+	autodetachInt := 0
+	if autodetach {
+		autodetachInt = 1
+	}
+
 	errno := C.libusb_set_auto_detach_kernel_driver(
 		d.handle,
 		C.int(autodetach),
