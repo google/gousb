@@ -27,8 +27,8 @@ so that I can verify that it is on file before I can accept pull requests.
 
 [cla]: https://cla.developers.google.com/
 
-Installation on Linux
-=====================
+Installation
+============
 
 Dependencies
 ------------
@@ -54,42 +54,20 @@ There is also a `usbid` package that will not be installed by default by this co
 
     go get -v github.com/kylelemons/gousb/usb{,id}
 
-Installation on Windows
-=======================
+Notes for installation on Windows
+---------------------------------
 
-Dependencies
-------------
-- Gcc (only tested on [Win-Builds](http://win-builds.org/), but any MSYS, CYGWIN, MINGW should be worked
-- [libusb-1.0](http://sourceforge.net/projects/libusb/files/libusb-1.0/)
+You'll need:
 
-Build
------
+- Gcc - tested on [Win-Builds](http://win-builds.org/) and MSYS/MINGW
+- pkg-config - see http://www.mingw.org/wiki/FAQ, "How do I get pkg-config installed?"
+- [libusb-1.0](http://sourceforge.net/projects/libusb/files/libusb-1.0/).
 
-- After downloaded, extract them to some directory; such as D:\lib\libusb-1.0.xx\
-- Remember two path which "libusb.h" file and "libusb-1.0.a" inside
+Make sure the `libusb-1.0.pc` pkg-config file from libusb was installed
+and that the result of the `pkg-config --cflags libusb-1.0` command shows the
+correct include path for installed libusb.
 
-*Note* For MinGW32, use **MinGW32/static/libusb-1.0.a** while MinGW64 use **MinGW64/static/libusb-1.0.a** for linker
-
-- Open `$(GOPATH)/src/github.com/kylelemons/gousb/usb/usb.go`. 
-
-Then edit `#cgo` directive, such as
-
-        // #cgo CFLAGS: -ID:/lib/libusbx-1.0.xx/include
-        // #cgo LDFLAGS: D:/lib/libusbx-1.0.xx/MinGW64/static/libusb-1.0.a
-
-
-to your `libusb-1.0` installed path before the line:
-
-    // #include <libusb-1.0/libusb.h>
-
-This flag will tell the linker the exact path of static library.
-Then install `gousb`:
-
-- Go to `$(GOPATH)/src/github.com/kylelemons/gousb/`. Run:
-
-        $ go install ./...
-		
-	`lsusb` can run under `$GOBIN/lsusb`
+After that you can continue with instructions for lsusb/gousb above.
 
 Documentation
 =============
