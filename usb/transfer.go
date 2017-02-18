@@ -111,7 +111,7 @@ func (t *usbTransfer) wait() (n int, err error) {
 	var status TransferStatus
 	switch TransferType(t.xfer._type) {
 	case TRANSFER_TYPE_ISOCHRONOUS:
-		n = int(C.compact_iso_data(t.xfer, (*C.uchar)(unsafe.Pointer(&status))))
+		n = int(C.compact_iso_data((*C.struct_libusb_transfer)(t.xfer), (*C.uchar)(unsafe.Pointer(&status))))
 	default:
 		n = int(t.xfer.actual_length)
 		status = TransferStatus(t.xfer.status)
@@ -150,7 +150,7 @@ func (t *usbTransfer) free() error {
 	if t.submitted {
 		return errors.New("free() cannot be called on a submitted transfer until wait() returns")
 	}
-	C.libusb_free_transfer(t.xfer)
+	C.libusb_free_transfer((*C.struct_libusb_transfer)(t.xfer))
 	t.xfer = nil
 	t.buf = nil
 	t.done = nil
