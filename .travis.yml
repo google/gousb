@@ -1,7 +1,10 @@
 language: go
+dist: trusty
 
 go:
   - 1.6
+  - 1.7
+  - 1.8
   - tip
 
 script: go test -v -test.run='BCD|Parse' ./...

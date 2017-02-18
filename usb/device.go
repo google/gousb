@@ -217,3 +217,26 @@ func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
 
 	return stringDescriptor, nil
 }
+
+// SetAutoDetach enables/disables libusb's automatic kernel driver detachment.
+// When autodetach is enabled libusb will automatically detach the kernel driver
+// on the interface and reattach it when releasing the interface.
+// Automatic kernel driver detachment is disabled on newly opened device handles by default.
+func (d *Device) SetAutoDetach(autodetach bool) error {
+	autodetachInt := 0
+	if autodetach {
+		autodetachInt = 1
+	}
+
+	err := C.libusb_set_auto_detach_kernel_driver(
+		d.handle,
+		C.int(autodetachInt),
+	)
+
+	// TODO LIBUSB_ERROR_NOT_SUPPORTED (-12) handling
+	// if any errors occur
+	if err != C.int(SUCCESS) {
+		return fmt.Errorf("usb: setautodetach: %s", usbError(err))
+	}
+	return nil
+}
