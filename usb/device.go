@@ -122,9 +122,7 @@ func (d *Device) Close() error {
 }
 
 func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error) {
-	end := &endpoint{
-		Device: d,
-	}
+	end := newEndpoint(d)
 
 	var setAlternate bool
 	for _, c := range d.Configs {
