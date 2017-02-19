@@ -35,9 +35,14 @@ type transferIntf interface {
 }
 
 type endpoint struct {
-	*Device
+	h *deviceHandle
+
 	InterfaceSetup
 	EndpointInfo
+
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+
 	newUSBTransfer func([]byte, time.Duration) (transferIntf, error)
 }
 
@@ -61,7 +66,7 @@ func (e *endpoint) Interface() InterfaceSetup { return e.InterfaceSetup }
 func (e *endpoint) Info() EndpointInfo        { return e.EndpointInfo }
 
 func (e *endpoint) newRealUSBTransfer(buf []byte, timeout time.Duration) (transferIntf, error) {
-	return newUSBTransfer((*deviceHandle)(e.Device.handle), e.EndpointInfo, buf, timeout)
+	return newUSBTransfer(e.h, e.EndpointInfo, buf, timeout)
 }
 
 func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
@@ -91,7 +96,9 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 
 func newEndpoint(d *Device) *endpoint {
 	ep := &endpoint{
-		Device: d,
+		h:            (*deviceHandle)(d.handle),
+		ReadTimeout:  d.ReadTimeout,
+		WriteTimeout: d.WriteTimeout,
 	}
 	ep.newUSBTransfer = ep.newRealUSBTransfer
 	return ep
