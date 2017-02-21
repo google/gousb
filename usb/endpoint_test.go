@@ -21,10 +21,12 @@ import (
 
 type fakeTransfer struct {
 	buf []byte
+	ret int
+	err error
 }
 
 func (*fakeTransfer) submit() error        { return nil }
-func (t *fakeTransfer) wait() (int, error) { return len(t.buf) / 2, nil }
+func (t *fakeTransfer) wait() (int, error) { return t.ret, t.err }
 func (*fakeTransfer) free() error          { return nil }
 
 func TestEndpoint(t *testing.T) {
@@ -42,5 +44,9 @@ func TestEndpoint(t *testing.T) {
 	}
 	if want := len(b)/2 + 1; got != want {
 		t.Errorf("bulkInEP.Read(): got %d bytes, want half of the buffer length: %d", got, want)
+	}
+	_, err := ep.Write(b)
+	if err == nil {
+		t.Error("bulkInEP.Write(): got nil error, want non-nil")
 	}
 }
