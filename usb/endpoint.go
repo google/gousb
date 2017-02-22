@@ -39,8 +39,8 @@ type endpoint struct {
 	InterfaceSetup
 	EndpointInfo
 
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
+	readTimeout  time.Duration
+	writeTimeout time.Duration
 
 	newUSBTransfer func([]byte, time.Duration) (transferIntf, error)
 }
@@ -50,7 +50,7 @@ func (e *endpoint) Read(buf []byte) (int, error) {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
 	}
 
-	return e.transfer(buf, e.ReadTimeout)
+	return e.transfer(buf, e.readTimeout)
 }
 
 func (e *endpoint) Write(buf []byte) (int, error) {
@@ -58,7 +58,7 @@ func (e *endpoint) Write(buf []byte) (int, error) {
 		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
 	}
 
-	return e.transfer(buf, e.WriteTimeout)
+	return e.transfer(buf, e.writeTimeout)
 }
 
 func (e *endpoint) Interface() InterfaceSetup { return e.InterfaceSetup }
@@ -93,8 +93,8 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 func newEndpoint(d *Device) *endpoint {
 	ep := &endpoint{
 		h:            (*deviceHandle)(d.handle),
-		ReadTimeout:  d.ReadTimeout,
-		WriteTimeout: d.WriteTimeout,
+		readTimeout:  d.ReadTimeout,
+		writeTimeout: d.WriteTimeout,
 	}
 	ep.newUSBTransfer = ep.newRealUSBTransfer
 	return ep
