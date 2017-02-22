@@ -17,7 +17,6 @@ package usb
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -28,10 +27,22 @@ type Endpoint interface {
 	Info() EndpointInfo
 }
 
+type transferIntf interface {
+	submit() error
+	wait() (int, error)
+	free() error
+}
+
 type endpoint struct {
-	*Device
+	h *deviceHandle
+
 	InterfaceSetup
 	EndpointInfo
+
+	readTimeout  time.Duration
+	writeTimeout time.Duration
+
+	newUSBTransfer func([]byte, time.Duration) (transferIntf, error)
 }
 
 func (e *endpoint) Read(buf []byte) (int, error) {
@@ -39,7 +50,7 @@ func (e *endpoint) Read(buf []byte) (int, error) {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
 	}
 
-	return e.transfer(buf, e.ReadTimeout)
+	return e.transfer(buf, e.readTimeout)
 }
 
 func (e *endpoint) Write(buf []byte) (int, error) {
@@ -47,33 +58,44 @@ func (e *endpoint) Write(buf []byte) (int, error) {
 		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
 	}
 
-	return e.transfer(buf, e.WriteTimeout)
+	return e.transfer(buf, e.writeTimeout)
 }
 
 func (e *endpoint) Interface() InterfaceSetup { return e.InterfaceSetup }
 func (e *endpoint) Info() EndpointInfo        { return e.EndpointInfo }
+
+func (e *endpoint) newLibUSBTransfer(buf []byte, timeout time.Duration) (transferIntf, error) {
+	return newUSBTransfer(e.h, e.EndpointInfo, buf, timeout)
+}
 
 func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
 
-	tt := e.TransferType()
-	t, err := newUSBTransfer((*deviceHandle)(e.Device.handle), e.EndpointInfo, buf, timeout)
+	t, err := e.newUSBTransfer(buf, timeout)
 	if err != nil {
 		return 0, err
 	}
 	defer t.free()
 
 	if err := t.submit(); err != nil {
-		log.Printf("bulk: %s failed to submit: %s", tt, err)
 		return 0, err
 	}
 
 	n, err := t.wait()
 	if err != nil {
-		log.Printf("bulk: %s failed: %s", tt, err)
-		return 0, err
+		return n, err
 	}
-	return n, err
+	return n, nil
+}
+
+func newEndpoint(d *Device) *endpoint {
+	ep := &endpoint{
+		h:            (*deviceHandle)(d.handle),
+		readTimeout:  d.ReadTimeout,
+		writeTimeout: d.WriteTimeout,
+	}
+	ep.newUSBTransfer = ep.newLibUSBTransfer
+	return ep
 }
