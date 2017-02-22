@@ -32,7 +32,7 @@ func (t *fakeTransfer) wait() (int, error) { return t.ret, t.err }
 func (*fakeTransfer) free() error          { return nil }
 
 func TestEndpoint(t *testing.T) {
-	for _, epSetup := range []struct {
+	for _, epCfg := range []struct {
 		method string
 		InterfaceSetup
 		EndpointInfo
@@ -40,7 +40,7 @@ func TestEndpoint(t *testing.T) {
 		{"Read", testBulkInSetup, testBulkInEP},
 		{"Write", testIsoOutSetup, testIsoOutEP},
 	} {
-		t.Run(epSetup.method, func(t *testing.T) {
+		t.Run(epCfg.method, func(t *testing.T) {
 			for _, tc := range []struct {
 				buf     []byte
 				ret     int
@@ -53,15 +53,15 @@ func TestEndpoint(t *testing.T) {
 				{buf: make([]byte, 128), ret: 10, err: errors.New("some error"), want: 10, wantErr: true},
 			} {
 				ep := &endpoint{
-					InterfaceSetup: epSetup.InterfaceSetup,
-					EndpointInfo:   epSetup.EndpointInfo,
+					InterfaceSetup: epCfg.InterfaceSetup,
+					EndpointInfo:   epCfg.EndpointInfo,
 					newUSBTransfer: func(buf []byte, timeout time.Duration) (transferIntf, error) {
 						return &fakeTransfer{buf: buf, ret: tc.ret, err: tc.err}, nil
 					},
 				}
-				op, ok := reflect.TypeOf(ep).MethodByName(epSetup.method)
+				op, ok := reflect.TypeOf(ep).MethodByName(epCfg.method)
 				if !ok {
-					t.Fatalf("method %s not found in endpoint", epSetup.method)
+					t.Fatalf("method %s not found in endpoint struct", epCfg.method)
 				}
 				opv := op.Func.Interface().(func(*endpoint, []byte) (int, error))
 				got, err := opv(ep, tc.buf)
