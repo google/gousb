@@ -159,10 +159,10 @@ func TestTransferProtocol(t *testing.T) {
 		t.Errorf("xfer#1(resubmitted).wait returned %d bytes, want %d", got, want)
 	}
 
-	for i := 0; i < 2; i++ {
-		xfers[i].cancel()
-		xfers[i].wait()
-		xfers[i].free()
+	for _, x := range xfers {
+		x.cancel()
+		x.wait()
+		x.free()
 	}
 }
 
