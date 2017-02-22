@@ -64,7 +64,7 @@ func (e *endpoint) Write(buf []byte) (int, error) {
 func (e *endpoint) Interface() InterfaceSetup { return e.InterfaceSetup }
 func (e *endpoint) Info() EndpointInfo        { return e.EndpointInfo }
 
-func (e *endpoint) newRealUSBTransfer(buf []byte, timeout time.Duration) (transferIntf, error) {
+func (e *endpoint) newLibUSBTransfer(buf []byte, timeout time.Duration) (transferIntf, error) {
 	return newUSBTransfer(e.h, e.EndpointInfo, buf, timeout)
 }
 
@@ -96,6 +96,6 @@ func newEndpoint(d *Device) *endpoint {
 		readTimeout:  d.ReadTimeout,
 		writeTimeout: d.WriteTimeout,
 	}
-	ep.newUSBTransfer = ep.newRealUSBTransfer
+	ep.newUSBTransfer = ep.newLibUSBTransfer
 	return ep
 }
