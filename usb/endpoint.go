@@ -15,9 +15,6 @@
 
 package usb
 
-// #include <libusb.h>
-import "C"
-
 import (
 	"fmt"
 	"log"
@@ -62,7 +59,7 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	}
 
 	tt := e.TransferType()
-	t, err := newUSBTransfer(e.Device.handle, e.EndpointInfo, buf, timeout)
+	t, err := newUSBTransfer((*deviceHandle)(e.Device.handle), e.EndpointInfo, buf, timeout)
 	if err != nil {
 		return 0, err
 	}
