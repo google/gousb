@@ -28,3 +28,19 @@ var testBulkInSetup = InterfaceSetup{
 	IfClass:   uint8(CLASS_VENDOR_SPEC),
 	Endpoints: []EndpointInfo{testBulkInEP},
 }
+
+// OUT iso endpoint
+var testIsoOutEP = EndpointInfo{
+	Address:       0x06,
+	Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+	MaxPacketSize: 3<<11 + 1024,
+	MaxIsoPacket:  3 * 1024,
+	PollInterval:  1,
+}
+
+var testIsoOutSetup = InterfaceSetup{
+	Number:    0,
+	Alternate: 0,
+	IfClass:   uint8(CLASS_VENDOR_SPEC),
+	Endpoints: []EndpointInfo{testIsoOutEP},
+}

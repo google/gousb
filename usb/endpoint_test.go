@@ -15,6 +15,8 @@
 package usb
 
 import (
+	"errors"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -30,23 +32,66 @@ func (t *fakeTransfer) wait() (int, error) { return t.ret, t.err }
 func (*fakeTransfer) free() error          { return nil }
 
 func TestEndpoint(t *testing.T) {
-	ep := endpoint{
+	for _, epSetup := range []struct {
+		method string
+		InterfaceSetup
+		EndpointInfo
+	}{
+		{"Read", testBulkInSetup, testBulkInEP},
+		{"Write", testIsoOutSetup, testIsoOutEP},
+	} {
+		t.Run(epSetup.method, func(t *testing.T) {
+			for _, tc := range []struct {
+				buf     []byte
+				ret     int
+				err     error
+				want    int
+				wantErr bool
+			}{
+				{buf: nil, ret: 10, want: 0},
+				{buf: make([]byte, 128), ret: 60, want: 60},
+				{buf: make([]byte, 128), ret: 10, err: errors.New("some error"), want: 10, wantErr: true},
+			} {
+				ep := &endpoint{
+					InterfaceSetup: epSetup.InterfaceSetup,
+					EndpointInfo:   epSetup.EndpointInfo,
+					newUSBTransfer: func(buf []byte, timeout time.Duration) (transferIntf, error) {
+						return &fakeTransfer{buf: buf, ret: tc.ret, err: tc.err}, nil
+					},
+				}
+				op, ok := reflect.TypeOf(ep).MethodByName(epSetup.method)
+				if !ok {
+					t.Fatalf("method %s not found in endpoint", epSetup.method)
+				}
+				opv := op.Func.Interface().(func(*endpoint, []byte) (int, error))
+				got, err := opv(ep, tc.buf)
+				if (err != nil) != tc.wantErr {
+					t.Errorf("bulkInEP.Read(): got err: %v, err != nil is %v, want %v", err, err != nil, tc.wantErr)
+					continue
+				}
+				if got != tc.want {
+					t.Errorf("bulkInEP.Read(): got %d bytes, want %d", got, tc.want)
+				}
+			}
+		})
+	}
+}
+
+func TestEndpointWrongDirection(t *testing.T) {
+	ep := &endpoint{
 		InterfaceSetup: testBulkInSetup,
 		EndpointInfo:   testBulkInEP,
-		newUSBTransfer: func(buf []byte, timeout time.Duration) (transferIntf, error) {
-			return &fakeTransfer{buf}, nil
-		},
 	}
-	b := make([]byte, 128)
-	got, err := ep.Read(b)
-	if err != nil {
-		t.Fatalf("bulkInEP.Read(): got error: %v, want nil", err)
-	}
-	if want := len(b)/2 + 1; got != want {
-		t.Errorf("bulkInEP.Read(): got %d bytes, want half of the buffer length: %d", got, want)
-	}
-	_, err := ep.Write(b)
+	_, err := ep.Write([]byte{1, 2, 3})
 	if err == nil {
 		t.Error("bulkInEP.Write(): got nil error, want non-nil")
+	}
+	ep = &endpoint{
+		InterfaceSetup: testIsoOutSetup,
+		EndpointInfo:   testIsoOutEP,
+	}
+	_, err = ep.Read(make([]byte, 64))
+	if err == nil {
+		t.Error("isoOutEP.Read(): got nil error, want non-nil")
 	}
 }

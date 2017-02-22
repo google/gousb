@@ -17,7 +17,6 @@ package usb
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -74,7 +73,6 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 		return 0, nil
 	}
 
-	tt := e.TransferType()
 	t, err := e.newUSBTransfer(buf, timeout)
 	if err != nil {
 		return 0, err
@@ -82,16 +80,14 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	defer t.free()
 
 	if err := t.submit(); err != nil {
-		log.Printf("bulk: %s failed to submit: %s", tt, err)
 		return 0, err
 	}
 
 	n, err := t.wait()
 	if err != nil {
-		log.Printf("bulk: %s failed: %s", tt, err)
-		return 0, err
+		return n, err
 	}
-	return n, err
+	return n, nil
 }
 
 func newEndpoint(d *Device) *endpoint {
