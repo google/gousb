@@ -27,9 +27,9 @@ type fakeTransfer struct {
 	err error
 }
 
-func (*fakeTransfer) submit() error        { return nil }
+func (t *fakeTransfer) submit() error      { return nil }
 func (t *fakeTransfer) wait() (int, error) { return t.ret, t.err }
-func (*fakeTransfer) free() error          { return nil }
+func (t *fakeTransfer) free() error        { return nil }
 
 func TestEndpoint(t *testing.T) {
 	for _, epCfg := range []struct {
