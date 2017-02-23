@@ -133,24 +133,17 @@ func newUSBTransfer(dev *libusbDevHandle, ei EndpointInfo, buf []byte, timeout t
 		}
 	}
 
-	xfer, err := libusb.alloc(dev, isoPackets)
+	xfer, err := libusb.alloc(dev, ei.Address, tt, timeout, isoPackets, buf)
 	if err != nil {
 		return nil, err
 	}
-
-	xfer.timeout = C.uint(timeout / time.Millisecond)
-	xfer.endpoint = C.uchar(ei.Address)
-	xfer._type = C.uchar(tt)
-
-	xfer.buffer = (*C.uchar)((unsafe.Pointer)(&buf[0]))
-	xfer.length = C.int(len(buf))
 
 	if tt == TRANSFER_TYPE_ISOCHRONOUS {
 		libusb.setIsoPacketLengths(xfer, ei.MaxIsoPacket)
 	}
 
 	t := &usbTransfer{
-		xfer: (*libusbTransfer)(xfer),
+		xfer: xfer,
 		buf:  buf,
 	}
 	runtime.SetFinalizer(t, func(t *usbTransfer) {
