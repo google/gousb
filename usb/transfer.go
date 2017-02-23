@@ -23,9 +23,6 @@ import (
 	"unsafe"
 )
 
-// #include <libusb.h>
-import "C"
-
 type usbTransfer struct {
 	// mu protects the transfer state.
 	mu sync.Mutex
