@@ -15,13 +15,8 @@
 
 package usb
 
-// #include <libusb.h>
-import "C"
-
 import (
 	"fmt"
-	"reflect"
-	"unsafe"
 )
 
 type EndpointInfo struct {
@@ -86,74 +81,4 @@ type ConfigInfo struct {
 
 func (c ConfigInfo) String() string {
 	return fmt.Sprintf("Config %02x", c.Config)
-}
-
-func newConfig(dev *C.libusb_device, cfg *C.struct_libusb_config_descriptor) ConfigInfo {
-	c := ConfigInfo{
-		Config:     uint8(cfg.bConfigurationValue),
-		Attributes: uint8(cfg.bmAttributes),
-		MaxPower:   uint8(cfg.MaxPower),
-	}
-
-	var ifaces []C.struct_libusb_interface
-	*(*reflect.SliceHeader)(unsafe.Pointer(&ifaces)) = reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(cfg._interface)),
-		Len:  int(cfg.bNumInterfaces),
-		Cap:  int(cfg.bNumInterfaces),
-	}
-	c.Interfaces = make([]InterfaceInfo, 0, len(ifaces))
-	for _, iface := range ifaces {
-		if iface.num_altsetting == 0 {
-			continue
-		}
-
-		var alts []C.struct_libusb_interface_descriptor
-		*(*reflect.SliceHeader)(unsafe.Pointer(&alts)) = reflect.SliceHeader{
-			Data: uintptr(unsafe.Pointer(iface.altsetting)),
-			Len:  int(iface.num_altsetting),
-			Cap:  int(iface.num_altsetting),
-		}
-		descs := make([]InterfaceSetup, 0, len(alts))
-		for _, alt := range alts {
-			i := InterfaceSetup{
-				Number:     uint8(alt.bInterfaceNumber),
-				Alternate:  uint8(alt.bAlternateSetting),
-				IfClass:    uint8(alt.bInterfaceClass),
-				IfSubClass: uint8(alt.bInterfaceSubClass),
-				IfProtocol: uint8(alt.bInterfaceProtocol),
-			}
-			var ends []C.struct_libusb_endpoint_descriptor
-			*(*reflect.SliceHeader)(unsafe.Pointer(&ends)) = reflect.SliceHeader{
-				Data: uintptr(unsafe.Pointer(alt.endpoint)),
-				Len:  int(alt.bNumEndpoints),
-				Cap:  int(alt.bNumEndpoints),
-			}
-			i.Endpoints = make([]EndpointInfo, 0, len(ends))
-			for _, end := range ends {
-				ei := EndpointInfo{
-					Address:       uint8(end.bEndpointAddress),
-					Attributes:    uint8(end.bmAttributes),
-					MaxPacketSize: uint16(end.wMaxPacketSize),
-					PollInterval:  uint8(end.bInterval),
-					RefreshRate:   uint8(end.bRefresh),
-					SynchAddress:  uint8(end.bSynchAddress),
-				}
-				if ei.TransferType() == TRANSFER_TYPE_ISOCHRONOUS {
-					// bits 0-10 identify the packet size, bits 11-12 are the number of additional transactions per microframe.
-					// Don't use libusb_get_max_iso_packet_size, as it has a bug where it returns the same value
-					// regardless of alternative setting used, where different alternative settings might define different
-					// max packet sizes.
-					// See http://libusb.org/ticket/77 for more background.
-					ei.MaxIsoPacket = uint32(end.wMaxPacketSize) & 0x07ff * (uint32(end.wMaxPacketSize)>>11&3 + 1)
-				}
-				i.Endpoints = append(i.Endpoints, ei)
-			}
-			descs = append(descs, i)
-		}
-		c.Interfaces = append(c.Interfaces, InterfaceInfo{
-			Number: descs[0].Number,
-			Setups: descs,
-		})
-	}
-	return c
 }

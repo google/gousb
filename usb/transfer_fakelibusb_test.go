@@ -19,19 +19,20 @@ import "sync"
 type fakeLibusb struct {
 	sync.Mutex
 	ts map[*libusbTransfer]chan struct{}
+	libusbIntf
 }
 
-func (f *fakeLibusb) submit(t *libusbTransfer) usbError {
+func (f *fakeLibusb) submit(t *libusbTransfer) error {
 	f.Lock()
 	defer f.Unlock()
 	if f.ts[t] == nil {
 		f.ts[t] = make(chan struct{})
 	}
 	close(f.ts[t])
-	return SUCCESS
+	return nil
 }
 
-func (f *fakeLibusb) cancel(t *libusbTransfer) usbError { return SUCCESS }
+func (f *fakeLibusb) cancel(t *libusbTransfer) error { return nil }
 
 func (f *fakeLibusb) waitForSubmit(t *usbTransfer) {
 	f.Lock()
@@ -52,5 +53,8 @@ func (f *fakeLibusb) runCallback(t *usbTransfer, cb func(*usbTransfer)) {
 }
 
 func newFakeLibusb() *fakeLibusb {
-	return &fakeLibusb{ts: make(map[*libusbTransfer]chan struct{})}
+	return &fakeLibusb{
+		ts:         make(map[*libusbTransfer]chan struct{}),
+		libusbIntf: libusbImpl{},
+	}
 }

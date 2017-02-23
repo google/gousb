@@ -15,15 +15,10 @@
 
 package usb
 
-// #include <libusb.h>
-import "C"
-
 import (
 	"fmt"
-	"reflect"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 var DefaultReadTimeout = 1 * time.Second
@@ -31,7 +26,7 @@ var DefaultWriteTimeout = 1 * time.Second
 var DefaultControlTimeout = 250 * time.Millisecond //5 * time.Second
 
 type Device struct {
-	handle *C.libusb_device_handle
+	handle *libusbDevHandle
 
 	// Embed the device information for easy access
 	*Descriptor
@@ -46,7 +41,7 @@ type Device struct {
 	claimed map[uint8]int
 }
 
-func newDevice(handle *C.libusb_device_handle, desc *Descriptor) *Device {
+func newDevice(handle *libusbDevHandle, desc *Descriptor) *Device {
 	ifaces := 0
 	d := &Device{
 		handle:         handle,
@@ -62,48 +57,24 @@ func newDevice(handle *C.libusb_device_handle, desc *Descriptor) *Device {
 }
 
 func (d *Device) Reset() error {
-	if errno := C.libusb_reset_device(d.handle); errno != 0 {
-		return usbError(errno)
-	}
-	return nil
+	return libusb.reset(d.handle)
 }
 
 func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
-	//log.Printf("control xfer: %d:%d/%d:%d %x", idx, rType, request, val, string(data))
-	dataSlice := (*reflect.SliceHeader)(unsafe.Pointer(&data))
-	n := C.libusb_control_transfer(
-		d.handle,
-		C.uint8_t(rType),
-		C.uint8_t(request),
-		C.uint16_t(val),
-		C.uint16_t(idx),
-		(*C.uchar)(unsafe.Pointer(dataSlice.Data)),
-		C.uint16_t(len(data)),
-		C.uint(d.ControlTimeout/time.Millisecond))
-	if n < 0 {
-		return int(n), usbError(n)
-	}
-	return int(n), nil
+	return libusb.control(d.handle, d.ControlTimeout, rType, request, val, idx, data)
 }
 
 // ActiveConfig returns the config id (not the index) of the active configuration.
 // This corresponds to the ConfigInfo.Config field.
 func (d *Device) ActiveConfig() (uint8, error) {
-	var cfg C.int
-	if errno := C.libusb_get_configuration(d.handle, &cfg); errno < 0 {
-		return 0, usbError(errno)
-	}
-	return uint8(cfg), nil
+	return libusb.getConfig(d.handle)
 }
 
 // SetConfig attempts to change the active configuration.
 // The cfg provided is the config id (not the index) of the configuration to set,
 // which corresponds to the ConfigInfo.Config field.
 func (d *Device) SetConfig(cfg uint8) error {
-	if errno := C.libusb_set_configuration(d.handle, C.int(cfg)); errno < 0 {
-		return usbError(errno)
-	}
-	return nil
+	return libusb.setConfig(d.handle, cfg)
 }
 
 // Close the device.
@@ -114,9 +85,9 @@ func (d *Device) Close() error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	for iface := range d.claimed {
-		C.libusb_release_interface(d.handle, C.int(iface))
+		libusb.release(d.handle, iface)
 	}
-	C.libusb_close(d.handle)
+	libusb.close(d.handle)
 	d.handle = nil
 	return nil
 }
@@ -162,19 +133,19 @@ func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error
 found:
 
 	// Set the configuration
-	var activeConf C.int
-	if errno := C.libusb_get_configuration(d.handle, &activeConf); errno < 0 {
-		return nil, fmt.Errorf("usb: getcfg: %s", usbError(errno))
+	activeConf, err := libusb.getConfig(d.handle)
+	if err != nil {
+		return nil, fmt.Errorf("usb: getcfg: %s", err)
 	}
-	if int(activeConf) != int(conf) {
-		if errno := C.libusb_set_configuration(d.handle, C.int(conf)); errno < 0 {
-			return nil, fmt.Errorf("usb: setcfg: %s", usbError(errno))
+	if activeConf != conf {
+		if err := libusb.setConfig(d.handle, conf); err != nil {
+			return nil, fmt.Errorf("usb: setcfg: %s", err)
 		}
 	}
 
 	// Claim the interface
-	if errno := C.libusb_claim_interface(d.handle, C.int(iface)); errno < 0 {
-		return nil, fmt.Errorf("usb: claim: %s", usbError(errno))
+	if err := libusb.claim(d.handle, iface); err != nil {
+		return nil, fmt.Errorf("usb: claim: %s", err)
 	}
 
 	// Increment the claim count
@@ -184,9 +155,8 @@ found:
 
 	// Choose the alternate
 	if setAlternate {
-		if errno := C.libusb_set_interface_alt_setting(d.handle, C.int(iface), C.int(setup)); errno < 0 {
-			debug.Printf("altsetting error: %s", usbError(errno))
-			return nil, fmt.Errorf("usb: setalt: %s", usbError(errno))
+		if err := libusb.setAlt(d.handle, iface, setup); err != nil {
+			return nil, fmt.Errorf("usb: setalt: %s", err)
 		}
 	}
 
@@ -194,26 +164,7 @@ found:
 }
 
 func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
-
-	// allocate 200-byte array limited the length of string descriptor
-	goBuffer := make([]byte, 200)
-
-	// get string descriptor from libusb. if errno < 0 then there are any errors.
-	// if errno >= 0; it is a length of result string descriptor
-	errno := C.libusb_get_string_descriptor_ascii(
-		d.handle,
-		C.uint8_t(desc_index),
-		(*C.uchar)(unsafe.Pointer(&goBuffer[0])),
-		200)
-
-	// if any errors occur
-	if errno < 0 {
-		return "", fmt.Errorf("usb: getstr: %s", usbError(errno))
-	}
-	// convert slice of byte to string with limited length from errno
-	stringDescriptor := string(goBuffer[:errno])
-
-	return stringDescriptor, nil
+	return libusb.getStringDesc(d.handle, desc_index)
 }
 
 // SetAutoDetach enables/disables libusb's automatic kernel driver detachment.
@@ -221,20 +172,12 @@ func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
 // on the interface and reattach it when releasing the interface.
 // Automatic kernel driver detachment is disabled on newly opened device handles by default.
 func (d *Device) SetAutoDetach(autodetach bool) error {
-	autodetachInt := 0
-	if autodetach {
+	var autodetachInt int
+	switch autodetach {
+	case true:
 		autodetachInt = 1
+	case false:
+		autodetachInt = 0
 	}
-
-	err := C.libusb_set_auto_detach_kernel_driver(
-		d.handle,
-		C.int(autodetachInt),
-	)
-
-	// TODO LIBUSB_ERROR_NOT_SUPPORTED (-12) handling
-	// if any errors occur
-	if err != C.int(SUCCESS) {
-		return fmt.Errorf("usb: setautodetach: %s", usbError(err))
-	}
-	return nil
+	return libusb.setAutoDetach(d.handle, autodetachInt)
 }

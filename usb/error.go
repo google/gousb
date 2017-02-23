@@ -28,6 +28,14 @@ func (e usbError) Error() string {
 	return fmt.Sprintf("libusb: %s [code %d]", usbErrorString[e], int(e))
 }
 
+func fromUSBError(errno C.int) error {
+	err := usbError(errno)
+	if err == SUCCESS {
+		return nil
+	}
+	return err
+}
+
 const (
 	SUCCESS             usbError = C.LIBUSB_SUCCESS
 	ERROR_IO            usbError = C.LIBUSB_ERROR_IO

@@ -20,50 +20,26 @@ package usb
 // #include <libusb.h>
 import "C"
 
-import (
-	"log"
-	"reflect"
-	"unsafe"
-)
-
 type Context struct {
-	ctx  *C.libusb_context
+	ctx  *libusbContext
 	done chan struct{}
 }
 
 func (c *Context) Debug(level int) {
-	C.libusb_set_debug(c.ctx, C.int(level))
+	libusb.setDebug(c.ctx, level)
 }
 
 func NewContext() *Context {
-	c := &Context{
+	c, err := libusb.init()
+	if err != nil {
+		panic(err)
+	}
+	ctx := &Context{
+		ctx:  c,
 		done: make(chan struct{}),
 	}
-
-	if errno := C.libusb_init(&c.ctx); errno != 0 {
-		panic(usbError(errno))
-	}
-
-	go func() {
-		tv := C.struct_timeval{
-			tv_sec:  0,
-			tv_usec: 100000,
-		}
-		for {
-			select {
-			case <-c.done:
-				return
-			default:
-			}
-			if errno := C.libusb_handle_events_timeout_completed(c.ctx, &tv, nil); errno < 0 {
-				log.Printf("handle_events: error: %s", usbError(errno))
-				continue
-			}
-			//log.Printf("handle_events returned")
-		}
-	}()
-
-	return c
+	go libusb.handleEvents(ctx.ctx, ctx.done)
+	return ctx
 }
 
 // ListDevices calls each with each enumerated device.
@@ -72,36 +48,30 @@ func NewContext() *Context {
 // If there are any errors enumerating the devices,
 // the final one is returned along with any successfully opened devices.
 func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, error) {
-	var list **C.libusb_device
-	cnt := C.libusb_get_device_list(c.ctx, &list)
-	if cnt < 0 {
-		return nil, usbError(cnt)
-	}
-	defer C.libusb_free_device_list(list, 1)
-
-	var slice []*C.libusb_device
-	*(*reflect.SliceHeader)(unsafe.Pointer(&slice)) = reflect.SliceHeader{
-		Data: uintptr(unsafe.Pointer(list)),
-		Len:  int(cnt),
-		Cap:  int(cnt),
+	list, err := libusb.getDevices(c.ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	var reterr error
 	var ret []*Device
-	for _, dev := range slice {
-		desc, err := newDescriptor(dev)
+	for _, dev := range list {
+		desc, err := libusb.getDeviceDesc(dev)
 		if err != nil {
+			libusb.dereference(dev)
 			reterr = err
 			continue
 		}
 
 		if each(desc) {
-			var handle *C.libusb_device_handle
-			if errno := C.libusb_open(dev, &handle); errno != 0 {
-				reterr = usbError(errno)
+			handle, err := libusb.open(dev)
+			if err != nil {
+				reterr = err
 				continue
 			}
 			ret = append(ret, newDevice(handle, desc))
+		} else {
+			libusb.dereference(dev)
 		}
 	}
 	return ret, reterr
@@ -110,21 +80,14 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 // OpenDeviceWithVidPid opens Device from specific VendorId and ProductId.
 // If there are any errors, it'll returns at second value.
 func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
-
-	handle := C.libusb_open_device_with_vid_pid(c.ctx, (C.uint16_t)(vid), (C.uint16_t)(pid))
-	if handle == nil {
-		return nil, ERROR_NOT_FOUND
+	dev, handle, err := libusb.openVIDPID(c.ctx, vid, pid)
+	if err != nil {
+		return nil, err
 	}
-
-	dev := C.libusb_get_device(handle)
-	if dev == nil {
-		return nil, ERROR_NO_DEVICE
-	}
-
-	desc, err := newDescriptor(dev)
-
+	desc, err := libusb.getDeviceDesc(dev)
 	// return an error from nil-handle and nil-device
 	if err != nil {
+		libusb.dereference(dev)
 		return nil, err
 	}
 
@@ -135,7 +98,7 @@ func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
 func (c *Context) Close() error {
 	close(c.done)
 	if c.ctx != nil {
-		C.libusb_exit(c.ctx)
+		libusb.exit(c.ctx)
 	}
 	c.ctx = nil
 	return nil

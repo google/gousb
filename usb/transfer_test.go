@@ -87,12 +87,10 @@ func TestNewTransfer(t *testing.T) {
 }
 
 func TestTransferProtocol(t *testing.T) {
-	origSubmit, origCancel := cSubmit, cCancel
-	defer func() { cSubmit, cCancel = origSubmit, origCancel }()
+	defer func(i libusbIntf) { libusb = i }(libusb)
 
 	f := newFakeLibusb()
-	cSubmit = f.submit
-	cCancel = f.cancel
+	libusb = f
 
 	xfers := make([]*usbTransfer, 2)
 	var err error
@@ -167,12 +165,10 @@ func TestTransferProtocol(t *testing.T) {
 }
 
 func TestIsoPackets(t *testing.T) {
-	origSubmit, origCancel := cSubmit, cCancel
-	defer func() { cSubmit, cCancel = origSubmit, origCancel }()
+	defer func(i libusbIntf) { libusb = i }(libusb)
 
 	f := newFakeLibusb()
-	cSubmit = f.submit
-	cCancel = f.cancel
+	libusb = f
 
 	xfer, err := newUSBTransfer(nil, EndpointInfo{
 		Address:       0x82,

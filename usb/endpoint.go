@@ -34,7 +34,7 @@ type transferIntf interface {
 }
 
 type endpoint struct {
-	h *deviceHandle
+	h *libusbDevHandle
 
 	InterfaceSetup
 	EndpointInfo
@@ -92,7 +92,7 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 
 func newEndpoint(d *Device) *endpoint {
 	ep := &endpoint{
-		h:            (*deviceHandle)(d.handle),
+		h:            d.handle,
 		readTimeout:  d.ReadTimeout,
 		writeTimeout: d.WriteTimeout,
 	}
