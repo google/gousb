@@ -133,12 +133,11 @@ func newUSBTransfer(dev *libusbDevHandle, ei EndpointInfo, buf []byte, timeout t
 		}
 	}
 
-	xfer, err := libusb.alloc(isoPackets)
+	xfer, err := libusb.alloc(dev, isoPackets)
 	if err != nil {
 		return nil, err
 	}
 
-	xfer.dev_handle = (*C.struct_libusb_device_handle)(dev)
 	xfer.timeout = C.uint(timeout / time.Millisecond)
 	xfer.endpoint = C.uchar(ei.Address)
 	xfer._type = C.uchar(tt)
