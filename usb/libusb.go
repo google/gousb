@@ -23,6 +23,7 @@ import (
 )
 
 /*
+#cgo pkg-config: libusb-1.0
 #include <libusb.h>
 
 int compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);

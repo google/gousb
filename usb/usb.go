@@ -16,10 +16,6 @@
 // Package usb provides a wrapper around libusb-1.0.
 package usb
 
-// #cgo pkg-config: libusb-1.0
-// #include <libusb.h>
-import "C"
-
 type Context struct {
 	ctx  *libusbContext
 	done chan struct{}
