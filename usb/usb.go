@@ -133,7 +133,7 @@ func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
 }
 
 func (c *Context) Close() error {
-	close(c.done)
+	c.done <- struct{}{}
 	if c.ctx != nil {
 		C.libusb_exit(c.ctx)
 	}
