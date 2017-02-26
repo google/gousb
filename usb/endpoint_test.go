@@ -15,23 +15,12 @@
 package usb
 
 import (
-	"errors"
 	"reflect"
 	"testing"
-	"time"
 )
 
-type fakeTransfer struct {
-	buf []byte
-	ret int
-	err error
-}
-
-func (t *fakeTransfer) submit() error      { return nil }
-func (t *fakeTransfer) wait() (int, error) { return t.ret, t.err }
-func (t *fakeTransfer) free() error        { return nil }
-
 func TestEndpoint(t *testing.T) {
+	defer func(i libusbIntf) { libusb = i }(libusb)
 	for _, epCfg := range []struct {
 		method string
 		InterfaceSetup
@@ -42,35 +31,58 @@ func TestEndpoint(t *testing.T) {
 	} {
 		t.Run(epCfg.method, func(t *testing.T) {
 			for _, tc := range []struct {
+				desc    string
 				buf     []byte
 				ret     int
-				err     error
+				status  TransferStatus
 				want    int
 				wantErr bool
 			}{
-				{buf: nil, ret: 10, want: 0},
-				{buf: make([]byte, 128), ret: 60, want: 60},
-				{buf: make([]byte, 128), ret: 10, err: errors.New("some error"), want: 10, wantErr: true},
+				{
+					desc: "empty buffer",
+					buf:  nil,
+					ret:  10,
+					want: 0,
+				},
+				{
+					desc: "128B buffer, 60 transferred",
+					buf:  make([]byte, 128),
+					ret:  60,
+					want: 60,
+				},
+				{
+					desc:    "128B buffer, 10 transferred and then error",
+					buf:     make([]byte, 128),
+					ret:     10,
+					status:  LIBUSB_TRANSFER_ERROR,
+					want:    10,
+					wantErr: true,
+				},
 			} {
+				lib := newFakeLibusb()
+				libusb = lib
 				ep := &endpoint{
 					InterfaceSetup: epCfg.InterfaceSetup,
 					EndpointInfo:   epCfg.EndpointInfo,
-					newUSBTransfer: func(buf []byte, timeout time.Duration) (transferIntf, error) {
-						return &fakeTransfer{buf: buf, ret: tc.ret, err: tc.err}, nil
-					},
 				}
 				op, ok := reflect.TypeOf(ep).MethodByName(epCfg.method)
 				if !ok {
 					t.Fatalf("method %s not found in endpoint struct", epCfg.method)
 				}
+				go func() {
+					fakeT := lib.waitForSubmitted()
+					fakeT.length = tc.ret
+					fakeT.status = tc.status
+					close(fakeT.done)
+				}()
 				opv := op.Func.Interface().(func(*endpoint, []byte) (int, error))
 				got, err := opv(ep, tc.buf)
 				if (err != nil) != tc.wantErr {
-					t.Errorf("bulkInEP.Read(): got err: %v, err != nil is %v, want %v", err, err != nil, tc.wantErr)
+					t.Errorf("%s: bulkInEP.Read(): got err: %v, err != nil is %v, want %v", tc.desc, err, err != nil, tc.wantErr)
 					continue
 				}
 				if got != tc.want {
-					t.Errorf("bulkInEP.Read(): got %d bytes, want %d", got, tc.want)
+					t.Errorf("%s: bulkInEP.Read(): got %d bytes, want %d", tc.desc, got, tc.want)
 				}
 			}
 		})
