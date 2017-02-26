@@ -17,6 +17,7 @@ package usb
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestEndpoint(t *testing.T) {
@@ -61,10 +62,7 @@ func TestEndpoint(t *testing.T) {
 			} {
 				lib := newFakeLibusb()
 				libusb = lib
-				ep := &endpoint{
-					InterfaceSetup: epCfg.InterfaceSetup,
-					EndpointInfo:   epCfg.EndpointInfo,
-				}
+				ep := newEndpoint(nil, epCfg.InterfaceSetup, epCfg.EndpointInfo, time.Second, time.Second)
 				op, ok := reflect.TypeOf(ep).MethodByName(epCfg.method)
 				if !ok {
 					t.Fatalf("method %s not found in endpoint struct", epCfg.method)

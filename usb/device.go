@@ -141,7 +141,7 @@ func (d *Device) OpenEndpoint(cfgNum, ifNum, setNum, epNum uint8) (Endpoint, err
 		return nil, fmt.Errorf("usb: unknown endpoint %02x", epNum)
 	}
 
-	end := newEndpoint(d, *ifs, *ep)
+	end := newEndpoint(d.handle, *ifs, *ep, d.ReadTimeout, d.WriteTimeout)
 
 	// Set the configuration
 	activeConf, err := libusb.getConfig(d.handle)
