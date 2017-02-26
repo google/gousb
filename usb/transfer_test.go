@@ -17,7 +17,6 @@ package usb
 import (
 	"testing"
 	"time"
-	"unsafe"
 )
 
 func TestNewTransfer(t *testing.T) {
@@ -107,24 +106,26 @@ func TestTransferProtocol(t *testing.T) {
 	}
 
 	go func() {
-		f.waitForSubmit(xfers[0])
-		f.runCallback(xfers[0], func(t *usbTransfer) {
-			t.xfer.actual_length = 5
-			t.xfer.status = uint32(SUCCESS)
-			copy(t.buf, []byte{1, 2, 3, 4, 5})
-		})
-	}()
-	go func() {
-		f.waitForSubmit(xfers[1])
-		f.runCallback(xfers[1], func(t *usbTransfer) {
-			t.xfer.actual_length = 99
-			t.xfer.status = uint32(SUCCESS)
-			copy(t.buf, []byte{12, 12, 12, 12, 12})
-		})
+		ft := f.waitForSubmitted()
+		ft.length = 5
+		ft.status = LIBUSB_TRANSFER_COMPLETED
+		copy(ft.buf, []byte{1, 2, 3, 4, 5})
+		close(ft.done)
+
+		ft = f.waitForSubmitted()
+		ft.length = 99
+		ft.status = LIBUSB_TRANSFER_COMPLETED
+		copy(ft.buf, []byte{12, 12, 12, 12, 12})
+		close(ft.done)
+
+		ft = f.waitForSubmitted()
+		ft.length = 123
+		ft.status = LIBUSB_TRANSFER_CANCELLED
+		close(ft.done)
 	}()
 
-	xfers[1].submit()
 	xfers[0].submit()
+	xfers[1].submit()
 	got, err := xfers[0].wait()
 	if err != nil {
 		t.Errorf("xfer#0.wait returned error %v, want nil", err)
@@ -140,13 +141,6 @@ func TestTransferProtocol(t *testing.T) {
 		t.Errorf("xfer#0.wait returned %d bytes, want %d", got, want)
 	}
 
-	go func() {
-		f.waitForSubmit(xfers[1])
-		f.runCallback(xfers[1], func(t *usbTransfer) {
-			t.xfer.actual_length = 123
-			t.xfer.status = uint32(LIBUSB_TRANSFER_CANCELLED)
-		})
-	}()
 	xfers[1].submit()
 	xfers[1].cancel()
 	got, err = xfers[1].wait()
@@ -161,66 +155,5 @@ func TestTransferProtocol(t *testing.T) {
 		x.cancel()
 		x.wait()
 		x.free()
-	}
-}
-
-func TestIsoPackets(t *testing.T) {
-	defer func(i libusbIntf) { libusb = i }(libusb)
-
-	f := newFakeLibusb()
-	libusb = f
-
-	xfer, err := newUSBTransfer(nil, EndpointInfo{
-		Address:       0x82,
-		Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
-		MaxPacketSize: 3<<11 + 1024,
-		MaxIsoPacket:  3 * 1024,
-		PollInterval:  1,
-	}, make([]byte, 15000), time.Second)
-	if err != nil {
-		t.Fatalf("newUSBTransfer: %v", err)
-	}
-
-	// 15000 / (3*1024) = 4.something, rounded up to 5
-	if got, want := int(xfer.xfer.num_iso_packets), 5; got != want {
-		t.Fatalf("newUSBTransfer: got %d iso packets, want %d", got, want)
-	}
-
-	go func() {
-		f.waitForSubmit(xfer)
-		f.runCallback(xfer, func(x *usbTransfer) {
-			x.xfer.actual_length = 1234 // meaningless for iso transfers
-			x.xfer.status = uint32(LIBUSB_TRANSFER_TIMED_OUT)
-			for i := 0; i < int(xfer.xfer.num_iso_packets); i++ {
-				// this is a horrible calculation.
-				// libusb_transfer uses a flexible array for the iso packet
-				// descriptors at the end of the transfer struct.
-				// The only way to get access to the elements of that array
-				// is to use pointer arithmetic.
-				// Calculate the offset of the first descriptor in the struct,
-				// then move by sizeof(iso descriptor) for num_iso_packets.
-				desc := (*libusbIso)(unsafe.Pointer(uintptr(unsafe.Pointer(x.xfer)) + libusbIsoOffset + uintptr(i*libusbIsoSize)))
-				// max iso packet = 3 * 1024
-				if desc.length != 3*1024 {
-					t.Errorf("iso pkt length: got %d, want %d", desc.length, 3*1024)
-				}
-				desc.actual_length = 100
-				// packets 0..2 are successful, packet 3 is timed out
-				if i != 4 {
-					desc.status = uint32(LIBUSB_TRANSFER_COMPLETED)
-				} else {
-					desc.status = uint32(LIBUSB_TRANSFER_TIMED_OUT)
-				}
-			}
-		})
-	}()
-
-	xfer.submit()
-	got, err := xfer.wait()
-	if err == nil {
-		t.Error("Iso transfer: got nil error, want non-nil")
-	}
-	if want := 4 * 100; got != want {
-		t.Errorf("Iso transfer: got %d bytes, want %d", got, want)
 	}
 }
