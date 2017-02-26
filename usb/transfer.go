@@ -20,7 +20,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 type usbTransfer struct {
@@ -48,8 +47,7 @@ func (t *usbTransfer) submit() error {
 		return errors.New("transfer was already submitted and is not finished yet.")
 	}
 	t.done = make(chan struct{})
-	t.xfer.user_data = (unsafe.Pointer)(&t.done)
-	if err := libusb.submit(t.xfer); err != nil {
+	if err := libusb.submit(t.xfer, t.done); err != nil {
 		return err
 	}
 	t.submitted = true
@@ -73,13 +71,7 @@ func (t *usbTransfer) wait() (n int, err error) {
 	case <-t.done:
 	}
 	t.submitted = false
-	var status TransferStatus
-	switch TransferType(t.xfer._type) {
-	case TRANSFER_TYPE_ISOCHRONOUS:
-		n, status = libusb.compactIsoData(t.xfer)
-	default:
-		n, status = int(t.xfer.actual_length), TransferStatus(t.xfer.status)
-	}
+	n, status := libusb.data(t.xfer)
 	if status != LIBUSB_TRANSFER_COMPLETED {
 		return n, status
 	}
