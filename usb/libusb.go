@@ -70,13 +70,13 @@ type libusbIntf interface {
 	release(*libusbDevHandle, uint8)
 	setAlt(*libusbDevHandle, uint8, uint8) error
 
-	// endpoint
+	// transfer
 	alloc(*libusbDevHandle, uint8, TransferType, time.Duration, int, []byte) (*libusbTransfer, error)
 	cancel(*libusbTransfer) error
-	submit(*libusbTransfer) error
+	submit(*libusbTransfer, chan struct{}) error
+	data(*libusbTransfer) (int, TransferStatus)
 	free(*libusbTransfer)
 	setIsoPacketLengths(*libusbTransfer, uint32)
-	compactIsoData(*libusbTransfer) (int, TransferStatus)
 }
 
 // libusbImpl is an implementation of libusbIntf using real CGo-wrapped libusb.
@@ -91,7 +91,7 @@ func (libusbImpl) init() (*libusbContext, error) {
 }
 
 func (libusbImpl) handleEvents(c *libusbContext, done <-chan struct{}) {
-	tv := C.struct_timeval{tv_sec: 10}
+	tv := C.struct_timeval{tv_usec: 100e3}
 	for {
 		select {
 		case <-done:
@@ -346,8 +346,18 @@ func (libusbImpl) cancel(t *libusbTransfer) error {
 	return fromUSBError(C.libusb_cancel_transfer((*C.struct_libusb_transfer)(t)))
 }
 
-func (libusbImpl) submit(t *libusbTransfer) error {
+func (libusbImpl) submit(t *libusbTransfer, done chan struct{}) error {
+	t.user_data = (unsafe.Pointer)(&done)
 	return fromUSBError(C.submit((*C.struct_libusb_transfer)(t)))
+}
+
+func (libusbImpl) data(t *libusbTransfer) (int, TransferStatus) {
+	if TransferType(t._type) == TRANSFER_TYPE_ISOCHRONOUS {
+		var status TransferStatus
+		n := int(C.compact_iso_data((*C.struct_libusb_transfer)(t), (*C.uchar)(unsafe.Pointer(&status))))
+		return n, status
+	}
+	return int(t.actual_length), TransferStatus(t.status)
 }
 
 func (libusbImpl) free(t *libusbTransfer) {
@@ -356,12 +366,6 @@ func (libusbImpl) free(t *libusbTransfer) {
 
 func (libusbImpl) setIsoPacketLengths(t *libusbTransfer, length uint32) {
 	C.libusb_set_iso_packet_lengths((*C.struct_libusb_transfer)(t), C.uint(length))
-}
-
-func (libusbImpl) compactIsoData(t *libusbTransfer) (int, TransferStatus) {
-	var status TransferStatus
-	n := int(C.compact_iso_data((*C.struct_libusb_transfer)(t), (*C.uchar)(unsafe.Pointer(&status))))
-	return n, status
 }
 
 // libusb is an injection point for tests
