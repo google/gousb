@@ -92,70 +92,81 @@ func (d *Device) Close() error {
 	return nil
 }
 
-func (d *Device) OpenEndpoint(conf, iface, setup, epoint uint8) (Endpoint, error) {
-	end := newEndpoint(d)
+func (d *Device) OpenEndpoint(cfgNum, ifNum, setNum, epNum uint8) (Endpoint, error) {
+	var cfg *ConfigInfo
+	for _, c := range d.Configs {
+		if c.Config == cfgNum {
+			debug.Printf("found conf: %#v\n", c)
+			cfg = &c
+			break
+		}
+	}
+	if cfg == nil {
+		return nil, fmt.Errorf("usb: unknown configuration %02x", cfgNum)
+	}
+
+	var intf *InterfaceInfo
+	for _, i := range cfg.Interfaces {
+		if i.Number == ifNum {
+			debug.Printf("found iface: %#v\n", i)
+			intf = &i
+			break
+		}
+	}
+	if intf == nil {
+		return nil, fmt.Errorf("usb: unknown interface %02x", ifNum)
+	}
 
 	var setAlternate bool
-	for _, c := range d.Configs {
-		if c.Config != conf {
-			continue
+	var ifs *InterfaceSetup
+	for i, s := range intf.Setups {
+		if s.Alternate == setNum {
+			setAlternate = i != 0
+			debug.Printf("found setup: %#v [default: %v]\n", s, !setAlternate)
+			ifs = &s
 		}
-		debug.Printf("found conf: %#v\n", c)
-		for _, i := range c.Interfaces {
-			if i.Number != iface {
-				continue
-			}
-			debug.Printf("found iface: %#v\n", i)
-			for i, s := range i.Setups {
-				if s.Alternate != setup {
-					continue
-				}
-				setAlternate = i != 0
-
-				debug.Printf("found setup: %#v [default: %v]\n", s, !setAlternate)
-				for _, e := range s.Endpoints {
-					debug.Printf("ep %02x search: %#v\n", epoint, s)
-					if e.Address != epoint {
-						continue
-					}
-					end.InterfaceSetup = s
-					end.EndpointInfo = e
-					goto found
-				}
-				return nil, fmt.Errorf("usb: unknown endpoint %02x", epoint)
-			}
-			return nil, fmt.Errorf("usb: unknown setup %02x", setup)
-		}
-		return nil, fmt.Errorf("usb: unknown interface %02x", iface)
 	}
-	return nil, fmt.Errorf("usb: unknown configuration %02x", conf)
+	if ifs == nil {
+		return nil, fmt.Errorf("usb: unknown setup %02x", setNum)
+	}
 
-found:
+	var ep *EndpointInfo
+	for _, e := range ifs.Endpoints {
+		if e.Address == epNum {
+			debug.Printf("found ep %02x in %#v\n", epNum, *ifs)
+			ep = &e
+		}
+	}
+	if ep == nil {
+		return nil, fmt.Errorf("usb: unknown endpoint %02x", epNum)
+	}
+
+	end := newEndpoint(d, *ifs, *ep)
 
 	// Set the configuration
 	activeConf, err := libusb.getConfig(d.handle)
 	if err != nil {
 		return nil, fmt.Errorf("usb: getcfg: %s", err)
 	}
-	if activeConf != conf {
-		if err := libusb.setConfig(d.handle, conf); err != nil {
+	if activeConf != cfgNum {
+		if err := libusb.setConfig(d.handle, cfgNum); err != nil {
 			return nil, fmt.Errorf("usb: setcfg: %s", err)
 		}
 	}
 
 	// Claim the interface
-	if err := libusb.claim(d.handle, iface); err != nil {
+	if err := libusb.claim(d.handle, ifNum); err != nil {
 		return nil, fmt.Errorf("usb: claim: %s", err)
 	}
 
 	// Increment the claim count
 	d.lock.Lock()
-	d.claimed[iface]++
+	d.claimed[ifNum]++
 	d.lock.Unlock() // unlock immediately because the next calls may block
 
 	// Choose the alternate
 	if setAlternate {
-		if err := libusb.setAlt(d.handle, iface, setup); err != nil {
+		if err := libusb.setAlt(d.handle, ifNum, setNum); err != nil {
 			return nil, fmt.Errorf("usb: setalt: %s", err)
 		}
 	}
