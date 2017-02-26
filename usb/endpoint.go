@@ -78,10 +78,12 @@ func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	return n, nil
 }
 
-func newEndpoint(d *Device) *endpoint {
+func newEndpoint(d *Device, s InterfaceSetup, e EndpointInfo) *endpoint {
 	return &endpoint{
-		h:            d.handle,
-		readTimeout:  d.ReadTimeout,
-		writeTimeout: d.WriteTimeout,
+		InterfaceSetup: s,
+		EndpointInfo:   e,
+		h:              d.handle,
+		readTimeout:    d.ReadTimeout,
+		writeTimeout:   d.WriteTimeout,
 	}
 }
