@@ -6,7 +6,7 @@ go:
   - 1.8
   - tip
 
-script: go test -v -test.run='BCD|Parse' -bench.run=. ./...
+script: go test -v -test.run='BCD|Parse' ./...
 
 addons:
   apt:
