@@ -381,3 +381,8 @@ func xfer_callback(cptr unsafe.Pointer) {
 	ch := *(*chan struct{})(cptr)
 	close(ch)
 }
+
+// for benchmarking
+func libusbSetDebug(c *libusbContext, lvl int) {
+	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
+}
