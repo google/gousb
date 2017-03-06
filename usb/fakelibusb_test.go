@@ -15,6 +15,7 @@
 package usb
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
@@ -40,6 +41,8 @@ type fakeLibusb struct {
 	ts map[*libusbTransfer]*fakeTransfer
 	// submitted receives a fakeTransfers when submit() is called.
 	submitted chan *fakeTransfer
+	// handlers is a map of device handles pointing at opened devices.
+	handlers map[*libusbDevHandle]*libusbDevice
 }
 
 func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ uint8, _ TransferType, _ time.Duration, _ int, buf []byte) (*libusbTransfer, error) {
@@ -80,6 +83,67 @@ func newFakeLibusb() *fakeLibusb {
 	return &fakeLibusb{
 		ts:         make(map[*libusbTransfer]*fakeTransfer),
 		submitted:  make(chan *fakeTransfer, 10),
+		handlers:   make(map[*libusbDevHandle]*libusbDevice),
 		libusbIntf: libusbImpl{},
 	}
+}
+
+var (
+	fakeDev1 = new(libusbDevice)
+	fakeDev2 = new(libusbDevice)
+)
+
+func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
+	return []*libusbDevice{fakeDev1, fakeDev2}, nil
+}
+
+func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
+	switch d {
+	case fakeDev1:
+		// Bus 001 Device 001: ID 9999:0001
+		// One config, one interface, one setup,
+		// two endpoints: 0x01 write, 0x82 read.
+		return &Descriptor{
+			Bus:      1,
+			Address:  1,
+			Spec:     USB_2_0,
+			Device:   BCD(0x0100), // 1.00
+			Vendor:   ID(0x9999),
+			Product:  ID(0x0001),
+			Protocol: 255,
+			Configs: []ConfigInfo{{
+				Config:     1,
+				Attributes: uint8(TRANSFER_TYPE_BULK),
+				MaxPower:   50, // * 2mA
+				Interfaces: []InterfaceInfo{{
+					Number: 0,
+					Setups: []InterfaceSetup{{
+						Number:    0,
+						Alternate: 0,
+						IfClass:   uint8(CLASS_VENDOR_SPEC),
+						Endpoints: []EndpointInfo{},
+					}},
+				}},
+			}},
+		}, nil
+	case fakeDev2:
+		return &Descriptor{}, nil
+	}
+	return nil, errors.New("invalid USB device")
+}
+
+func (f *fakeLibusb) dereference(d *libusbDevice) {}
+
+func (f *fakeLibusb) open(d *libusbDevice) (*libusbDevHandle, error) {
+	h := new(libusbDevHandle)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.handlers[h] = d
+	return h, nil
+}
+
+func (f *fakeLibusb) close(h *libusbDevHandle) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.handlers, h)
 }
