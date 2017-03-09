@@ -21,5 +21,5 @@ install:
 
 script:
   # a workaround for go test not supporting coverage for multiple packages in a single invocation
-  - echo 'mode: count' > coverage.merged && go list ./... | xargs -n1 -I{} sh -c 'go test -covermode=count -coverprofile=coverage.tmp -test.run="BCD|Parse" {} && tail -n +2 coverage.tmp >> coverage.merged' && rm coverage.tmp
+  - sh -c "echo 'mode: count' > coverage.merged && go list ./... | xargs -n1 -I{} sh -c 'go test -covermode=count -coverprofile=coverage.tmp -test.run=BCD\|Parse {} && tail -n +2 coverage.tmp >> coverage.merged' && rm coverage.tmp"
   - $HOME/gopath/bin/goveralls -coverprofile=coverage.merged -service=travis-ci -repotoken $COVERALLS_TOKEN
