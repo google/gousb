@@ -24,7 +24,7 @@ import (
 
 func TestGetStringDescriptorAscii(t *testing.T) {
 	if os.Getenv("TRAVIS") == "true" {
-		t.Skip("This test is known to fail under TravisCI")
+		t.Skip("test known to fail on Travis")
 	}
 	c := NewContext()
 	defer c.Close()
