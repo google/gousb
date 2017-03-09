@@ -6,9 +6,18 @@ go:
   - 1.8
   - tip
 
-script: go test -v -test.run='BCD|Parse' ./...
+install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+
+script:
+  - go test -v -covermode=count -coverprofile=coverage.out -test.run='BCD|Parse' ./...
+  - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
 addons:
   apt:
     packages:
       libusb-1.0-0-dev
+
+# COVERALLS_TOKEN
+secure: "jXueELysh+Zq1YZAIlHdorCANZKQL/6hRTaSLDJGeLwKnZPwKvLsn7FucNsPZ7KAL1DM8Ij7YciQOirgrKng2+KMCTgoB05erFn/Fq/cYxtIkHHE1yy0m4Iqy6q2Ttq/Lhw16Hni03Om4whX0q3W5Yk+aZTeOjKWOMoSrGTrrw7y2tqLUwBLOpl54yYk5dSJ3apPdawLFhi+DfPK4ss6qbEzN4n+g9hJJYmKSXynpcHdVCKZkVJdgVz9mm6vPRlyDVoQNfzCm015eikRigQFagSN/tYs6NtOKIPeiM820GhGsda7TXYjuqYxB3XRZkfq+o0IexPbsaSnNPDjKyB9CUAOndhJtGotRu9BnXBxLXwn3/tUzCT98cB9Sv8S826askalGTXeKr5Wv+oRjkcMUJlrh4xoXJR9gFRcLA4vOnS0fbf5snFwFwskiKNh5grKJoG5QJATTfubMAZHHApNLFcK94Zt7n4TdsE+Ui6uKkrARjIHEonCu6h8xVJA2DUfOKKtayn12b6rn3AhDCiab5YnOh8EI87McAfqYIsFse6k+PvCHIqSj6N6am1AY+Sjs9K/SbXJcwE15MwRP/Q76dsnLCsUuSOVmjbPe+Uix1PBnwd1zXIFrMxxjpLBaf5YGVH1ZfBGR6TmNJZmeCryXdpLGxGij3h1ooHMYhtdtE8="
