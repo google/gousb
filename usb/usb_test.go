@@ -78,6 +78,9 @@ func TestOpenDeviceWithVidPid(t *testing.T) {
 			t.Errorf("OpenDeviceWithVidPid(%s/%s): got error %v, want nil", ID(d.vid), ID(d.pid), err)
 		}
 		if dev != nil {
+			if dev.Descriptor.Vendor != ID(d.vid) || dev.Descriptor.Product != ID(d.pid) {
+				t.Errorf("OpenDeviceWithVidPid(%s/%s): the device returned has VID/PID %s/%s, different from specified in the arguments", ID(d.vid), ID(d.pid), dev.Descriptor.Vendor, dev.Descriptor.Product)
+			}
 			dev.Close()
 		}
 	}
