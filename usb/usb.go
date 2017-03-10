@@ -80,12 +80,13 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 // it will return a non-nil device and non-nil error. A Device.Close() must
 // be called to release the device if the returned device wasn't nil.
 func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
-	dev * Device
-	devs, err := ListDevices(func(desc *Descriptor) {
-		if dev != nil {
+	var found bool
+	devs, err := c.ListDevices(func(desc *Descriptor) bool {
+		if found {
 			return false
 		}
 		if desc.Vendor == ID(vid) && desc.Product == ID(pid) {
+			found = true
 			return true
 		}
 		return false

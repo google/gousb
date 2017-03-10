@@ -53,3 +53,32 @@ func TestListDevices(t *testing.T) {
 		}
 	}
 }
+
+func TestOpenDeviceWithVidPid(t *testing.T) {
+	orig := libusb
+	defer func() { libusb = orig }()
+	libusb = newFakeLibusb()
+
+	for _, d := range []struct {
+		vid, pid int
+		exists   bool
+	}{
+		{0x7777, 0x0003, false},
+		{0x8888, 0x0001, false},
+		{0x8888, 0x0002, true},
+		{0x9999, 0x0001, true},
+		{0x9999, 0x0002, false},
+	} {
+		c := NewContext()
+		dev, err := c.OpenDeviceWithVidPid(d.vid, d.pid)
+		if (dev != nil) != d.exists {
+			t.Errorf("OpenDeviceWithVidPid(%s/%s): device != nil is %v, want %v", ID(d.vid), ID(d.pid), dev != nil, d.exists)
+		}
+		if err != nil {
+			t.Errorf("OpenDeviceWithVidPid(%s/%s): got error %v, want nil", ID(d.vid), ID(d.pid), err)
+		}
+		if dev != nil {
+			dev.Close()
+		}
+	}
+}
