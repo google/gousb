@@ -105,3 +105,30 @@ func TestEndpointWrongDirection(t *testing.T) {
 		t.Error("isoOutEP.Read(): got nil error, want non-nil")
 	}
 }
+
+func TestOpenEndpoint(t *testing.T) {
+	origLib := libusb
+	defer func() { libusb = origLib }()
+	libusb = newFakeLibusb()
+
+	c := NewContext()
+	dev, err := c.OpenDeviceWithVidPid(0x8888, 0x0002)
+	if dev == nil {
+		t.Fatal("OpenDeviceWithVidPid(0x8888, 0x0002): got nil device, need non-nil")
+	}
+	defer dev.Close()
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): got error %v, want nil", err)
+	}
+	ep, err := dev.OpenEndpoint(1, 1, 2, 0x86)
+	if err != nil {
+		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got error %v, want nil", err)
+	}
+	i := ep.Info()
+	if got, want := i.Address, uint8(0x86); got != want {
+		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): ep.Info.Address = %x, want %x", got, want)
+	}
+	if got, want := i.MaxIsoPacket, uint32(1024); got != want {
+		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): ep.Info.MaxIsoPacket = %d, want %d", got, want)
+	}
+}
