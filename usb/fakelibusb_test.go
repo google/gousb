@@ -15,9 +15,10 @@
 package usb
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 type fakeTransfer struct {
@@ -89,21 +90,13 @@ func newFakeLibusb() *fakeLibusb {
 }
 
 var (
-	fakeDev1 = new(libusbDevice)
-	fakeDev2 = new(libusbDevice)
-)
-
-func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
-	return []*libusbDevice{fakeDev1, fakeDev2}, nil
-}
-
-func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
-	switch d {
-	case fakeDev1:
+	fakeDevices = map[*libusbDevice]*Descriptor{
 		// Bus 001 Device 001: ID 9999:0001
 		// One config, one interface, one setup,
-		// two endpoints: 0x01 write, 0x82 read.
-		return &Descriptor{
+		// two endpoints: 0x01 OUT, 0x82 IN.
+		// TODO(https://github.com/golang/go/issues/19487): replace with
+		// new(libusbDevice)
+		(*libusbDevice)(unsafe.Pointer(uintptr(1))): &Descriptor{
 			Bus:      1,
 			Address:  1,
 			Spec:     USB_2_0,
@@ -112,24 +105,118 @@ func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 			Product:  ID(0x0001),
 			Protocol: 255,
 			Configs: []ConfigInfo{{
-				Config:     1,
-				Attributes: uint8(TRANSFER_TYPE_BULK),
-				MaxPower:   50, // * 2mA
+				Config:   1,
+				MaxPower: 50, // * 2mA
 				Interfaces: []InterfaceInfo{{
 					Number: 0,
 					Setups: []InterfaceSetup{{
 						Number:    0,
 						Alternate: 0,
 						IfClass:   uint8(CLASS_VENDOR_SPEC),
-						Endpoints: []EndpointInfo{},
+						Endpoints: []EndpointInfo{{
+							Address:       uint8(0x01 | ENDPOINT_DIR_OUT),
+							Attributes:    uint8(TRANSFER_TYPE_BULK),
+							MaxPacketSize: 512,
+						}, {
+							Address:       uint8(0x02 | ENDPOINT_DIR_IN),
+							Attributes:    uint8(TRANSFER_TYPE_BULK),
+							MaxPacketSize: 512,
+						}},
 					}},
 				}},
 			}},
-		}, nil
-	case fakeDev2:
-		return &Descriptor{}, nil
+		},
+		// Bus 001 Device 002: ID 8888:0002
+		// One config, two interfaces. interface #0 with no endpoints,
+		// interface #1 with two alt setups with different packet sizes for
+		// endpoints. Two isochronous endpoints, 0x05 OUT and 0x86 OUT.
+		// TODO(https://github.com/golang/go/issues/19487): replace with
+		// new(libusbDevice)
+		(*libusbDevice)(unsafe.Pointer(uintptr(2))): &Descriptor{
+			Bus:      1,
+			Address:  2,
+			Spec:     USB_2_0,
+			Device:   BCD(0x0103), // 1.03
+			Vendor:   ID(0x8888),
+			Product:  ID(0x0002),
+			Protocol: 255,
+			Configs: []ConfigInfo{{
+				Config:   1,
+				MaxPower: 50, // * 2mA
+				Interfaces: []InterfaceInfo{{
+					Number: 0,
+					Setups: []InterfaceSetup{{
+						Number:    0,
+						Alternate: 0,
+						IfClass:   uint8(CLASS_VENDOR_SPEC),
+					}},
+				}, {
+					Number: 1,
+					Setups: []InterfaceSetup{{
+						Number:    1,
+						Alternate: 0,
+						IfClass:   uint8(CLASS_VENDOR_SPEC),
+						Endpoints: []EndpointInfo{{
+							Address:       uint8(0x05 | ENDPOINT_DIR_OUT),
+							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							MaxPacketSize: 2<<11 | 1024,
+							MaxIsoPacket:  3 * 1024,
+						}, {
+							Address:       uint8(0x06 | ENDPOINT_DIR_IN),
+							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							MaxPacketSize: 2<<11 | 1024,
+							MaxIsoPacket:  3 * 1024,
+						}},
+					}, {
+						Number:    1,
+						Alternate: 1,
+						IfClass:   uint8(CLASS_VENDOR_SPEC),
+						Endpoints: []EndpointInfo{{
+							Address:       uint8(0x05 | ENDPOINT_DIR_OUT),
+							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							MaxPacketSize: 1<<11 | 1024,
+							MaxIsoPacket:  2 * 1024,
+						}, {
+							Address:       uint8(0x06 | ENDPOINT_DIR_IN),
+							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							MaxPacketSize: 1<<11 | 1024,
+							MaxIsoPacket:  2 * 1024,
+						}},
+					}, {
+						Number:    1,
+						Alternate: 2,
+						IfClass:   uint8(CLASS_VENDOR_SPEC),
+						Endpoints: []EndpointInfo{{
+							Address:       uint8(0x05 | ENDPOINT_DIR_OUT),
+							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							MaxPacketSize: 1024,
+							MaxIsoPacket:  1024,
+						}, {
+							Address:       uint8(0x06 | ENDPOINT_DIR_IN),
+							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							MaxPacketSize: 1024,
+							MaxIsoPacket:  1024,
+						}},
+					}},
+				}},
+			}},
+		},
 	}
-	return nil, errors.New("invalid USB device")
+)
+
+func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
+	ret := make([]*libusbDevice, 0, len(fakeDevices))
+	for d := range fakeDevices {
+		ret = append(ret, d)
+	}
+	return ret, nil
+}
+
+func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
+	if desc, ok := fakeDevices[d]; ok {
+		return desc, nil
+	}
+	return nil, fmt.Errorf("invalid USB device %p", d)
 }
 
 func (f *fakeLibusb) dereference(d *libusbDevice) {}
