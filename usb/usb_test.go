@@ -15,12 +15,7 @@
 
 package usb
 
-import (
-	"bytes"
-	"log"
-	"os"
-	"testing"
-)
+import "testing"
 
 func TestListDevices(t *testing.T) {
 	orig := libusb
