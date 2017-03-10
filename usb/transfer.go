@@ -14,49 +14,13 @@
 
 package usb
 
-/*
-#include <libusb.h>
-
-int compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
-int submit(struct libusb_transfer *xfer);
-*/
-import "C"
-
 import (
 	"errors"
 	"fmt"
 	"runtime"
 	"sync"
 	"time"
-	"unsafe"
 )
-
-// libusb hooks used as injection points for tests.
-var (
-	cCancel = func(t *libusbTransfer) usbError {
-		return usbError(C.libusb_cancel_transfer((*C.struct_libusb_transfer)(t)))
-	}
-	cSubmit = func(t *libusbTransfer) usbError {
-		return usbError(C.submit((*C.struct_libusb_transfer)(t)))
-	}
-)
-
-// because of a limitation of cgo, tests cannot import C.
-type deviceHandle C.libusb_device_handle
-type libusbTransfer C.struct_libusb_transfer
-type libusbIso C.struct_libusb_iso_packet_descriptor
-
-// also for tests
-var (
-	libusbIsoSize   = C.sizeof_struct_libusb_iso_packet_descriptor
-	libusbIsoOffset = unsafe.Offsetof(C.struct_libusb_transfer{}.iso_packet_desc)
-)
-
-//export xfer_callback
-func xfer_callback(cptr unsafe.Pointer) {
-	ch := *(*chan struct{})(cptr)
-	close(ch)
-}
 
 type usbTransfer struct {
 	// mu protects the transfer state.
@@ -83,8 +47,7 @@ func (t *usbTransfer) submit() error {
 		return errors.New("transfer was already submitted and is not finished yet.")
 	}
 	t.done = make(chan struct{})
-	t.xfer.user_data = (unsafe.Pointer)(&t.done)
-	if err := cSubmit(t.xfer); err != SUCCESS {
+	if err := libusb.submit(t.xfer, t.done); err != nil {
 		return err
 	}
 	t.submitted = true
@@ -108,14 +71,7 @@ func (t *usbTransfer) wait() (n int, err error) {
 	case <-t.done:
 	}
 	t.submitted = false
-	var status TransferStatus
-	switch TransferType(t.xfer._type) {
-	case TRANSFER_TYPE_ISOCHRONOUS:
-		n = int(C.compact_iso_data((*C.struct_libusb_transfer)(t.xfer), (*C.uchar)(unsafe.Pointer(&status))))
-	default:
-		n = int(t.xfer.actual_length)
-		status = TransferStatus(t.xfer.status)
-	}
+	n, status := libusb.data(t.xfer)
 	if status != LIBUSB_TRANSFER_COMPLETED {
 		return n, status
 	}
@@ -130,15 +86,12 @@ func (t *usbTransfer) cancel() error {
 	if !t.submitted {
 		return nil
 	}
-	err := usbError(cCancel(t.xfer))
+	err := libusb.cancel(t.xfer)
 	if err == ERROR_NOT_FOUND {
 		// transfer already completed
-		err = SUCCESS
+		return nil
 	}
-	if err != SUCCESS {
-		return err
-	}
-	return nil
+	return err
 }
 
 // free releases the memory allocated for the transfer.
@@ -150,7 +103,7 @@ func (t *usbTransfer) free() error {
 	if t.submitted {
 		return errors.New("free() cannot be called on a submitted transfer until wait() returns")
 	}
-	C.libusb_free_transfer((*C.struct_libusb_transfer)(t.xfer))
+	libusb.free(t.xfer)
 	t.xfer = nil
 	t.buf = nil
 	t.done = nil
@@ -159,7 +112,7 @@ func (t *usbTransfer) free() error {
 
 // newUSBTransfer allocates a new transfer structure for communication with a
 // given device/endpoint, with buf as the underlying transfer buffer.
-func newUSBTransfer(dev *deviceHandle, ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
+func newUSBTransfer(dev *libusbDevHandle, ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets int
 	tt := ei.TransferType()
 	if tt == TRANSFER_TYPE_ISOCHRONOUS {
@@ -169,26 +122,17 @@ func newUSBTransfer(dev *deviceHandle, ei EndpointInfo, buf []byte, timeout time
 		}
 	}
 
-	xfer := C.libusb_alloc_transfer(C.int(isoPackets))
-	if xfer == nil {
-		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
+	xfer, err := libusb.alloc(dev, ei.Address, tt, timeout, isoPackets, buf)
+	if err != nil {
+		return nil, err
 	}
 
-	xfer.dev_handle = (*C.struct_libusb_device_handle)(dev)
-	xfer.timeout = C.uint(timeout / time.Millisecond)
-	xfer.endpoint = C.uchar(ei.Address)
-	xfer._type = C.uchar(tt)
-
-	xfer.buffer = (*C.uchar)((unsafe.Pointer)(&buf[0]))
-	xfer.length = C.int(len(buf))
-
 	if tt == TRANSFER_TYPE_ISOCHRONOUS {
-		xfer.num_iso_packets = C.int(isoPackets)
-		C.libusb_set_iso_packet_lengths(xfer, C.uint(ei.MaxIsoPacket))
+		libusb.setIsoPacketLengths(xfer, ei.MaxIsoPacket)
 	}
 
 	t := &usbTransfer{
-		xfer: (*libusbTransfer)(xfer),
+		xfer: xfer,
 		buf:  buf,
 	}
 	runtime.SetFinalizer(t, func(t *usbTransfer) {
