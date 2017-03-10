@@ -74,21 +74,26 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 }
 
 // OpenDeviceWithVidPid opens Device from specific VendorId and ProductId.
-// If there are any errors, it'll returns at second value.
+// If none is found, it returns nil and nil error. If there are multiple devices
+// with the same VID/PID, it will return one of them, picked arbitrarily.
+// If there were any errors during device list traversal, it is possible
+// it will return a non-nil device and non-nil error. A Device.Close() must
+// be called to release the device if the returned device wasn't nil.
 func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
-	dev, handle, err := libusb.openVIDPID(c.ctx, vid, pid)
-	if err != nil {
+	dev * Device
+	devs, err := ListDevices(func(desc *Descriptor) {
+		if dev != nil {
+			return false
+		}
+		if desc.Vendor == ID(vid) && desc.Product == ID(pid) {
+			return true
+		}
+		return false
+	})
+	if len(devs) == 0 {
 		return nil, err
 	}
-	desc, err := libusb.getDeviceDesc(dev)
-	// return an error from nil-handle and nil-device
-	if err != nil {
-		libusb.dereference(dev)
-		return nil, err
-	}
-
-	device := newDevice(handle, desc)
-	return device, nil
+	return devs[0], nil
 }
 
 func (c *Context) Close() error {

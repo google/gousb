@@ -50,7 +50,6 @@ type libusbIntf interface {
 	getDevices(*libusbContext) ([]*libusbDevice, error)
 	exit(*libusbContext)
 	setDebug(*libusbContext, int)
-	openVIDPID(*libusbContext, int, int) (*libusbDevice, *libusbDevHandle, error)
 
 	// device
 	dereference(*libusbDevice)
@@ -131,19 +130,6 @@ func (libusbImpl) exit(c *libusbContext) {
 
 func (libusbImpl) setDebug(c *libusbContext, lvl int) {
 	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
-}
-
-func (libusbImpl) openVIDPID(ctx *libusbContext, vid, pid int) (*libusbDevice, *libusbDevHandle, error) {
-	h := C.libusb_open_device_with_vid_pid((*C.libusb_context)(ctx), (C.uint16_t)(vid), (C.uint16_t)(pid))
-	if h == nil {
-		return nil, nil, ERROR_NOT_FOUND
-	}
-	dev := C.libusb_get_device(h)
-	if dev == nil {
-		return nil, nil, ERROR_NO_DEVICE
-	}
-	C.libusb_ref_device(dev)
-	return (*libusbDevice)(dev), (*libusbDevHandle)(h), nil
 }
 
 func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
