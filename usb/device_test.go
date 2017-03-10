@@ -13,15 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package usb_test
+package usb
 
 import (
 	"testing"
-
-	. "github.com/kylelemons/gousb/usb"
 )
 
 func TestGetStringDescriptorAscii(t *testing.T) {
+	t.Skip("uses real libusb, needs refactor to use a fake")
 	c := NewContext()
 	defer c.Close()
 	c.Debug(0)
