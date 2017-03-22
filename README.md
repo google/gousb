@@ -3,6 +3,7 @@ Introduction
 
 [![Build Status][ciimg]][ci]
 [![GoDoc][docimg]][doc]
+[![Coverage Status](https://coveralls.io/repos/github/kylelemons/gousb/badge.svg?branch=coverage)](https://coveralls.io/github/kylelemons/gousb?branch=coverage)
 
 The gousb package is an attempt at wrapping the libusb library into a Go-like binding.
 
