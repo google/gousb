@@ -23,6 +23,7 @@ import (
 )
 
 var (
+	// fake devices connected through the fakeLibusb stack.
 	fakeDevices = []*Descriptor{
 		// Bus 001 Device 001: ID 9999:0001
 		// One config, one interface, one setup,
@@ -150,9 +151,16 @@ type fakeTransfer struct {
 	length int
 }
 
+// fakeLibusb implements a fake libusb stack that pretends to have a number of
+// devices connected to it (see fakeDevices variable for a list of devices).
+// fakeLibusb is expected to implement all the functions related to device
+// enumeration, configuration etc. according to fakeDevices descriptors.
+// The fake devices endpoints don't have any particular behavior implemented,
+// instead fakeLibusb provides additional functions, like waitForSubmitted,
+// that allows the test to explicitly control individual transfer behavior.
 type fakeLibusb struct {
 	mu sync.Mutex
-	// fakeDevices has a map of
+	// fakeDevices has a map of devices and their descriptors.
 	fakeDevices map[*libusbDevice]*fakeDevice
 	// ts has a map of all allocated transfers, indexed by the pointer of
 	// underlying libusbTransfer.
@@ -276,6 +284,8 @@ func (f *fakeLibusb) free(t *libusbTransfer) {
 }
 func (f *fakeLibusb) setIsoPacketLengths(*libusbTransfer, uint32) {}
 
+// waitForSubmitted can be used by tests to define custom behavior of the transfers submitted on the USB bus.
+// TODO(sebek): add fields in fakeTransfer to differentiate between different devices/endpoints used concurrently.
 func (f *fakeLibusb) waitForSubmitted() *fakeTransfer {
 	return <-f.submitted
 }
