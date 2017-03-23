@@ -42,7 +42,7 @@ func (e EndpointInfo) Direction() EndpointDirection {
 }
 
 func (e EndpointInfo) String() string {
-	return fmt.Sprintf("Endpoint %d %-3s %s - %s %s [%d %d]",
+	return fmt.Sprintf("Endpoint #%d %-3s %s - %s %s [%d %d]",
 		e.Number(), e.Direction(), e.TransferType(),
 		IsoSyncType(e.Attributes)&ISO_SYNC_TYPE_MASK,
 		IsoUsageType(e.Attributes)&ISO_USAGE_TYPE_MASK,

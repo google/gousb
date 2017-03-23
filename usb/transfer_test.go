@@ -20,6 +20,9 @@ import (
 )
 
 func TestNewTransfer(t *testing.T) {
+	defer func(i libusbIntf) { libusb = i }(libusb)
+	libusb = newFakeLibusb()
+
 	for _, tc := range []struct {
 		desc        string
 		dir         EndpointDirection
@@ -33,27 +36,22 @@ func TestNewTransfer(t *testing.T) {
 		wantTimeout int
 	}{
 		{
-			desc:        "bulk in transfer, 512B packets",
-			dir:         ENDPOINT_DIR_IN,
-			tt:          TRANSFER_TYPE_BULK,
-			maxPkt:      512,
-			buf:         1024,
-			timeout:     time.Second,
-			wantIso:     0,
-			wantLength:  1024,
-			wantTimeout: 1000,
+			desc:       "bulk in transfer, 512B packets",
+			dir:        ENDPOINT_DIR_IN,
+			tt:         TRANSFER_TYPE_BULK,
+			maxPkt:     512,
+			buf:        1024,
+			timeout:    time.Second,
+			wantLength: 1024,
 		},
 		{
-			desc:        "iso out transfer, 3 * 1024B packets",
-			dir:         ENDPOINT_DIR_OUT,
-			tt:          TRANSFER_TYPE_ISOCHRONOUS,
-			maxPkt:      2<<11 + 1024,
-			maxIso:      3 * 1024,
-			buf:         10000,
-			timeout:     500 * time.Millisecond,
-			wantIso:     4,
-			wantLength:  10000,
-			wantTimeout: 500,
+			desc:       "iso out transfer, 3 * 1024B packets",
+			dir:        ENDPOINT_DIR_OUT,
+			tt:         TRANSFER_TYPE_ISOCHRONOUS,
+			maxPkt:     2<<11 + 1024,
+			maxIso:     3 * 1024,
+			buf:        10000,
+			wantLength: 10000,
 		},
 	} {
 		xfer, err := newUSBTransfer(nil, EndpointInfo{
@@ -67,20 +65,8 @@ func TestNewTransfer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("newUSBTransfer(): %v", err)
 		}
-		if got, want := len(xfer.buf), tc.buf; got != want {
+		if got, want := len(xfer.buf), tc.wantLength; got != want {
 			t.Errorf("xfer.buf: got %d bytes, want %d", got, want)
-		}
-		if got, want := int(xfer.xfer.length), tc.buf; got != want {
-			t.Errorf("xfer.length: got %d, want %d", got, want)
-		}
-		if got, want := int(xfer.xfer.num_iso_packets), tc.wantIso; got != want {
-			t.Errorf("xfer.num_iso_packets: got %d, want %d", got, want)
-		}
-		if got, want := int(xfer.xfer.timeout), tc.wantTimeout; got != want {
-			t.Errorf("xfer.timeout: got %d ms, want %d", got, want)
-		}
-		if got, want := TransferType(xfer.xfer._type), tc.tt; got != want {
-			t.Errorf("xfer._type: got %s, want %s", got, want)
 		}
 	}
 }
