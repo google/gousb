@@ -289,7 +289,10 @@ func newFakeLibusb() *fakeLibusb {
 		claims:      make(map[*libusbDevice]map[uint8]bool),
 	}
 	for i, d := range fakeDevices {
-		// TODO(https://golang.org/issue/19487): use new(libusbDevice) after Go 1.9
+		// libusb does not export a way to allocate a new libusb_device struct
+		// without using the full USB stack. Since the fake library uses the
+		// libusbDevice only as an identifier, use arbitrary numbers pretending
+		// to be pointers. The contents of these pointers is never accessed.
 		fl.fakeDevices[(*libusbDevice)(unsafe.Pointer(uintptr(i)))] = &fakeDevice{
 			desc: d,
 			alt:  0,
