@@ -3,7 +3,7 @@ Introduction
 
 [![Build Status][ciimg]][ci]
 [![GoDoc][docimg]][doc]
-[![Coverage Status](https://coveralls.io/repos/github/kylelemons/gousb/badge.svg?branch=master)](https://coveralls.io/github/kylelemons/gousb?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/kylelemons/gousb/badge.svg?branch=gousb2.0)](https://coveralls.io/github/kylelemons/gousb?branch=gousb2.0)
 
 The gousb package is an attempt at wrapping the libusb library into a Go-like binding.
 
@@ -13,7 +13,7 @@ Supported platforms include:
 - darwin
 - windows
 
-[ciimg]:  https://travis-ci.org/kylelemons/gousb.svg?branch=master
+[ciimg]:  https://travis-ci.org/kylelemons/gousb.svg?branch=gousb2.0
 [ci]:     https://travis-ci.org/kylelemons/gousb
 [docimg]: https://godoc.org/github.com/kylelemons/gousb?status.svg
 [doc]:    https://godoc.org/github.com/kylelemons/gousb
