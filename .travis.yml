@@ -1,10 +1,6 @@
 language: go
 dist: trusty
 
-env:
-  # COVERALLS_TOKEN
-  secure: "jXueELysh+Zq1YZAIlHdorCANZKQL/6hRTaSLDJGeLwKnZPwKvLsn7FucNsPZ7KAL1DM8Ij7YciQOirgrKng2+KMCTgoB05erFn/Fq/cYxtIkHHE1yy0m4Iqy6q2Ttq/Lhw16Hni03Om4whX0q3W5Yk+aZTeOjKWOMoSrGTrrw7y2tqLUwBLOpl54yYk5dSJ3apPdawLFhi+DfPK4ss6qbEzN4n+g9hJJYmKSXynpcHdVCKZkVJdgVz9mm6vPRlyDVoQNfzCm015eikRigQFagSN/tYs6NtOKIPeiM820GhGsda7TXYjuqYxB3XRZkfq+o0IexPbsaSnNPDjKyB9CUAOndhJtGotRu9BnXBxLXwn3/tUzCT98cB9Sv8S826askalGTXeKr5Wv+oRjkcMUJlrh4xoXJR9gFRcLA4vOnS0fbf5snFwFwskiKNh5grKJoG5QJATTfubMAZHHApNLFcK94Zt7n4TdsE+Ui6uKkrARjIHEonCu6h8xVJA2DUfOKKtayn12b6rn3AhDCiab5YnOh8EI87McAfqYIsFse6k+PvCHIqSj6N6am1AY+Sjs9K/SbXJcwE15MwRP/Q76dsnLCsUuSOVmjbPe+Uix1PBnwd1zXIFrMxxjpLBaf5YGVH1ZfBGR6TmNJZmeCryXdpLGxGij3h1ooHMYhtdtE8="
-
 go:
   - 1.7
   - 1.8
@@ -20,6 +16,9 @@ install:
   - go get github.com/mattn/goveralls
 
 script:
-  # a workaround for go test not supporting coverage for multiple packages in a single invocation
+  # a workaround for go test not supporting coverage for multiple packages in a single invocation.
+  # If goveralls upload fails, ignore the result.
   - |-
-    if [ -n "$COVERALLS_TOKEN" ]; then echo 'mode: count' > coverage.merged && go list ./... | xargs -n1 -I{} sh -c ': > coverage.tmp; go test -v -covermode=count -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.merged' && rm coverage.tmp && $HOME/gopath/bin/goveralls -coverprofile=coverage.merged -service=travis-ci -ignore usb/libusb.go -repotoken "$COVERALLS_TOKEN"; fi
+    echo 'mode: count' > coverage.merged && go list ./... | xargs -n1 -I{} sh -c ': > coverage.tmp; go test -v -covermode=count -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.merged' && rm coverage.tmp
+  - |-
+    $HOME/gopath/bin/goveralls -coverprofile=coverage.merged -service=travis-ci -ignore usb/libusb.go || true
