@@ -163,7 +163,7 @@ func main() {
 	}
 
 	log.Printf("Connecting to endpoint %d...", *endpoint)
-	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint)|uint8(usb.ENDPOINT_DIR_IN))
+	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint)|uint8(usb.EndpointDirectionIn))
 	if err != nil {
 		log.Fatalf("open: %s", err)
 	}

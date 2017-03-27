@@ -21,33 +21,33 @@ import "C"
 type Class uint8
 
 const (
-	CLASS_PER_INTERFACE Class = C.LIBUSB_CLASS_PER_INTERFACE
-	CLASS_AUDIO         Class = C.LIBUSB_CLASS_AUDIO
-	CLASS_COMM          Class = C.LIBUSB_CLASS_COMM
-	CLASS_HID           Class = C.LIBUSB_CLASS_HID
-	CLASS_PRINTER       Class = C.LIBUSB_CLASS_PRINTER
-	CLASS_PTP           Class = C.LIBUSB_CLASS_PTP
-	CLASS_MASS_STORAGE  Class = C.LIBUSB_CLASS_MASS_STORAGE
-	CLASS_HUB           Class = C.LIBUSB_CLASS_HUB
-	CLASS_DATA          Class = C.LIBUSB_CLASS_DATA
-	CLASS_WIRELESS      Class = C.LIBUSB_CLASS_WIRELESS
-	CLASS_APPLICATION   Class = C.LIBUSB_CLASS_APPLICATION
-	CLASS_VENDOR_SPEC   Class = C.LIBUSB_CLASS_VENDOR_SPEC
+	ClassPerInterface Class = C.LIBUSB_CLASS_PER_INTERFACE
+	ClassAudio        Class = C.LIBUSB_CLASS_AUDIO
+	ClassComm         Class = C.LIBUSB_CLASS_COMM
+	ClassHID          Class = C.LIBUSB_CLASS_HID
+	ClassPrinter      Class = C.LIBUSB_CLASS_PRINTER
+	ClassPTP          Class = C.LIBUSB_CLASS_PTP
+	ClassMassStorage  Class = C.LIBUSB_CLASS_MASS_STORAGE
+	ClassHub          Class = C.LIBUSB_CLASS_HUB
+	ClassData         Class = C.LIBUSB_CLASS_DATA
+	ClassWireless     Class = C.LIBUSB_CLASS_WIRELESS
+	ClassApplication  Class = C.LIBUSB_CLASS_APPLICATION
+	ClassVendorSpec   Class = C.LIBUSB_CLASS_VENDOR_SPEC
 )
 
 var classDescription = map[Class]string{
-	CLASS_PER_INTERFACE: "per-interface",
-	CLASS_AUDIO:         "audio",
-	CLASS_COMM:          "communications",
-	CLASS_HID:           "human interface device",
-	CLASS_PRINTER:       "printer dclass",
-	CLASS_PTP:           "picture transfer protocol",
-	CLASS_MASS_STORAGE:  "mass storage",
-	CLASS_HUB:           "hub",
-	CLASS_DATA:          "data",
-	CLASS_WIRELESS:      "wireless",
-	CLASS_APPLICATION:   "application",
-	CLASS_VENDOR_SPEC:   "vendor-specific",
+	ClassPerInterface: "per-interface",
+	ClassAudio:        "audio",
+	ClassComm:         "communications",
+	ClassHID:          "human interface device",
+	ClassPrinter:      "printer dclass",
+	ClassPTP:          "picture transfer protocol",
+	ClassMassStorage:  "mass storage",
+	ClassHub:          "hub",
+	ClassData:         "data",
+	ClassWireless:     "wireless",
+	ClassApplication:  "application",
+	ClassVendorSpec:   "vendor-specific",
 }
 
 func (c Class) String() string {
@@ -57,27 +57,27 @@ func (c Class) String() string {
 type DescriptorType uint8
 
 const (
-	DT_DEVICE    DescriptorType = C.LIBUSB_DT_DEVICE
-	DT_CONFIG    DescriptorType = C.LIBUSB_DT_CONFIG
-	DT_STRING    DescriptorType = C.LIBUSB_DT_STRING
-	DT_INTERFACE DescriptorType = C.LIBUSB_DT_INTERFACE
-	DT_ENDPOINT  DescriptorType = C.LIBUSB_DT_ENDPOINT
-	DT_HID       DescriptorType = C.LIBUSB_DT_HID
-	DT_REPORT    DescriptorType = C.LIBUSB_DT_REPORT
-	DT_PHYSICAL  DescriptorType = C.LIBUSB_DT_PHYSICAL
-	DT_HUB       DescriptorType = C.LIBUSB_DT_HUB
+	DescriptorTypeDevice    DescriptorType = C.LIBUSB_DT_DEVICE
+	DescriptorTypeConfig    DescriptorType = C.LIBUSB_DT_CONFIG
+	DescriptorTypeString    DescriptorType = C.LIBUSB_DT_STRING
+	DescriptorTypeInterface DescriptorType = C.LIBUSB_DT_INTERFACE
+	DescriptorTypeEndpoint  DescriptorType = C.LIBUSB_DT_ENDPOINT
+	DescriptorTypeHID       DescriptorType = C.LIBUSB_DT_HID
+	DescriptorTypeReport    DescriptorType = C.LIBUSB_DT_REPORT
+	DescriptorTypePhysical  DescriptorType = C.LIBUSB_DT_PHYSICAL
+	DescriptorTypeHub       DescriptorType = C.LIBUSB_DT_HUB
 )
 
 var descriptorTypeDescription = map[DescriptorType]string{
-	DT_DEVICE:    "device",
-	DT_CONFIG:    "configuration",
-	DT_STRING:    "string",
-	DT_INTERFACE: "interface",
-	DT_ENDPOINT:  "endpoint",
-	DT_HID:       "HID",
-	DT_REPORT:    "HID report",
-	DT_PHYSICAL:  "physical",
-	DT_HUB:       "hub",
+	DescriptorTypeDevice:    "device",
+	DescriptorTypeConfig:    "configuration",
+	DescriptorTypeString:    "string",
+	DescriptorTypeInterface: "interface",
+	DescriptorTypeEndpoint:  "endpoint",
+	DescriptorTypeHID:       "HID",
+	DescriptorTypeReport:    "HID report",
+	DescriptorTypePhysical:  "physical",
+	DescriptorTypeHub:       "hub",
 }
 
 func (dt DescriptorType) String() string {
@@ -87,15 +87,15 @@ func (dt DescriptorType) String() string {
 type EndpointDirection uint8
 
 const (
-	ENDPOINT_NUM_MASK                   = 0x0f
-	ENDPOINT_DIR_IN   EndpointDirection = C.LIBUSB_ENDPOINT_IN
-	ENDPOINT_DIR_OUT  EndpointDirection = C.LIBUSB_ENDPOINT_OUT
-	ENDPOINT_DIR_MASK EndpointDirection = 0x80
+	EndpointNumMask                         = 0x0f
+	EndpointDirectionMask                   = 0x80
+	EndpointDirectionIn   EndpointDirection = C.LIBUSB_ENDPOINT_IN
+	EndpointDirectionOut  EndpointDirection = C.LIBUSB_ENDPOINT_OUT
 )
 
 var endpointDirectionDescription = map[EndpointDirection]string{
-	ENDPOINT_DIR_IN:  "IN",
-	ENDPOINT_DIR_OUT: "OUT",
+	EndpointDirectionIn:  "IN",
+	EndpointDirectionOut: "OUT",
 }
 
 func (ed EndpointDirection) String() string {

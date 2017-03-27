@@ -30,7 +30,7 @@ type EndpointInfo struct {
 }
 
 func (e EndpointInfo) Number() int {
-	return int(e.Address) & ENDPOINT_NUM_MASK
+	return int(e.Address) & EndpointNumMask
 }
 
 func (e EndpointInfo) TransferType() TransferType {
@@ -38,7 +38,7 @@ func (e EndpointInfo) TransferType() TransferType {
 }
 
 func (e EndpointInfo) Direction() EndpointDirection {
-	return EndpointDirection(e.Address) & ENDPOINT_DIR_MASK
+	return EndpointDirection(e.Address) & EndpointDirectionMask
 }
 
 func (e EndpointInfo) String() string {

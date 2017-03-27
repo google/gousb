@@ -31,7 +31,7 @@ type Endpoint struct {
 }
 
 func (e *Endpoint) Read(buf []byte) (int, error) {
-	if EndpointDirection(e.Address)&ENDPOINT_DIR_MASK != ENDPOINT_DIR_IN {
+	if EndpointDirection(e.Address)&EndpointDirectionMask != EndpointDirectionIn {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
 	}
 
@@ -39,7 +39,7 @@ func (e *Endpoint) Read(buf []byte) (int, error) {
 }
 
 func (e *Endpoint) Write(buf []byte) (int, error) {
-	if EndpointDirection(e.Address)&ENDPOINT_DIR_MASK != ENDPOINT_DIR_OUT {
+	if EndpointDirection(e.Address)&EndpointDirectionMask != EndpointDirectionOut {
 		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
 	}
 

@@ -37,7 +37,7 @@ func TestNewTransfer(t *testing.T) {
 	}{
 		{
 			desc:       "bulk in transfer, 512B packets",
-			dir:        ENDPOINT_DIR_IN,
+			dir:        EndpointDirectionIn,
 			tt:         TRANSFER_TYPE_BULK,
 			maxPkt:     512,
 			buf:        1024,
@@ -46,7 +46,7 @@ func TestNewTransfer(t *testing.T) {
 		},
 		{
 			desc:       "iso out transfer, 3 * 1024B packets",
-			dir:        ENDPOINT_DIR_OUT,
+			dir:        EndpointDirectionOut,
 			tt:         TRANSFER_TYPE_ISOCHRONOUS,
 			maxPkt:     2<<11 + 1024,
 			maxIso:     3 * 1024,
