@@ -182,3 +182,25 @@ var requestTypeDescription = map[RequestType]string{
 func (rt RequestType) String() string {
 	return requestTypeDescription[rt]
 }
+
+type DeviceSpeed int
+
+const (
+	DeviceSpeedUnknown DeviceSpeed = C.LIBUSB_SPEED_UNKNOWN
+	DeviceSpeedLow     DeviceSpeed = C.LIBUSB_SPEED_LOW
+	DeviceSpeedFull    DeviceSpeed = C.LIBUSB_SPEED_FULL
+	DeviceSpeedHigh    DeviceSpeed = C.LIBUSB_SPEED_HIGH
+	DeviceSpeedSuper   DeviceSpeed = C.LIBUSB_SPEED_SUPER
+)
+
+var deviceSpeedDescription = map[DeviceSpeed]string{
+	DeviceSpeedUnknown: "unknown",
+	DeviceSpeedLow:     "low",
+	DeviceSpeedFull:    "full",
+	DeviceSpeedHigh:    "high",
+	DeviceSpeedSuper:   "super",
+}
+
+func (s DeviceSpeed) String() string {
+	return deviceSpeedDescription[s]
+}
