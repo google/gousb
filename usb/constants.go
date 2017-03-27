@@ -126,18 +126,18 @@ func (tt TransferType) String() string {
 type IsoSyncType uint8
 
 const (
-	ISO_SYNC_TYPE_NONE     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_NONE << 2
-	ISO_SYNC_TYPE_ASYNC    IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ASYNC << 2
-	ISO_SYNC_TYPE_ADAPTIVE IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ADAPTIVE << 2
-	ISO_SYNC_TYPE_SYNC     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_SYNC << 2
-	ISO_SYNC_TYPE_MASK     IsoSyncType = 0x0C
+	IsoSyncTypeNone     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_NONE << 2
+	IsoSyncTypeAsync    IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ASYNC << 2
+	IsoSyncTypeAdaptive IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ADAPTIVE << 2
+	IsoSyncTypeSync     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_SYNC << 2
+	IsoSyncTypeMask                 = 0x0C
 )
 
 var isoSyncTypeDescription = map[IsoSyncType]string{
-	ISO_SYNC_TYPE_NONE:     "unsynchronized",
-	ISO_SYNC_TYPE_ASYNC:    "asynchronous",
-	ISO_SYNC_TYPE_ADAPTIVE: "adaptive",
-	ISO_SYNC_TYPE_SYNC:     "synchronous",
+	IsoSyncTypeNone:     "unsynchronized",
+	IsoSyncTypeAsync:    "asynchronous",
+	IsoSyncTypeAdaptive: "adaptive",
+	IsoSyncTypeSync:     "synchronous",
 }
 
 func (ist IsoSyncType) String() string {
@@ -147,16 +147,16 @@ func (ist IsoSyncType) String() string {
 type IsoUsageType uint8
 
 const (
-	ISO_USAGE_TYPE_DATA     IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_DATA << 4
-	ISO_USAGE_TYPE_FEEDBACK IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_FEEDBACK << 4
-	ISO_USAGE_TYPE_IMPLICIT IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_IMPLICIT << 4
-	ISO_USAGE_TYPE_MASK     IsoUsageType = 0x30
+	IsoUsageTypeData     IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_DATA << 4
+	IsoUsageTypeFeedback IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_FEEDBACK << 4
+	IsoUsageTypeImplicit IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_IMPLICIT << 4
+	IsoUsageTypeMask                  = 0x30
 )
 
 var isoUsageTypeDescription = map[IsoUsageType]string{
-	ISO_USAGE_TYPE_DATA:     "data",
-	ISO_USAGE_TYPE_FEEDBACK: "feedback",
-	ISO_USAGE_TYPE_IMPLICIT: "implicit data",
+	IsoUsageTypeData:     "data",
+	IsoUsageTypeFeedback: "feedback",
+	IsoUsageTypeImplicit: "implicit data",
 }
 
 func (iut IsoUsageType) String() string {
@@ -166,17 +166,17 @@ func (iut IsoUsageType) String() string {
 type RequestType uint8
 
 const (
-	REQUEST_TYPE_STANDARD = C.LIBUSB_REQUEST_TYPE_STANDARD
-	REQUEST_TYPE_CLASS    = C.LIBUSB_REQUEST_TYPE_CLASS
-	REQUEST_TYPE_VENDOR   = C.LIBUSB_REQUEST_TYPE_VENDOR
-	REQUEST_TYPE_RESERVED = C.LIBUSB_REQUEST_TYPE_RESERVED
+	RequestTypeStandard = C.LIBUSB_REQUEST_TYPE_STANDARD
+	RequestTypeClass    = C.LIBUSB_REQUEST_TYPE_CLASS
+	RequestTypeVendor   = C.LIBUSB_REQUEST_TYPE_VENDOR
+	RequestTypeReserved = C.LIBUSB_REQUEST_TYPE_RESERVED
 )
 
 var requestTypeDescription = map[RequestType]string{
-	REQUEST_TYPE_STANDARD: "standard",
-	REQUEST_TYPE_CLASS:    "class",
-	REQUEST_TYPE_VENDOR:   "vendor",
-	REQUEST_TYPE_RESERVED: "reserved",
+	RequestTypeStandard: "standard",
+	RequestTypeClass:    "class",
+	RequestTypeVendor:   "vendor",
+	RequestTypeReserved: "reserved",
 }
 
 func (rt RequestType) String() string {

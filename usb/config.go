@@ -30,22 +30,22 @@ type EndpointInfo struct {
 }
 
 func (e EndpointInfo) Number() int {
-	return int(e.Address) & EndpointNumMask
+	return int(e.Address & EndpointNumMask)
 }
 
 func (e EndpointInfo) TransferType() TransferType {
-	return TransferType(e.Attributes) & TransferTypeMask
+	return TransferType(e.Attributes & TransferTypeMask)
 }
 
 func (e EndpointInfo) Direction() EndpointDirection {
-	return EndpointDirection(e.Address) & EndpointDirectionMask
+	return EndpointDirection(e.Address & EndpointDirectionMask)
 }
 
 func (e EndpointInfo) String() string {
 	return fmt.Sprintf("Endpoint #%d %-3s %s - %s %s [%d %d]",
 		e.Number(), e.Direction(), e.TransferType(),
-		IsoSyncType(e.Attributes)&ISO_SYNC_TYPE_MASK,
-		IsoUsageType(e.Attributes)&ISO_USAGE_TYPE_MASK,
+		IsoSyncType(e.Attributes)&IsoSyncTypeMask,
+		IsoUsageType(e.Attributes)&IsoUsageTypeMask,
 		e.MaxPacketSize, e.MaxIsoPacket,
 	)
 }
