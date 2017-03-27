@@ -34,7 +34,7 @@ func (e EndpointInfo) Number() int {
 }
 
 func (e EndpointInfo) TransferType() TransferType {
-	return TransferType(e.Attributes) & TRANSFER_TYPE_MASK
+	return TransferType(e.Attributes) & TransferTypeMask
 }
 
 func (e EndpointInfo) Direction() EndpointDirection {

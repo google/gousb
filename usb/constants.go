@@ -105,18 +105,18 @@ func (ed EndpointDirection) String() string {
 type TransferType uint8
 
 const (
-	TRANSFER_TYPE_CONTROL     TransferType = C.LIBUSB_TRANSFER_TYPE_CONTROL
-	TRANSFER_TYPE_ISOCHRONOUS TransferType = C.LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
-	TRANSFER_TYPE_BULK        TransferType = C.LIBUSB_TRANSFER_TYPE_BULK
-	TRANSFER_TYPE_INTERRUPT   TransferType = C.LIBUSB_TRANSFER_TYPE_INTERRUPT
-	TRANSFER_TYPE_MASK        TransferType = 0x03
+	TransferTypeControl     TransferType = C.LIBUSB_TRANSFER_TYPE_CONTROL
+	TransferTypeIsochronous TransferType = C.LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
+	TransferTypeBulk        TransferType = C.LIBUSB_TRANSFER_TYPE_BULK
+	TransferTypeInterrupt   TransferType = C.LIBUSB_TRANSFER_TYPE_INTERRUPT
+	TransferTypeMask                     = 0x03
 )
 
 var transferTypeDescription = map[TransferType]string{
-	TRANSFER_TYPE_CONTROL:     "control",
-	TRANSFER_TYPE_ISOCHRONOUS: "isochronous",
-	TRANSFER_TYPE_BULK:        "bulk",
-	TRANSFER_TYPE_INTERRUPT:   "interrupt",
+	TransferTypeControl:     "control",
+	TransferTypeIsochronous: "isochronous",
+	TransferTypeBulk:        "bulk",
+	TransferTypeInterrupt:   "interrupt",
 }
 
 func (tt TransferType) String() string {

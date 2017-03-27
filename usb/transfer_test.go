@@ -38,7 +38,7 @@ func TestNewTransfer(t *testing.T) {
 		{
 			desc:       "bulk in transfer, 512B packets",
 			dir:        EndpointDirectionIn,
-			tt:         TRANSFER_TYPE_BULK,
+			tt:         TransferTypeBulk,
 			maxPkt:     512,
 			buf:        1024,
 			timeout:    time.Second,
@@ -47,7 +47,7 @@ func TestNewTransfer(t *testing.T) {
 		{
 			desc:       "iso out transfer, 3 * 1024B packets",
 			dir:        EndpointDirectionOut,
-			tt:         TRANSFER_TYPE_ISOCHRONOUS,
+			tt:         TransferTypeIsochronous,
 			maxPkt:     2<<11 + 1024,
 			maxIso:     3 * 1024,
 			buf:        10000,
@@ -82,7 +82,7 @@ func TestTransferProtocol(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		xfers[i], err = newUSBTransfer(nil, EndpointInfo{
 			Address:       0x86,
-			Attributes:    uint8(TRANSFER_TYPE_BULK),
+			Attributes:    uint8(TransferTypeBulk),
 			MaxPacketSize: 512,
 			PollInterval:  1,
 		}, make([]byte, 10240), time.Second)

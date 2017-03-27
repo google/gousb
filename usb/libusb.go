@@ -193,7 +193,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 						RefreshRate:   uint8(end.bRefresh),
 						SynchAddress:  uint8(end.bSynchAddress),
 					}
-					if ei.TransferType() == TRANSFER_TYPE_ISOCHRONOUS {
+					if ei.TransferType() == TransferTypeIsochronous {
 						// bits 0-10 identify the packet size, bits 11-12 are the number of additional transactions per microframe.
 						// Don't use libusb_get_max_iso_packet_size, as it has a bug where it returns the same value
 						// regardless of alternative setting used, where different alternative settings might define different
@@ -338,7 +338,7 @@ func (libusbImpl) submit(t *libusbTransfer, done chan struct{}) error {
 }
 
 func (libusbImpl) data(t *libusbTransfer) (int, TransferStatus) {
-	if TransferType(t._type) == TRANSFER_TYPE_ISOCHRONOUS {
+	if TransferType(t._type) == TransferTypeIsochronous {
 		var status TransferStatus
 		n := int(C.compact_iso_data((*C.struct_libusb_transfer)(t), (*C.uchar)(unsafe.Pointer(&status))))
 		return n, status

@@ -17,7 +17,7 @@ package usb
 // IN bulk endpoint
 var testBulkInEP = EndpointInfo{
 	Address:       0x82,
-	Attributes:    uint8(TRANSFER_TYPE_BULK),
+	Attributes:    uint8(TransferTypeBulk),
 	MaxPacketSize: 512,
 	PollInterval:  1,
 }
@@ -32,7 +32,7 @@ var testBulkInSetup = InterfaceSetup{
 // OUT iso endpoint
 var testIsoOutEP = EndpointInfo{
 	Address:       0x06,
-	Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+	Attributes:    uint8(TransferTypeIsochronous),
 	MaxPacketSize: 3<<11 + 1024,
 	MaxIsoPacket:  3 * 1024,
 	PollInterval:  1,

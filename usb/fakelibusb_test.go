@@ -47,11 +47,11 @@ var (
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
 							Address:       uint8(0x01 | EndpointDirectionOut),
-							Attributes:    uint8(TRANSFER_TYPE_BULK),
+							Attributes:    uint8(TransferTypeBulk),
 							MaxPacketSize: 512,
 						}, {
 							Address:       uint8(0x02 | EndpointDirectionIn),
-							Attributes:    uint8(TRANSFER_TYPE_BULK),
+							Attributes:    uint8(TransferTypeBulk),
 							MaxPacketSize: 512,
 						}},
 					}},
@@ -88,12 +88,12 @@ var (
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
 							Address:       uint8(0x05 | EndpointDirectionOut),
-							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							Attributes:    uint8(TransferTypeIsochronous),
 							MaxPacketSize: 2<<11 | 1024,
 							MaxIsoPacket:  3 * 1024,
 						}, {
 							Address:       uint8(0x06 | EndpointDirectionIn),
-							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							Attributes:    uint8(TransferTypeIsochronous),
 							MaxPacketSize: 2<<11 | 1024,
 							MaxIsoPacket:  3 * 1024,
 						}},
@@ -103,12 +103,12 @@ var (
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
 							Address:       uint8(0x05 | EndpointDirectionOut),
-							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							Attributes:    uint8(TransferTypeIsochronous),
 							MaxPacketSize: 1<<11 | 1024,
 							MaxIsoPacket:  2 * 1024,
 						}, {
 							Address:       uint8(0x06 | EndpointDirectionIn),
-							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							Attributes:    uint8(TransferTypeIsochronous),
 							MaxPacketSize: 1<<11 | 1024,
 							MaxIsoPacket:  2 * 1024,
 						}},
@@ -118,12 +118,12 @@ var (
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
 							Address:       uint8(0x05 | EndpointDirectionOut),
-							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							Attributes:    uint8(TransferTypeIsochronous),
 							MaxPacketSize: 1024,
 							MaxIsoPacket:  1024,
 						}, {
 							Address:       uint8(0x06 | EndpointDirectionIn),
-							Attributes:    uint8(TRANSFER_TYPE_ISOCHRONOUS),
+							Attributes:    uint8(TransferTypeIsochronous),
 							MaxPacketSize: 1024,
 							MaxIsoPacket:  1024,
 						}},
