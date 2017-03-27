@@ -73,7 +73,7 @@ func TestEndpoint(t *testing.T) {
 					fakeT.status = tc.status
 					close(fakeT.done)
 				}()
-				opv := op.Func.Interface().(func(*endpoint, []byte) (int, error))
+				opv := op.Func.Interface().(func(*Endpoint, []byte) (int, error))
 				got, err := opv(ep, tc.buf)
 				if (err != nil) != tc.wantErr {
 					t.Errorf("%s: bulkInEP.Read(): got err: %v, err != nil is %v, want %v", tc.desc, err, err != nil, tc.wantErr)
@@ -88,7 +88,7 @@ func TestEndpoint(t *testing.T) {
 }
 
 func TestEndpointWrongDirection(t *testing.T) {
-	ep := &endpoint{
+	ep := &Endpoint{
 		InterfaceSetup: testBulkInSetup,
 		EndpointInfo:   testBulkInEP,
 	}
@@ -96,7 +96,7 @@ func TestEndpointWrongDirection(t *testing.T) {
 	if err == nil {
 		t.Error("bulkInEP.Write(): got nil error, want non-nil")
 	}
-	ep = &endpoint{
+	ep = &Endpoint{
 		InterfaceSetup: testIsoOutSetup,
 		EndpointInfo:   testIsoOutEP,
 	}

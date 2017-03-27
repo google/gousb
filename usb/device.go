@@ -92,7 +92,7 @@ func (d *Device) Close() error {
 	return nil
 }
 
-func (d *Device) OpenEndpoint(cfgNum, ifNum, setNum, epNum uint8) (Endpoint, error) {
+func (d *Device) OpenEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*Endpoint, error) {
 	var cfg *ConfigInfo
 	for _, c := range d.Configs {
 		if c.Config == cfgNum {
