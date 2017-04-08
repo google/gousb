@@ -30,6 +30,10 @@ type Endpoint struct {
 	writeTimeout time.Duration
 }
 
+func (e *Endpoint) String() string {
+	return e.Info.String()
+}
+
 func (e *Endpoint) Read(buf []byte) (int, error) {
 	if e.Info.Direction != EndpointDirectionIn {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
