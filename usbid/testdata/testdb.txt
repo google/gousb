@@ -1,0 +1,28 @@
+# Skip comment
+abcd  Vendor One
+	0123  Product One
+	0124  Product Two
+efef  Vendor Two
+	0aba  Product
+		12  Interface One
+		24  Interface Two
+	0abb  Product
+		12  Interface
+
+C 00  (Defined at Interface level)
+C 01  Audio
+	01  Control Device
+	02  Streaming
+	03  MIDI Streaming
+C 02  Communications
+	01  Direct Line
+	02  Abstract (modem)
+		00  None
+		01  AT-commands (v.25ter)
+		02  AT-commands (PCCA101)
+		03  AT-commands (PCCA101 + wakeup)
+		04  AT-commands (GSM)
+		05  AT-commands (3G)
+		06  AT-commands (CDMA)
+		fe  Defined by command set descriptor
+		ff  Vendor Specific (MSFT RNDIS?)
