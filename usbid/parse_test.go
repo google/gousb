@@ -31,7 +31,6 @@ func mustRead(fname string) string {
 }
 
 func TestParse(t *testing.T) {
-	testDBPath := "testdata/testdb.txt"
 	vendors, classes, err := ParseIDs(strings.NewReader(mustRead(testDBPath)))
 	if err != nil {
 		t.Fatalf("ParseIDs(%q): %s", testDBPath, err)
