@@ -421,7 +421,11 @@ func xfer_callback(cptr unsafe.Pointer) {
 	close(ch)
 }
 
-// for benchmarking
+// for benchmarking and testing
 func libusbSetDebug(c *libusbContext, lvl int) {
 	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
+}
+
+func newCPointer() unsafe.Pointer {
+	return unsafe.Pointer(C.malloc(1))
 }

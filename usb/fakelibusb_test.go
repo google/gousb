@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 var (
@@ -302,12 +301,12 @@ func newFakeLibusb() *fakeLibusb {
 		handles:     make(map[*libusbDevHandle]*libusbDevice),
 		claims:      make(map[*libusbDevice]map[uint8]bool),
 	}
-	for i, d := range fakeDevices {
+	for _, d := range fakeDevices {
 		// libusb does not export a way to allocate a new libusb_device struct
 		// without using the full USB stack. Since the fake library uses the
-		// libusbDevice only as an identifier, use arbitrary numbers pretending
-		// to be pointers. The contents of these pointers is never accessed.
-		fl.fakeDevices[(*libusbDevice)(unsafe.Pointer(uintptr(i)))] = &fakeDevice{
+		// libusbDevice only as an identifier, use an arbitrary unique pointer.
+		// The contents of these pointers is never accessed.
+		fl.fakeDevices[(*libusbDevice)(newCPointer())] = &fakeDevice{
 			desc: d,
 			alt:  0,
 		}
