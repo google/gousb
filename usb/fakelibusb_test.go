@@ -306,7 +306,7 @@ func newFakeLibusb() *fakeLibusb {
 		// without using the full USB stack. Since the fake library uses the
 		// libusbDevice only as an identifier, use an arbitrary unique pointer.
 		// The contents of these pointers is never accessed.
-		fl.fakeDevices[(*libusbDevice)(newCPointer())] = &fakeDevice{
+		fl.fakeDevices[newDevicePointer()] = &fakeDevice{
 			desc: d,
 			alt:  0,
 		}

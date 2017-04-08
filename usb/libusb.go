@@ -426,6 +426,6 @@ func libusbSetDebug(c *libusbContext, lvl int) {
 	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
-func newCPointer() unsafe.Pointer {
-	return unsafe.Pointer(C.malloc(1))
+func newDevicePointer() *libusbDevice {
+	return (*libusbDevice)(unsafe.Pointer(C.malloc(1)))
 }
