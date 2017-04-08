@@ -16,8 +16,9 @@ package usbid
 
 import "github.com/kylelemons/gousb/usb"
 
+const testDBPath = "testdata/testdb.txt"
+
 var (
-	testDBPath    = "testdata/testdb.txt"
 	testDBVendors = map[usb.ID]*Vendor{
 		0xabcd: {
 			Name: "Vendor One",
