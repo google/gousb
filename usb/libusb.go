@@ -36,6 +36,74 @@ type libusbDevice C.libusb_device
 type libusbDevHandle C.libusb_device_handle
 type libusbTransfer C.struct_libusb_transfer
 type libusbIso C.struct_libusb_iso_packet_descriptor
+type libusbEndpoint C.struct_libusb_endpoint_descriptor
+
+func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
+	ei := EndpointInfo{
+		Number:        uint8(ep.bEndpointAddress & EndpointNumMask),
+		Direction:     EndpointDirection(ep.bEndpointAddress & EndpointDirectionMask),
+		TransferType:  TransferType(ep.bmAttributes & TransferTypeMask),
+		MaxPacketSize: uint32(ep.wMaxPacketSize),
+	}
+	if ei.TransferType == TransferTypeIsochronous {
+		// bits 0-10 identify the packet size, bits 11-12 are the number of additional transactions per microframe.
+		// Don't use libusb_get_max_iso_packet_size, as it has a bug where it returns the same value
+		// regardless of alternative setting used, where different alternative settings might define different
+		// max packet sizes.
+		// See http://libusb.org/ticket/77 for more background.
+		ei.MaxPacketSize = uint32(ep.wMaxPacketSize) & 0x07ff * (uint32(ep.wMaxPacketSize)>>11&3 + 1)
+		ei.IsoSyncType = IsoSyncType(ep.bmAttributes & IsoSyncTypeMask)
+		switch ep.bmAttributes & UsageTypeMask {
+		case C.LIBUSB_ISO_USAGE_TYPE_DATA:
+			ei.UsageType = IsoUsageTypeData
+		case C.LIBUSB_ISO_USAGE_TYPE_FEEDBACK:
+			ei.UsageType = IsoUsageTypeFeedback
+		case C.LIBUSB_ISO_USAGE_TYPE_IMPLICIT:
+			ei.UsageType = IsoUsageTypeImplicit
+		}
+	}
+	// TODO(sebek): PollInterval does not work yet. The meaning of bInterval
+	// in the descriptor varies depending on the device and USB version:
+	// - if the device conforms to USB1.x:
+	//     Interval for polling endpoint for data transfers. Expressed in
+	//     milliseconds.
+	//     This field is ignored for bulk and control endpoints. For
+	//     isochronous endpoints this field must be set to 1. For interrupt
+	//     endpoints, this field may range from 1 to 255.
+	// - if the device conforms to USB[23].x and the device is in low speed
+	//   of full speed mode:
+	//     Interval for polling endpoint for data transfers.  Expressed in
+	//     frames or microframes depending on the device operating speed
+	//     (i.e., either 1 millisecond or 125 µs units).
+	//     For full-/high-speed isochronous endpoints, this value must be in
+	//     the range from 1 to 16. The bInterval value is used as the exponent
+	//     for a 2bInterval-1 value; e.g., a bInterval of 4 means a period
+	//     of 8 (24-1).
+	//     For full-/low-speed interrupt endpoints, the value of this field may
+	//     be from 1 to 255.
+	//     For high-speed interrupt endpoints, the bInterval value is used as
+	//     the exponent for a 2bInterval-1 value; e.g., a bInterval of 4 means
+	//     a period of 8 (24-1). This value must be from 1 to 16.
+	//     For high-speed bulk/control OUT endpoints, the bInterval must
+	//     specify the maximum NAK rate of the endpoint. A value of 0 indicates
+	//     the endpoint never NAKs. Other values indicate at most 1 NAK each
+	//     bInterval number of microframes. This value must be in the range
+	//     from 0 to 255.
+	// - if the device conforms to USB3.x and the device is in SuperSpeed mode:
+	//     Interval for servicing the endpoint for data transfers. Expressed in
+	//     125-µs units.
+	//     For Enhanced SuperSpeed isochronous and interrupt endpoints, this
+	//     value shall be in the range from 1 to 16. However, the valid ranges
+	//     are 8 to 16 for Notification type Interrupt endpoints. The bInterval
+	//     value is used as the exponent for a 2(bInterval-1) value; e.g., a
+	//     bInterval of 4 means a period of 8 (2(4-1) → 23 → 8).
+	//     This field is reserved and shall not be used for Enhanced SuperSpeed
+	//     bulk or control endpoints.
+	//
+	// Note: in low-speed mode, isochronous transfers are not supported.
+	ei.PollInterval = 0
+	return ei
+}
 
 // libusbIntf is a set of trivial idiomatic Go wrappers around libusb C functions.
 // The underlying code is generally not testable or difficult to test,
@@ -70,7 +138,7 @@ type libusbIntf interface {
 	setAlt(*libusbDevHandle, uint8, uint8) error
 
 	// transfer
-	alloc(*libusbDevHandle, uint8, TransferType, time.Duration, int, []byte) (*libusbTransfer, error)
+	alloc(*libusbDevHandle, *EndpointInfo, time.Duration, int, []byte) (*libusbTransfer, error)
 	cancel(*libusbTransfer) error
 	submit(*libusbTransfer, chan struct{}) error
 	data(*libusbTransfer) (int, TransferStatus)
@@ -184,24 +252,9 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 					Cap:  int(alt.bNumEndpoints),
 				}
 				i.Endpoints = make([]EndpointInfo, 0, len(ends))
-				for _, end := range ends {
-					ei := EndpointInfo{
-						Address:       uint8(end.bEndpointAddress),
-						Attributes:    uint8(end.bmAttributes),
-						MaxPacketSize: uint16(end.wMaxPacketSize),
-						PollInterval:  uint8(end.bInterval),
-						RefreshRate:   uint8(end.bRefresh),
-						SynchAddress:  uint8(end.bSynchAddress),
-					}
-					if ei.TransferType() == TransferTypeIsochronous {
-						// bits 0-10 identify the packet size, bits 11-12 are the number of additional transactions per microframe.
-						// Don't use libusb_get_max_iso_packet_size, as it has a bug where it returns the same value
-						// regardless of alternative setting used, where different alternative settings might define different
-						// max packet sizes.
-						// See http://libusb.org/ticket/77 for more background.
-						ei.MaxIsoPacket = uint32(end.wMaxPacketSize) & 0x07ff * (uint32(end.wMaxPacketSize)>>11&3 + 1)
-					}
-					i.Endpoints = append(i.Endpoints, ei)
+				for n, end := range ends {
+					// TODO(sebek): pass the device descriptor too.
+					i.Endpoints[n] = libusbEndpoint(end).endpointInfo(nil)
 				}
 				descs = append(descs, i)
 			}
@@ -313,15 +366,15 @@ func (libusbImpl) setAlt(d *libusbDevHandle, iface, setup uint8) error {
 	return fromUSBError(C.libusb_set_interface_alt_setting((*C.libusb_device_handle)(d), C.int(iface), C.int(setup)))
 }
 
-func (libusbImpl) alloc(d *libusbDevHandle, addr uint8, tt TransferType, timeout time.Duration, isoPackets int, buf []byte) (*libusbTransfer, error) {
+func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointInfo, timeout time.Duration, isoPackets int, buf []byte) (*libusbTransfer, error) {
 	xfer := C.libusb_alloc_transfer(C.int(isoPackets))
 	if xfer == nil {
 		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
 	}
 	xfer.dev_handle = (*C.libusb_device_handle)(d)
-	xfer.endpoint = C.uchar(addr)
+	xfer.endpoint = C.uchar(uint8(ep.Number&EndpointNumMask) | uint8(ep.Direction&EndpointDirectionMask))
 	xfer.timeout = C.uint(timeout / time.Millisecond)
-	xfer._type = C.uchar(tt)
+	xfer._type = C.uchar(ep.TransferType)
 	xfer.num_iso_packets = C.int(isoPackets)
 	xfer.buffer = (*C.uchar)((unsafe.Pointer)(&buf[0]))
 	xfer.length = C.int(len(buf))

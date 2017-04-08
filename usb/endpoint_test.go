@@ -90,7 +90,7 @@ func TestEndpoint(t *testing.T) {
 func TestEndpointWrongDirection(t *testing.T) {
 	ep := &Endpoint{
 		InterfaceSetup: testBulkInSetup,
-		EndpointInfo:   testBulkInEP,
+		Info:           testBulkInEP,
 	}
 	_, err := ep.Write([]byte{1, 2, 3})
 	if err == nil {
@@ -98,7 +98,7 @@ func TestEndpointWrongDirection(t *testing.T) {
 	}
 	ep = &Endpoint{
 		InterfaceSetup: testIsoOutSetup,
-		EndpointInfo:   testIsoOutEP,
+		Info:           testIsoOutEP,
 	}
 	_, err = ep.Read(make([]byte, 64))
 	if err == nil {
@@ -120,15 +120,11 @@ func TestOpenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): got error %v, want nil", err)
 	}
-	ep, err := dev.OpenEndpoint(1, 1, 2, 0x86)
+	got, err := dev.OpenEndpoint(6, 1, 1, 2)
 	if err != nil {
-		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got error %v, want nil", err)
+		t.Fatalf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got error %v, want nil", err)
 	}
-	i := ep.Info()
-	if got, want := i.Address, uint8(0x86); got != want {
-		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): ep.Info.Address = %x, want %x", got, want)
-	}
-	if got, want := i.MaxIsoPacket, uint32(1024); got != want {
-		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): ep.Info.MaxIsoPacket = %d, want %d", got, want)
+	if want := fakeDevices[1].Configs[0].Interfaces[1].Setups[2].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
+		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got %+v, want %+v", got, want)
 	}
 }

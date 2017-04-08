@@ -14,12 +14,14 @@
 
 package usb
 
+import "time"
+
 // IN bulk endpoint
 var testBulkInEP = EndpointInfo{
-	Address:       0x82,
-	Attributes:    uint8(TransferTypeBulk),
+	Number:        2,
+	Direction:     EndpointDirectionIn,
 	MaxPacketSize: 512,
-	PollInterval:  1,
+	TransferType:  TransferTypeBulk,
 }
 
 var testBulkInSetup = InterfaceSetup{
@@ -31,11 +33,11 @@ var testBulkInSetup = InterfaceSetup{
 
 // OUT iso endpoint
 var testIsoOutEP = EndpointInfo{
-	Address:       0x06,
-	Attributes:    uint8(TransferTypeIsochronous),
-	MaxPacketSize: 3<<11 + 1024,
-	MaxIsoPacket:  3 * 1024,
-	PollInterval:  1,
+	Number:        6,
+	MaxPacketSize: 3 * 1024,
+	TransferType:  TransferTypeIsochronous,
+	PollInterval:  125 * time.Microsecond,
+	UsageType:     IsoUsageTypeData,
 }
 
 var testIsoOutSetup = InterfaceSetup{

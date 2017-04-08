@@ -27,8 +27,7 @@ func TestNewTransfer(t *testing.T) {
 		desc        string
 		dir         EndpointDirection
 		tt          TransferType
-		maxPkt      uint16
-		maxIso      uint32
+		maxPkt      uint32
 		buf         int
 		timeout     time.Duration
 		wantIso     int
@@ -48,18 +47,16 @@ func TestNewTransfer(t *testing.T) {
 			desc:       "iso out transfer, 3 * 1024B packets",
 			dir:        EndpointDirectionOut,
 			tt:         TransferTypeIsochronous,
-			maxPkt:     2<<11 + 1024,
-			maxIso:     3 * 1024,
+			maxPkt:     3 * 1024,
 			buf:        10000,
 			wantLength: 10000,
 		},
 	} {
-		xfer, err := newUSBTransfer(nil, EndpointInfo{
-			Address:       uint8(tc.dir) | 0x02,
-			Attributes:    uint8(tc.tt),
+		xfer, err := newUSBTransfer(nil, &EndpointInfo{
+			Number:        2,
+			Direction:     tc.dir,
+			TransferType:  tc.tt,
 			MaxPacketSize: tc.maxPkt,
-			MaxIsoPacket:  tc.maxIso,
-			PollInterval:  1,
 		}, make([]byte, tc.buf), tc.timeout)
 
 		if err != nil {
@@ -80,11 +77,11 @@ func TestTransferProtocol(t *testing.T) {
 	xfers := make([]*usbTransfer, 2)
 	var err error
 	for i := 0; i < 2; i++ {
-		xfers[i], err = newUSBTransfer(nil, EndpointInfo{
-			Address:       0x86,
-			Attributes:    uint8(TransferTypeBulk),
+		xfers[i], err = newUSBTransfer(nil, &EndpointInfo{
+			Number:        6,
+			Direction:     EndpointDirectionIn,
+			TransferType:  TransferTypeBulk,
 			MaxPacketSize: 512,
-			PollInterval:  1,
 		}, make([]byte, 10240), time.Second)
 		if err != nil {
 			t.Fatalf("newUSBTransfer: %v", err)

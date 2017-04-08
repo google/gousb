@@ -46,13 +46,15 @@ var (
 						Alternate: 0,
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
-							Address:       uint8(0x01 | EndpointDirectionOut),
-							Attributes:    uint8(TransferTypeBulk),
+							Number:        1,
+							Direction:     EndpointDirectionOut,
 							MaxPacketSize: 512,
+							TransferType:  TransferTypeBulk,
 						}, {
-							Address:       uint8(0x02 | EndpointDirectionIn),
-							Attributes:    uint8(TransferTypeBulk),
+							Number:        2,
+							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 512,
+							TransferType:  TransferTypeBulk,
 						}},
 					}},
 				}},
@@ -87,45 +89,47 @@ var (
 						Alternate: 0,
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
-							Address:       uint8(0x05 | EndpointDirectionOut),
-							Attributes:    uint8(TransferTypeIsochronous),
-							MaxPacketSize: 2<<11 | 1024,
-							MaxIsoPacket:  3 * 1024,
+							Number:        5,
+							Direction:     EndpointDirectionOut,
+							MaxPacketSize: 3 * 1024,
+							TransferType:  TransferTypeIsochronous,
+							UsageType:     IsoUsageTypeData,
 						}, {
-							Address:       uint8(0x06 | EndpointDirectionIn),
-							Attributes:    uint8(TransferTypeIsochronous),
-							MaxPacketSize: 2<<11 | 1024,
-							MaxIsoPacket:  3 * 1024,
+							Number:        6,
+							Direction:     EndpointDirectionIn,
+							MaxPacketSize: 3 * 1024,
+							TransferType:  TransferTypeIsochronous,
+							UsageType:     IsoUsageTypeData,
 						}},
 					}, {
 						Number:    1,
 						Alternate: 1,
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
-							Address:       uint8(0x05 | EndpointDirectionOut),
-							Attributes:    uint8(TransferTypeIsochronous),
-							MaxPacketSize: 1<<11 | 1024,
-							MaxIsoPacket:  2 * 1024,
+							Number:        5,
+							Direction:     EndpointDirectionOut,
+							MaxPacketSize: 2 * 1024,
+							TransferType:  TransferTypeIsochronous,
 						}, {
-							Address:       uint8(0x06 | EndpointDirectionIn),
-							Attributes:    uint8(TransferTypeIsochronous),
-							MaxPacketSize: 1<<11 | 1024,
-							MaxIsoPacket:  2 * 1024,
+							Number:        6,
+							Direction:     EndpointDirectionIn,
+							MaxPacketSize: 2 * 1024,
+							TransferType:  TransferTypeIsochronous,
 						}},
 					}, {
 						Number:    1,
 						Alternate: 2,
 						IfClass:   uint8(ClassVendorSpec),
 						Endpoints: []EndpointInfo{{
-							Address:       uint8(0x05 | EndpointDirectionOut),
-							Attributes:    uint8(TransferTypeIsochronous),
+							Number:        5,
+							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 1024,
-							MaxIsoPacket:  1024,
+							TransferType:  TransferTypeIsochronous,
 						}, {
-							Address:       uint8(0x06 | EndpointDirectionIn),
-							Attributes:    uint8(TransferTypeIsochronous),
+							Number:        6,
+							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 1024,
-							MaxIsoPacket:  1024,
+							TransferType:  TransferTypeIsochronous,
 						}},
 					}},
 				}},
@@ -256,7 +260,7 @@ func (f *fakeLibusb) setAlt(d *libusbDevHandle, intf, alt uint8) error {
 	return nil
 }
 
-func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ uint8, _ TransferType, _ time.Duration, _ int, buf []byte) (*libusbTransfer, error) {
+func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointInfo, _ time.Duration, _ int, buf []byte) (*libusbTransfer, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	t := new(libusbTransfer)

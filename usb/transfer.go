@@ -112,23 +112,22 @@ func (t *usbTransfer) free() error {
 
 // newUSBTransfer allocates a new transfer structure for communication with a
 // given device/endpoint, with buf as the underlying transfer buffer.
-func newUSBTransfer(dev *libusbDevHandle, ei EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
+func newUSBTransfer(dev *libusbDevHandle, ei *EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets int
-	tt := ei.TransferType()
-	if tt == TransferTypeIsochronous {
-		isoPackets = len(buf) / int(ei.MaxIsoPacket)
-		if int(ei.MaxIsoPacket)*isoPackets < len(buf) {
+	if ei.TransferType == TransferTypeIsochronous {
+		isoPackets = len(buf) / int(ei.MaxPacketSize)
+		if int(ei.MaxPacketSize)*isoPackets < len(buf) {
 			isoPackets++
 		}
 	}
 
-	xfer, err := libusb.alloc(dev, ei.Address, tt, timeout, isoPackets, buf)
+	xfer, err := libusb.alloc(dev, ei, timeout, isoPackets, buf)
 	if err != nil {
 		return nil, err
 	}
 
-	if tt == TransferTypeIsochronous {
-		libusb.setIsoPacketLengths(xfer, ei.MaxIsoPacket)
+	if ei.TransferType == TransferTypeIsochronous {
+		libusb.setIsoPacketLengths(xfer, ei.MaxPacketSize)
 	}
 
 	t := &usbTransfer{

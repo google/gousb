@@ -9,20 +9,23 @@ func TestEndpointInfo(t *testing.T) {
 	}{
 		{
 			ep: EndpointInfo{
-				Address:       0x86,
-				Attributes:    0x02,
+				Number:        6,
+				Direction:     EndpointDirectionIn,
+				TransferType:  TransferTypeBulk,
 				MaxPacketSize: 512,
 			},
-			want: "Endpoint #6 IN  bulk - unsynchronized data [512 0]",
+			want: "Endpoint #6 IN (address 0x86) bulk [512 bytes]",
 		},
 		{
 			ep: EndpointInfo{
-				Address:       0x02,
-				Attributes:    0x05,
+				Number:        2,
+				Direction:     EndpointDirectionOut,
+				TransferType:  TransferTypeIsochronous,
 				MaxPacketSize: 512,
-				MaxIsoPacket:  512,
+				IsoSyncType:   IsoSyncTypeAsync,
+				UsageType:     IsoUsageTypeData,
 			},
-			want: "Endpoint #2 OUT isochronous - asynchronous data [512 512]",
+			want: "Endpoint #2 OUT (address 0x02) isochronous - asynchronous data [512 bytes]",
 		},
 	} {
 		if got := tc.ep.String(); got != tc.want {

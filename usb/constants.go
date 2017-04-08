@@ -144,23 +144,32 @@ func (ist IsoSyncType) String() string {
 	return isoSyncTypeDescription[ist]
 }
 
-type IsoUsageType uint8
+type UsageType uint8
 
 const (
-	IsoUsageTypeData     IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_DATA << 4
-	IsoUsageTypeFeedback IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_FEEDBACK << 4
-	IsoUsageTypeImplicit IsoUsageType = C.LIBUSB_ISO_USAGE_TYPE_IMPLICIT << 4
-	IsoUsageTypeMask                  = 0x30
+	// Note: USB3.0 defines usage type for both isochronous and interrupt
+	// endpoints, with the same constants representing different usage types.
+	// UsageType constants do not correspond to bmAttribute values.
+	UsageTypeMask                = 0x30
+	UsageTypeUndefined UsageType = iota
+	IsoUsageTypeData
+	IsoUsageTypeFeedback
+	IsoUsageTypeImplicit
+	InterruptUsageTypePeriodic
+	InterruptUsageTypeNotification
 )
 
-var isoUsageTypeDescription = map[IsoUsageType]string{
-	IsoUsageTypeData:     "data",
-	IsoUsageTypeFeedback: "feedback",
-	IsoUsageTypeImplicit: "implicit data",
+var usageTypeDescription = map[UsageType]string{
+	UsageTypeUndefined:             "undefined usage",
+	IsoUsageTypeData:               "data",
+	IsoUsageTypeFeedback:           "feedback",
+	IsoUsageTypeImplicit:           "implicit data",
+	InterruptUsageTypePeriodic:     "periodic",
+	InterruptUsageTypeNotification: "notification",
 }
 
-func (iut IsoUsageType) String() string {
-	return isoUsageTypeDescription[iut]
+func (ut UsageType) String() string {
+	return usageTypeDescription[ut]
 }
 
 type RequestType uint8

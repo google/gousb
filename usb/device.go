@@ -92,7 +92,7 @@ func (d *Device) Close() error {
 	return nil
 }
 
-func (d *Device) OpenEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*Endpoint, error) {
+func (d *Device) OpenEndpoint(epNum, cfgNum, ifNum, setNum uint8) (*Endpoint, error) {
 	var cfg *ConfigInfo
 	for _, c := range d.Configs {
 		if c.Config == cfgNum {
@@ -132,7 +132,7 @@ func (d *Device) OpenEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*Endpoint, er
 
 	var ep *EndpointInfo
 	for _, e := range ifs.Endpoints {
-		if e.Address == epNum {
+		if e.Number == epNum {
 			debug.Printf("found ep %02x in %#v\n", epNum, *ifs)
 			ep = &e
 		}

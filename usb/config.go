@@ -17,37 +17,31 @@ package usb
 
 import (
 	"fmt"
+	"strings"
+	"time"
 )
 
 type EndpointInfo struct {
-	Address       uint8
-	Attributes    uint8
-	MaxPacketSize uint16
-	MaxIsoPacket  uint32
-	PollInterval  uint8
-	RefreshRate   uint8
-	SynchAddress  uint8
-}
-
-func (e EndpointInfo) Number() int {
-	return int(e.Address & EndpointNumMask)
-}
-
-func (e EndpointInfo) TransferType() TransferType {
-	return TransferType(e.Attributes & TransferTypeMask)
-}
-
-func (e EndpointInfo) Direction() EndpointDirection {
-	return EndpointDirection(e.Address & EndpointDirectionMask)
+	Number        uint8
+	Direction     EndpointDirection
+	MaxPacketSize uint32
+	TransferType  TransferType
+	PollInterval  time.Duration
+	IsoSyncType   IsoSyncType
+	UsageType     UsageType
 }
 
 func (e EndpointInfo) String() string {
-	return fmt.Sprintf("Endpoint #%d %-3s %s - %s %s [%d %d]",
-		e.Number(), e.Direction(), e.TransferType(),
-		IsoSyncType(e.Attributes)&IsoSyncTypeMask,
-		IsoUsageType(e.Attributes)&IsoUsageTypeMask,
-		e.MaxPacketSize, e.MaxIsoPacket,
-	)
+	ret := make([]string, 0, 3)
+	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, uint8(e.Number)|uint8(e.Direction), e.TransferType))
+	switch e.TransferType {
+	case TransferTypeIsochronous:
+		ret = append(ret, fmt.Sprintf("- %s %s", e.IsoSyncType, e.UsageType))
+	case TransferTypeInterrupt:
+		ret = append(ret, fmt.Sprintf("- %s", e.UsageType))
+	}
+	ret = append(ret, fmt.Sprintf("[%d bytes]", e.MaxPacketSize))
+	return strings.Join(ret, " ")
 }
 
 type InterfaceInfo struct {

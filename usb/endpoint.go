@@ -24,14 +24,14 @@ type Endpoint struct {
 	h *libusbDevHandle
 
 	InterfaceSetup
-	EndpointInfo
+	Info EndpointInfo
 
 	readTimeout  time.Duration
 	writeTimeout time.Duration
 }
 
 func (e *Endpoint) Read(buf []byte) (int, error) {
-	if EndpointDirection(e.Address)&EndpointDirectionMask != EndpointDirectionIn {
+	if e.Info.Direction != EndpointDirectionIn {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
 	}
 
@@ -39,22 +39,19 @@ func (e *Endpoint) Read(buf []byte) (int, error) {
 }
 
 func (e *Endpoint) Write(buf []byte) (int, error) {
-	if EndpointDirection(e.Address)&EndpointDirectionMask != EndpointDirectionOut {
+	if e.Info.Direction != EndpointDirectionOut {
 		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
 	}
 
 	return e.transfer(buf, e.writeTimeout)
 }
 
-func (e *Endpoint) Interface() InterfaceSetup { return e.InterfaceSetup }
-func (e *Endpoint) Info() EndpointInfo        { return e.EndpointInfo }
-
 func (e *Endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.h, e.EndpointInfo, buf, timeout)
+	t, err := newUSBTransfer(e.h, &e.Info, buf, timeout)
 	if err != nil {
 		return 0, err
 	}
@@ -74,7 +71,7 @@ func (e *Endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 func newEndpoint(h *libusbDevHandle, s InterfaceSetup, e EndpointInfo, rt, wt time.Duration) *Endpoint {
 	return &Endpoint{
 		InterfaceSetup: s,
-		EndpointInfo:   e,
+		Info:           e,
 		h:              h,
 		readTimeout:    rt,
 		writeTimeout:   wt,
