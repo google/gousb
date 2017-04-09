@@ -24,7 +24,7 @@ import (
 type Endpoint struct {
 	h *libusbDevHandle
 
-	InterfaceSetup
+	InterfaceSetting
 	Info EndpointInfo
 
 	readTimeout  time.Duration
@@ -76,12 +76,12 @@ func (e *Endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	return n, nil
 }
 
-func newEndpoint(h *libusbDevHandle, s InterfaceSetup, e EndpointInfo, rt, wt time.Duration) *Endpoint {
+func newEndpoint(h *libusbDevHandle, s InterfaceSetting, e EndpointInfo, rt, wt time.Duration) *Endpoint {
 	return &Endpoint{
-		InterfaceSetup: s,
-		Info:           e,
-		h:              h,
-		readTimeout:    rt,
-		writeTimeout:   wt,
+		InterfaceSetting: s,
+		Info:             e,
+		h:                h,
+		readTimeout:      rt,
+		writeTimeout:     wt,
 	}
 }

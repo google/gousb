@@ -15,8 +15,7 @@
 
 package usb
 
-// To enable internal debugging:
-//   -ldflags "-X github.com/kylelemons/gousb/usb.debugInternal true"
+// To enable internal debugging, set the GOUSB_DEBUG environment variable.
 
 import (
 	"io"
@@ -26,11 +25,12 @@ import (
 )
 
 var debug *log.Logger
-var debugInternal string
+
+const debugEnvVarName = "GOUSB_DEBUG"
 
 func init() {
 	var out io.Writer = ioutil.Discard
-	if debugInternal != "" {
+	if os.Getenv(debugEnvVarName) != "" {
 		out = os.Stderr
 	}
 	debug = log.New(out, "usb", log.LstdFlags|log.Lshortfile)

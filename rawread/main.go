@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/kylelemons/gousb/usb"
-	"github.com/kylelemons/gousb/usbid"
 )
 
 var (
@@ -138,29 +137,6 @@ func main() {
 		devs = devs[:1]
 	}
 	dev := devs[0]
-
-	// The usbid package can be used to print out human readable information.
-	log.Printf("  Protocol: %s\n", usbid.Classify(dev.Descriptor))
-
-	// The configurations can be examined from the Descriptor, though they can only
-	// be set once the device is opened.  All configuration references must be closed,
-	// to free up the memory in libusb.
-	for _, cfg := range dev.Configs {
-		// This loop just uses more of the built-in and usbid pretty printing to list
-		// the USB devices.
-		log.Printf("  %s:\n", cfg)
-		for _, alt := range cfg.Interfaces {
-			log.Printf("    --------------\n")
-			for _, iface := range alt.Setups {
-				log.Printf("    %s\n", iface)
-				log.Printf("      %s\n", usbid.Classify(iface))
-				for _, end := range iface.Endpoints {
-					log.Printf("      %s\n", end)
-				}
-			}
-		}
-		log.Printf("    --------------\n")
-	}
 
 	log.Printf("Connecting to endpoint %d...", *endpoint)
 	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint))

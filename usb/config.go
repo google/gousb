@@ -74,22 +74,22 @@ type InterfaceInfo struct {
 	// Number is the number of this interface, a zero-based index in the array
 	// of interfaces supported by the device configuration.
 	Number uint8
-	// Setups is a list of alternate settings supported by the interface.
-	Setups []InterfaceSetup
+	// AltSettings is a list of alternate settings supported by the interface.
+	AltSettings []InterfaceSetting
 }
 
 // String returns a human-readable descripton of the interface and it's
 // alternate settings.
 func (i InterfaceInfo) String() string {
-	return fmt.Sprintf("Interface %02x (%d alternate settings)", i.Number, len(i.Setups))
+	return fmt.Sprintf("Interface %d (%d alternate settings)", i.Number, len(i.AltSettings))
 }
 
-// InterfaceSetup contains information about a USB interface with a particular
+// InterfaceSetting contains information about a USB interface with a particular
 // alternate setting, extracted from the descriptor.
-type InterfaceSetup struct {
+type InterfaceSetting struct {
 	// Number is the number of this interface, the same as in InterfaceInfo.
 	Number uint8
-	// Alternate is the number of the alternate setting.
+	// Alternate is the number of this alternate setting.
 	Alternate uint8
 	// Class is the USB-IF class code, as defined by the USB spec.
 	Class Class
@@ -104,8 +104,8 @@ type InterfaceSetup struct {
 
 // String returns a human-readable descripton of the particular
 // alternate setting of an interface.
-func (a InterfaceSetup) String() string {
-	return fmt.Sprintf("Interface %02x Setup %02x", a.Number, a.Alternate)
+func (a InterfaceSetting) String() string {
+	return fmt.Sprintf("Interface %d alternate setting %d", a.Number, a.Alternate)
 }
 
 // ConfigInfo contains the information about a USB device configuration.
@@ -126,5 +126,5 @@ type ConfigInfo struct {
 
 // String returns the human-readable description of the configuration.
 func (c ConfigInfo) String() string {
-	return fmt.Sprintf("Config %02x", c.Config)
+	return fmt.Sprintf("Config %d", c.Config)
 }

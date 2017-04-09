@@ -52,12 +52,12 @@ func main() {
 			// This loop just uses more of the built-in and usbid pretty printing to list
 			// the USB devices.
 			fmt.Printf("  %s:\n", cfg)
-			for _, alt := range cfg.Interfaces {
+			for _, intf := range cfg.Interfaces {
 				fmt.Printf("    --------------\n")
-				for _, iface := range alt.Setups {
-					fmt.Printf("    %s\n", iface)
-					fmt.Printf("      %s\n", usbid.Classify(iface))
-					for _, end := range iface.Endpoints {
+				for _, ifSetting := range intf.AltSettings {
+					fmt.Printf("    %s\n", ifSetting)
+					fmt.Printf("      %s\n", usbid.Classify(ifSetting))
+					for _, end := range ifSetting.Endpoints {
 						fmt.Printf("      %s\n", end)
 					}
 				}

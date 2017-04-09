@@ -40,7 +40,7 @@ var (
 				MaxPower: Milliamperes(100),
 				Interfaces: []InterfaceInfo{{
 					Number: 0,
-					Setups: []InterfaceSetup{{
+					AltSettings: []InterfaceSetting{{
 						Number:    0,
 						Alternate: 0,
 						Class:     ClassVendorSpec,
@@ -76,14 +76,14 @@ var (
 				MaxPower: Milliamperes(100),
 				Interfaces: []InterfaceInfo{{
 					Number: 0,
-					Setups: []InterfaceSetup{{
+					AltSettings: []InterfaceSetting{{
 						Number:    0,
 						Alternate: 0,
 						Class:     ClassVendorSpec,
 					}},
 				}, {
 					Number: 1,
-					Setups: []InterfaceSetup{{
+					AltSettings: []InterfaceSetting{{
 						Number:    1,
 						Alternate: 0,
 						Class:     ClassVendorSpec,

@@ -24,11 +24,11 @@ func TestEndpoint(t *testing.T) {
 	defer func(i libusbIntf) { libusb = i }(libusb)
 	for _, epCfg := range []struct {
 		method string
-		InterfaceSetup
+		InterfaceSetting
 		EndpointInfo
 	}{
-		{"Read", testBulkInSetup, testBulkInEP},
-		{"Write", testIsoOutSetup, testIsoOutEP},
+		{"Read", testBulkInSetting, testBulkInEP},
+		{"Write", testIsoOutSetting, testIsoOutEP},
 	} {
 		t.Run(epCfg.method, func(t *testing.T) {
 			for _, tc := range []struct {
@@ -62,7 +62,7 @@ func TestEndpoint(t *testing.T) {
 			} {
 				lib := newFakeLibusb()
 				libusb = lib
-				ep := newEndpoint(nil, epCfg.InterfaceSetup, epCfg.EndpointInfo, time.Second, time.Second)
+				ep := newEndpoint(nil, epCfg.InterfaceSetting, epCfg.EndpointInfo, time.Second, time.Second)
 				op, ok := reflect.TypeOf(ep).MethodByName(epCfg.method)
 				if !ok {
 					t.Fatalf("method %s not found in endpoint struct", epCfg.method)
@@ -89,16 +89,16 @@ func TestEndpoint(t *testing.T) {
 
 func TestEndpointWrongDirection(t *testing.T) {
 	ep := &Endpoint{
-		InterfaceSetup: testBulkInSetup,
-		Info:           testBulkInEP,
+		InterfaceSetting: testBulkInSetting,
+		Info:             testBulkInEP,
 	}
 	_, err := ep.Write([]byte{1, 2, 3})
 	if err == nil {
 		t.Error("bulkInEP.Write(): got nil error, want non-nil")
 	}
 	ep = &Endpoint{
-		InterfaceSetup: testIsoOutSetup,
-		Info:           testIsoOutEP,
+		InterfaceSetting: testIsoOutSetting,
+		Info:             testIsoOutEP,
 	}
 	_, err = ep.Read(make([]byte, 64))
 	if err == nil {
@@ -124,7 +124,7 @@ func TestOpenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got error %v, want nil", err)
 	}
-	if want := fakeDevices[1].Configs[0].Interfaces[1].Setups[2].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
+	if want := fakeDevices[1].Configs[0].Interfaces[1].AltSettings[2].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
 		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got %+v, want %+v", got, want)
 	}
 }

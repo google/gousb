@@ -105,7 +105,7 @@ func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, e
 	var cfg *ConfigInfo
 	for _, c := range d.Configs {
 		if c.Config == cfgNum {
-			debug.Printf("found conf: %#v\n", c)
+			debug.Printf("found conf: %+v\n", c)
 			cfg = &c
 			break
 		}
@@ -117,7 +117,7 @@ func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, e
 	var intf *InterfaceInfo
 	for _, i := range cfg.Interfaces {
 		if i.Number == ifNum {
-			debug.Printf("found iface: %#v\n", i)
+			debug.Printf("found iface: %+v\n", i)
 			intf = &i
 			break
 		}
@@ -127,11 +127,11 @@ func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, e
 	}
 
 	var setAlternate bool
-	var ifs *InterfaceSetup
-	for i, s := range intf.Setups {
+	var ifs *InterfaceSetting
+	for i, s := range intf.AltSettings {
 		if s.Alternate == setNum {
 			setAlternate = i != 0
-			debug.Printf("found setup: %#v [default: %v]\n", s, !setAlternate)
+			debug.Printf("found setup: %+v [default: %v]\n", s, !setAlternate)
 			ifs = &s
 		}
 	}
@@ -142,7 +142,7 @@ func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, e
 	var ep *EndpointInfo
 	for _, e := range ifs.Endpoints {
 		if endpointAddr(e.Number, e.Direction) == epAddr {
-			debug.Printf("found ep 0x%02x %s in %#v\n", e.Number, e.Direction, *ifs)
+			debug.Printf("found ep #%d %s in %+v\n", e.Number, e.Direction, *ifs)
 			ep = &e
 		}
 	}

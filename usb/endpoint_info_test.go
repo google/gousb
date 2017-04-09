@@ -24,7 +24,7 @@ var testBulkInEP = EndpointInfo{
 	TransferType:  TransferTypeBulk,
 }
 
-var testBulkInSetup = InterfaceSetup{
+var testBulkInSetting = InterfaceSetting{
 	Number:    0,
 	Alternate: 0,
 	Class:     ClassVendorSpec,
@@ -40,7 +40,7 @@ var testIsoOutEP = EndpointInfo{
 	UsageType:     IsoUsageTypeData,
 }
 
-var testIsoOutSetup = InterfaceSetup{
+var testIsoOutSetting = InterfaceSetting{
 	Number:    0,
 	Alternate: 0,
 	Class:     ClassVendorSpec,

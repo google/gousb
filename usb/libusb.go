@@ -238,9 +238,9 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 				Len:  int(iface.num_altsetting),
 				Cap:  int(iface.num_altsetting),
 			}
-			descs := make([]InterfaceSetup, 0, len(alts))
+			descs := make([]InterfaceSetting, 0, len(alts))
 			for _, alt := range alts {
-				i := InterfaceSetup{
+				i := InterfaceSetting{
 					Number:    uint8(alt.bInterfaceNumber),
 					Alternate: uint8(alt.bAlternateSetting),
 					Class:     Class(alt.bInterfaceClass),
@@ -261,8 +261,8 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 				descs = append(descs, i)
 			}
 			c.Interfaces = append(c.Interfaces, InterfaceInfo{
-				Number: descs[0].Number,
-				Setups: descs,
+				Number:      descs[0].Number,
+				AltSettings: descs,
 			})
 		}
 		C.libusb_free_config_descriptor(cfg)
