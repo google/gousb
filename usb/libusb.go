@@ -40,9 +40,9 @@ type libusbEndpoint C.struct_libusb_endpoint_descriptor
 
 func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
 	ei := EndpointInfo{
-		Number:        uint8(ep.bEndpointAddress & EndpointNumMask),
-		Direction:     EndpointDirection((ep.bEndpointAddress & EndpointDirectionMask) != 0),
-		TransferType:  TransferType(ep.bmAttributes & TransferTypeMask),
+		Number:        uint8(ep.bEndpointAddress & endpointNumMask),
+		Direction:     EndpointDirection((ep.bEndpointAddress & endpointDirectionMask) != 0),
+		TransferType:  TransferType(ep.bmAttributes & transferTypeMask),
 		MaxPacketSize: uint32(ep.wMaxPacketSize),
 	}
 	if ei.TransferType == TransferTypeIsochronous {
@@ -52,8 +52,8 @@ func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
 		// max packet sizes.
 		// See http://libusb.org/ticket/77 for more background.
 		ei.MaxPacketSize = uint32(ep.wMaxPacketSize) & 0x07ff * (uint32(ep.wMaxPacketSize)>>11&3 + 1)
-		ei.IsoSyncType = IsoSyncType(ep.bmAttributes & IsoSyncTypeMask)
-		switch ep.bmAttributes & UsageTypeMask {
+		ei.IsoSyncType = IsoSyncType(ep.bmAttributes & isoSyncTypeMask)
+		switch ep.bmAttributes & usageTypeMask {
 		case C.LIBUSB_ISO_USAGE_TYPE_DATA:
 			ei.UsageType = IsoUsageTypeData
 		case C.LIBUSB_ISO_USAGE_TYPE_FEEDBACK:
@@ -214,8 +214,8 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 		}
 		c := ConfigInfo{
 			Config:       uint8(cfg.bConfigurationValue),
-			SelfPowered:  (cfg.bmAttributes & SelfPoweredMask) != 0,
-			RemoteWakeup: (cfg.bmAttributes & RemoteWakeupMask) != 0,
+			SelfPowered:  (cfg.bmAttributes & selfPoweredMask) != 0,
+			RemoteWakeup: (cfg.bmAttributes & remoteWakeupMask) != 0,
 			// TODO(sebek): at GenX speeds MaxPower is expressed in units of 8mA, not 2mA.
 			MaxPower: 2 * Milliamperes(cfg.MaxPower),
 		}
@@ -374,9 +374,9 @@ func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointInfo, timeout time.Durat
 		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
 	}
 	xfer.dev_handle = (*C.libusb_device_handle)(d)
-	addr := ep.Number & EndpointNumMask
+	addr := ep.Number & endpointNumMask
 	if ep.Direction == EndpointDirectionIn {
-		addr |= EndpointDirectionMask
+		addr |= endpointDirectionMask
 	}
 	xfer.endpoint = C.uchar(addr)
 	xfer.timeout = C.uint(timeout / time.Millisecond)

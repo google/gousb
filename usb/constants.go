@@ -105,8 +105,8 @@ func (dt DescriptorType) String() string {
 type EndpointDirection bool
 
 const (
-	EndpointNumMask       = 0x0f
-	EndpointDirectionMask = 0x80
+	endpointNumMask       = 0x0f
+	endpointDirectionMask = 0x80
 	// EndpointDirectionIn marks data flowing from device to host.
 	EndpointDirectionIn EndpointDirection = true
 	// EndpointDirectionOut marks data flowing from host to device.
@@ -129,7 +129,7 @@ const (
 	TransferTypeIsochronous TransferType = C.LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
 	TransferTypeBulk        TransferType = C.LIBUSB_TRANSFER_TYPE_BULK
 	TransferTypeInterrupt   TransferType = C.LIBUSB_TRANSFER_TYPE_INTERRUPT
-	TransferTypeMask                     = 0x03
+	transferTypeMask                     = 0x03
 )
 
 var transferTypeDescription = map[TransferType]string{
@@ -150,7 +150,7 @@ const (
 	IsoSyncTypeAsync    IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ASYNC << 2
 	IsoSyncTypeAdaptive IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ADAPTIVE << 2
 	IsoSyncTypeSync     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_SYNC << 2
-	IsoSyncTypeMask                 = 0x0C
+	isoSyncTypeMask                 = 0x0C
 )
 
 var isoSyncTypeDescription = map[IsoSyncType]string{
@@ -170,7 +170,7 @@ const (
 	// Note: USB3.0 defines usage type for both isochronous and interrupt
 	// endpoints, with the same constants representing different usage types.
 	// UsageType constants do not correspond to bmAttribute values.
-	UsageTypeMask                = 0x30
+	usageTypeMask                = 0x30
 	UsageTypeUndefined UsageType = iota
 	IsoUsageTypeData
 	IsoUsageTypeFeedback
@@ -235,12 +235,8 @@ func (s DeviceSpeed) String() string {
 }
 
 const (
-	// SelfPoweredMask is the bitmask for "self powered" field of configuration
-	// descriptor bmAttributes.
-	SelfPoweredMask = 0x40
-	// RemoteWakeupMask is the bitmask for "supports remote wakeup" field of
-	// configuration descriptor bmAttributes.
-	RemoteWakeupMask = 0x20
+	selfPoweredMask  = 0x40
+	remoteWakeupMask = 0x20
 )
 
 // Milliamperes is a unit of electric current consumption.
