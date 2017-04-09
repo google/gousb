@@ -60,7 +60,7 @@ func TestOpenDeviceWithVidPid(t *testing.T) {
 	libusb = newFakeLibusb()
 
 	for _, d := range []struct {
-		vid, pid int
+		vid, pid ID
 		exists   bool
 	}{
 		{0x7777, 0x0003, false},

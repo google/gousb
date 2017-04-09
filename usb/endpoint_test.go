@@ -146,3 +146,34 @@ func TestEndpointInfo(t *testing.T) {
 		}
 	}
 }
+
+func TestEndpointIn(t *testing.T) {
+	defer func(i libusbIntf) { libusb = i }(libusb)
+
+	lib := newFakeLibusb()
+	libusb = lib
+
+	ctx := NewContext()
+	d, err := ctx.OpenDeviceWithVidPid(0x9999, 0x0001)
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVidPid(0x9999, 0x0001): got error %v, want nil", err)
+	}
+	ep, err := d.InEndpoint(1, 0, 0, 2)
+	if err != nil {
+		t.Fatalf("InEndpoint(1, 0, 0, 2): got error %v, want nil", err)
+	}
+	dataTransferred := 100
+	go func() {
+		fakeT := lib.waitForSubmitted()
+		fakeT.length = dataTransferred
+		fakeT.status = TransferCompleted
+		close(fakeT.done)
+	}()
+	buf := make([]byte, 512)
+	got, err := ep.Read(buf)
+	if err != nil {
+		t.Errorf("ep.Read: got error %v, want nil", err)
+	} else if got != dataTransferred {
+		t.Errorf("ep.Read: got %d, want %d", got, dataTransferred)
+	}
+}
