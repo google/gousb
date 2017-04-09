@@ -64,7 +64,7 @@ func LoadFromURL(url string) error {
 //go:generate go run regen/regen.go --template regen/load_data.go.tpl -o load_data.go
 
 func init() {
-	ids, cls, err := ParseIDs(strings.NewReader(usbIdListData))
+	ids, cls, err := ParseIDs(strings.NewReader(usbIDListData))
 	if err != nil {
 		log.Printf("usbid: failed to parse: %s", err)
 		return

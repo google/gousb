@@ -23,7 +23,7 @@ import "time"
 //   2017-03-10 09:09:14.940548227 -0500 EST
 var LastUpdate = time.Unix(0, 1489154954940548227)
 
-const usbIdListData = `#
+const usbIDListData = `#
 #	List of USB ID's
 #
 #	Maintained by Stephen J. Gowdy <linux.usb.ids@gmail.com>
