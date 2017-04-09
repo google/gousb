@@ -37,13 +37,13 @@ var (
 			Protocol: 255,
 			Configs: []ConfigInfo{{
 				Config:   1,
-				MaxPower: 50, // * 2mA
+				MaxPower: Milliamperes(100),
 				Interfaces: []InterfaceInfo{{
 					Number: 0,
 					Setups: []InterfaceSetup{{
 						Number:    0,
 						Alternate: 0,
-						IfClass:   ClassVendorSpec,
+						Class:     ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        1,
 							Direction:     EndpointDirectionOut,
@@ -73,20 +73,20 @@ var (
 			Protocol: 255,
 			Configs: []ConfigInfo{{
 				Config:   1,
-				MaxPower: 50, // * 2mA
+				MaxPower: Milliamperes(100),
 				Interfaces: []InterfaceInfo{{
 					Number: 0,
 					Setups: []InterfaceSetup{{
 						Number:    0,
 						Alternate: 0,
-						IfClass:   ClassVendorSpec,
+						Class:     ClassVendorSpec,
 					}},
 				}, {
 					Number: 1,
 					Setups: []InterfaceSetup{{
 						Number:    1,
 						Alternate: 0,
-						IfClass:   ClassVendorSpec,
+						Class:     ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        5,
 							Direction:     EndpointDirectionOut,
@@ -103,7 +103,7 @@ var (
 					}, {
 						Number:    1,
 						Alternate: 1,
-						IfClass:   ClassVendorSpec,
+						Class:     ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        5,
 							Direction:     EndpointDirectionOut,
@@ -118,7 +118,7 @@ var (
 					}, {
 						Number:    1,
 						Alternate: 2,
-						IfClass:   ClassVendorSpec,
+						Class:     ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        5,
 							Direction:     EndpointDirectionIn,

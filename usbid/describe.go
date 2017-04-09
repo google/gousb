@@ -64,7 +64,7 @@ func Classify(val interface{}) string {
 	case *usb.Descriptor:
 		class, sub, proto = val.Class, val.SubClass, val.Protocol
 	case usb.InterfaceSetup:
-		class, sub, proto = usb.Class(val.IfClass), usb.Class(val.IfSubClass), val.IfProtocol
+		class, sub, proto = val.Class, val.SubClass, val.Protocol
 	default:
 		return fmt.Sprintf("Unknown (%T)", val)
 	}

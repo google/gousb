@@ -241,11 +241,11 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 			descs := make([]InterfaceSetup, 0, len(alts))
 			for _, alt := range alts {
 				i := InterfaceSetup{
-					Number:     uint8(alt.bInterfaceNumber),
-					Alternate:  uint8(alt.bAlternateSetting),
-					IfClass:    Class(alt.bInterfaceClass),
-					IfSubClass: Class(alt.bInterfaceSubClass),
-					IfProtocol: Protocol(alt.bInterfaceProtocol),
+					Number:    uint8(alt.bInterfaceNumber),
+					Alternate: uint8(alt.bAlternateSetting),
+					Class:     Class(alt.bInterfaceClass),
+					SubClass:  Class(alt.bInterfaceSubClass),
+					Protocol:  Protocol(alt.bInterfaceProtocol),
 				}
 				var ends []C.struct_libusb_endpoint_descriptor
 				*(*reflect.SliceHeader)(unsafe.Pointer(&ends)) = reflect.SliceHeader{

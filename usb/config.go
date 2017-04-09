@@ -81,12 +81,12 @@ type InterfaceSetup struct {
 	Number uint8
 	// Alternate is the number of the alternate setting.
 	Alternate uint8
-	// IfClass is the USB-IF class code, as defined by the USB spec.
-	IfClass Class
-	// IfClass is the USB-IF subclass code, as defined by the USB spec.
-	IfSubClass Class
-	// IfProtocol is USB protocol code, as defined by the USB spe.c
-	IfProtocol Protocol
+	// Class is the USB-IF class code, as defined by the USB spec.
+	Class Class
+	// SubClass is the USB-IF subclass code, as defined by the USB spec.
+	SubClass Class
+	// Protocol is USB protocol code, as defined by the USB spe.c
+	Protocol Protocol
 	// Endpoints has the list of endpoints available on this interface with
 	// this alternate setting.
 	Endpoints []EndpointInfo
