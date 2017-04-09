@@ -31,11 +31,11 @@ import (
 var (
 	vidPID   = flag.String("vidpid", "", "VID:PID of the device to which to connect. Exclusive with busaddr flag.")
 	busAddr  = flag.String("busaddr", "", "Bus:address of the device to which to connect. Exclusive with vidpid flag.")
-	config   = flag.Uint("config", 1, "Endpoint to which to connect")
-	iface    = flag.Uint("interface", 0, "Endpoint to which to connect")
-	setup    = flag.Uint("setup", 0, "Endpoint to which to connect")
-	endpoint = flag.Uint("endpoint", 1, "Endpoint to which to connect")
-	debug    = flag.Int("debug", 3, "Debug level for libusb")
+	config   = flag.Uint("config", 1, "Configuration number to use with the device.")
+	iface    = flag.Uint("interface", 0, "Interface to use on the device.")
+	setup    = flag.Uint("setup", 0, "Alternate setting to use on the interface.")
+	endpoint = flag.Uint("endpoint", 1, "Endpoint number to which to connect.")
+	debug    = flag.Int("debug", 3, "Debug level for libusb.")
 	size     = flag.Uint("read_size", 1024, "Number of bytes of data to read in a single transaction.")
 	num      = flag.Uint("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
 )
@@ -163,7 +163,7 @@ func main() {
 	}
 
 	log.Printf("Connecting to endpoint %d...", *endpoint)
-	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint)|uint8(usb.EndpointDirectionIn))
+	ep, err := dev.OpenEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint))
 	if err != nil {
 		log.Fatalf("open: %s", err)
 	}
