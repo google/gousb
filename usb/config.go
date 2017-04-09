@@ -21,14 +21,27 @@ import (
 	"time"
 )
 
+// EndpointInfo contains the information about an interface endpoint, collected
+// from the descriptor.
 type EndpointInfo struct {
-	Number        uint8
-	Direction     EndpointDirection
+	// Number represents the endpoint number. Note that the endpoint number is different from the
+	// address field in the descriptor - address 0x82 means endpoint number 2,
+	// with endpoint direction IN.
+	Number uint8
+	// Direction defines whether the data is flowing IN or OUT from the host perspective.
+	Direction EndpointDirection
+	// MaxPacketSize is the maximum USB packet size for a single frame/microframe.
 	MaxPacketSize uint32
-	TransferType  TransferType
-	PollInterval  time.Duration
-	IsoSyncType   IsoSyncType
-	UsageType     UsageType
+	// TransferType defines the endpoint type - bulk, interrupt, isochronous.
+	TransferType TransferType
+	// PollInterval is the maximum time between transfers for interrupt and isochronous transfer,
+	// or the NAK interval for a control transfer. See endpoint descriptor bInterval documentation
+	// in the USB spec for details.
+	PollInterval time.Duration
+	// IsoSyncType is the isochronous endpoint synchronization type, as defined by USB spec.
+	IsoSyncType IsoSyncType
+	// UsageType is the isochronous or interrupt endpoint usage type, as defined by USB spec.
+	UsageType UsageType
 }
 
 func (e EndpointInfo) String() string {
