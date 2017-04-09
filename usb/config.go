@@ -56,8 +56,8 @@ func (i InterfaceInfo) String() string {
 type InterfaceSetup struct {
 	Number     uint8
 	Alternate  uint8
-	IfClass    uint8
-	IfSubClass uint8
+	IfClass    Class
+	IfSubClass Class
 	IfProtocol uint8
 	Endpoints  []EndpointInfo
 }

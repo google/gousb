@@ -27,7 +27,7 @@ var testBulkInEP = EndpointInfo{
 var testBulkInSetup = InterfaceSetup{
 	Number:    0,
 	Alternate: 0,
-	IfClass:   uint8(ClassVendorSpec),
+	IfClass:   ClassVendorSpec,
 	Endpoints: []EndpointInfo{testBulkInEP},
 }
 
@@ -43,6 +43,6 @@ var testIsoOutEP = EndpointInfo{
 var testIsoOutSetup = InterfaceSetup{
 	Number:    0,
 	Alternate: 0,
-	IfClass:   uint8(ClassVendorSpec),
+	IfClass:   ClassVendorSpec,
 	Endpoints: []EndpointInfo{testIsoOutEP},
 }

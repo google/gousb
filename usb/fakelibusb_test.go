@@ -43,7 +43,7 @@ var (
 					Setups: []InterfaceSetup{{
 						Number:    0,
 						Alternate: 0,
-						IfClass:   uint8(ClassVendorSpec),
+						IfClass:   ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        1,
 							Direction:     EndpointDirectionOut,
@@ -79,14 +79,14 @@ var (
 					Setups: []InterfaceSetup{{
 						Number:    0,
 						Alternate: 0,
-						IfClass:   uint8(ClassVendorSpec),
+						IfClass:   ClassVendorSpec,
 					}},
 				}, {
 					Number: 1,
 					Setups: []InterfaceSetup{{
 						Number:    1,
 						Alternate: 0,
-						IfClass:   uint8(ClassVendorSpec),
+						IfClass:   ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        5,
 							Direction:     EndpointDirectionOut,
@@ -103,7 +103,7 @@ var (
 					}, {
 						Number:    1,
 						Alternate: 1,
-						IfClass:   uint8(ClassVendorSpec),
+						IfClass:   ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        5,
 							Direction:     EndpointDirectionOut,
@@ -118,7 +118,7 @@ var (
 					}, {
 						Number:    1,
 						Alternate: 2,
-						IfClass:   uint8(ClassVendorSpec),
+						IfClass:   ClassVendorSpec,
 						Endpoints: []EndpointInfo{{
 							Number:        5,
 							Direction:     EndpointDirectionIn,

@@ -241,8 +241,8 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 				i := InterfaceSetup{
 					Number:     uint8(alt.bInterfaceNumber),
 					Alternate:  uint8(alt.bAlternateSetting),
-					IfClass:    uint8(alt.bInterfaceClass),
-					IfSubClass: uint8(alt.bInterfaceSubClass),
+					IfClass:    Class(alt.bInterfaceClass),
+					IfSubClass: Class(alt.bInterfaceSubClass),
 					IfProtocol: uint8(alt.bInterfaceProtocol),
 				}
 				var ends []C.struct_libusb_endpoint_descriptor

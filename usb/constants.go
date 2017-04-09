@@ -17,6 +17,7 @@ package usb
 
 // #include <libusb.h>
 import "C"
+import "strconv"
 
 type Class uint8
 
@@ -51,7 +52,10 @@ var classDescription = map[Class]string{
 }
 
 func (c Class) String() string {
-	return classDescription[c]
+	if d, ok := classDescription[c]; ok {
+		return d
+	}
+	return strconv.Itoa(int(c))
 }
 
 type DescriptorType uint8
