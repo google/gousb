@@ -20,8 +20,40 @@ import (
 	"time"
 )
 
+// IN bulk endpoint
+var testBulkInEP = EndpointInfo{
+	Number:        2,
+	Direction:     EndpointDirectionIn,
+	MaxPacketSize: 512,
+	TransferType:  TransferTypeBulk,
+}
+
+var testBulkInSetting = InterfaceSetting{
+	Number:    0,
+	Alternate: 0,
+	Class:     ClassVendorSpec,
+	Endpoints: []EndpointInfo{testBulkInEP},
+}
+
+// OUT iso endpoint
+var testIsoOutEP = EndpointInfo{
+	Number:        6,
+	MaxPacketSize: 3 * 1024,
+	TransferType:  TransferTypeIsochronous,
+	PollInterval:  125 * time.Microsecond,
+	UsageType:     IsoUsageTypeData,
+}
+
+var testIsoOutSetting = InterfaceSetting{
+	Number:    0,
+	Alternate: 0,
+	Class:     ClassVendorSpec,
+	Endpoints: []EndpointInfo{testIsoOutEP},
+}
+
 func TestEndpoint(t *testing.T) {
 	defer func(i libusbIntf) { libusb = i }(libusb)
+
 	for _, epCfg := range []struct {
 		method string
 		InterfaceSetting
@@ -106,25 +138,44 @@ func TestEndpointWrongDirection(t *testing.T) {
 	}
 }
 
-func TestOpenEndpoint(t *testing.T) {
-	origLib := libusb
-	defer func() { libusb = origLib }()
-	libusb = newFakeLibusb()
-
-	c := NewContext()
-	dev, err := c.OpenDeviceWithVidPid(0x8888, 0x0002)
-	if dev == nil {
-		t.Fatal("OpenDeviceWithVidPid(0x8888, 0x0002): got nil device, need non-nil")
-	}
-	defer dev.Close()
-	if err != nil {
-		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): got error %v, want nil", err)
-	}
-	got, err := dev.OpenEndpoint(0x86, 1, 1, 2)
-	if err != nil {
-		t.Fatalf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got error %v, want nil", err)
-	}
-	if want := fakeDevices[1].Configs[0].Interfaces[1].AltSettings[2].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
-		t.Errorf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got %+v, want %+v", got, want)
+func TestEndpointInfo(t *testing.T) {
+	for _, tc := range []struct {
+		ep   EndpointInfo
+		want string
+	}{
+		{
+			ep: EndpointInfo{
+				Number:        6,
+				Direction:     EndpointDirectionIn,
+				TransferType:  TransferTypeBulk,
+				MaxPacketSize: 512,
+			},
+			want: "Endpoint #6 IN (address 0x86) bulk [512 bytes]",
+		},
+		{
+			ep: EndpointInfo{
+				Number:        2,
+				Direction:     EndpointDirectionOut,
+				TransferType:  TransferTypeIsochronous,
+				MaxPacketSize: 512,
+				IsoSyncType:   IsoSyncTypeAsync,
+				UsageType:     IsoUsageTypeData,
+			},
+			want: "Endpoint #2 OUT (address 0x02) isochronous - asynchronous data [512 bytes]",
+		},
+		{
+			ep: EndpointInfo{
+				Number:        3,
+				Direction:     EndpointDirectionIn,
+				TransferType:  TransferTypeInterrupt,
+				MaxPacketSize: 16,
+				UsageType:     InterruptUsageTypePeriodic,
+			},
+			want: "Endpoint #3 IN (address 0x83) interrupt - periodic [16 bytes]",
+		},
+	} {
+		if got := tc.ep.String(); got != tc.want {
+			t.Errorf("%#v.String(): got %q, want %q", tc.ep, got, tc.want)
+		}
 	}
 }
