@@ -64,7 +64,7 @@ var (
 				0x01: {Name: "Direct Line"},
 				0x02: {
 					Name: "Abstract (modem)",
-					Protocol: map[uint8]string{
+					Protocol: map[usb.Protocol]string{
 						0x00: "None",
 						0x01: "AT-commands (v.25ter)",
 						0x02: "AT-commands (PCCA101)",

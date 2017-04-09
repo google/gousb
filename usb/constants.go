@@ -19,6 +19,7 @@ package usb
 import "C"
 import "strconv"
 
+// Class represents a USB-IF class or subclass code.
 type Class uint8
 
 const (
@@ -56,6 +57,14 @@ func (c Class) String() string {
 		return d
 	}
 	return strconv.Itoa(int(c))
+}
+
+// Protocol is the interface class protocol, qualified by the values
+// of interface class and subclass.
+type Protocol uint8
+
+func (p Protocol) String() string {
+	return strconv.Itoa(int(p))
 }
 
 type DescriptorType uint8

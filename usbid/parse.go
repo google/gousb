@@ -63,7 +63,7 @@ func (c Class) String() string {
 // A SubClass contains the name of the subclass and any associated protocols.
 type SubClass struct {
 	Name     string
-	Protocol map[uint8]string
+	Protocol map[usb.Protocol]string
 }
 
 // String returns the name of the SubClass.
@@ -186,9 +186,9 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 			}
 
 			if subclass.Protocol == nil {
-				subclass.Protocol = make(map[uint8]string)
+				subclass.Protocol = make(map[usb.Protocol]string)
 			}
-			subclass.Protocol[uint8(id)] = name
+			subclass.Protocol[usb.Protocol(id)] = name
 
 		default:
 			return fmt.Errorf("too many levels of nesting for class")

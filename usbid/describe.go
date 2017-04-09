@@ -58,7 +58,7 @@ func Describe(val interface{}) string {
 func Classify(val interface{}) string {
 	var (
 		class, sub usb.Class
-		proto      uint8
+		proto      usb.Protocol
 	)
 	switch val := val.(type) {
 	case *usb.Descriptor:

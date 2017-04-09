@@ -86,7 +86,7 @@ type InterfaceSetup struct {
 	// IfClass is the USB-IF subclass code, as defined by the USB spec.
 	IfSubClass Class
 	// IfProtocol is USB protocol code, as defined by the USB spe.c
-	IfProtocol uint8
+	IfProtocol Protocol
 	// Endpoints has the list of endpoints available on this interface with
 	// this alternate setting.
 	Endpoints []EndpointInfo

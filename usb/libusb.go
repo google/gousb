@@ -245,7 +245,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 					Alternate:  uint8(alt.bAlternateSetting),
 					IfClass:    Class(alt.bInterfaceClass),
 					IfSubClass: Class(alt.bInterfaceSubClass),
-					IfProtocol: uint8(alt.bInterfaceProtocol),
+					IfProtocol: Protocol(alt.bInterfaceProtocol),
 				}
 				var ends []C.struct_libusb_endpoint_descriptor
 				*(*reflect.SliceHeader)(unsafe.Pointer(&ends)) = reflect.SliceHeader{
@@ -278,7 +278,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 		Product:  ID(desc.idProduct),
 		Class:    Class(desc.bDeviceClass),
 		SubClass: Class(desc.bDeviceSubClass),
-		Protocol: uint8(desc.bDeviceProtocol),
+		Protocol: Protocol(desc.bDeviceProtocol),
 		Configs:  cfgs,
 	}, nil
 }
