@@ -20,6 +20,7 @@ import (
 	"time"
 )
 
+// Endpoint identifies a USB endpoint opened for transfer.
 type Endpoint struct {
 	h *libusbDevHandle
 
@@ -30,10 +31,12 @@ type Endpoint struct {
 	writeTimeout time.Duration
 }
 
+// String returns a human-readable description of the endpoint.
 func (e *Endpoint) String() string {
 	return e.Info.String()
 }
 
+// Read reads data from an IN endpoint.
 func (e *Endpoint) Read(buf []byte) (int, error) {
 	if e.Info.Direction != EndpointDirectionIn {
 		return 0, fmt.Errorf("usb: read: not an IN endpoint")
@@ -42,6 +45,7 @@ func (e *Endpoint) Read(buf []byte) (int, error) {
 	return e.transfer(buf, e.readTimeout)
 }
 
+// Write writes data to an OUT endpoint.
 func (e *Endpoint) Write(buf []byte) (int, error) {
 	if e.Info.Direction != EndpointDirectionOut {
 		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
