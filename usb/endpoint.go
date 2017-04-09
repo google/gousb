@@ -110,7 +110,7 @@ func newEndpoint(h *libusbDevHandle, s InterfaceSetting, e EndpointInfo) *endpoi
 	}
 }
 
-// OutEndpoint represents an IN endpoint open for transfer.
+// InEndpoint represents an IN endpoint open for transfer.
 type InEndpoint struct {
 	*endpoint
 	timeout time.Duration

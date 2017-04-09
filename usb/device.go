@@ -182,6 +182,7 @@ func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, e
 	return end, nil
 }
 
+// InEndpoint prepares an IN endpoint for transfer.
 func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*InEndpoint, error) {
 	ep, err := d.openEndpoint(cfgNum, ifNum, setNum, endpointAddr(epNum, EndpointDirectionIn))
 	if err != nil {
@@ -190,6 +191,18 @@ func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*InEndpoint, er
 	return &InEndpoint{
 		endpoint: ep,
 		timeout:  d.ReadTimeout,
+	}, nil
+}
+
+// OutEndpoint prepares an OUT endpoint for transfer.
+func (d *Device) OutEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*OutEndpoint, error) {
+	ep, err := d.openEndpoint(cfgNum, ifNum, setNum, endpointAddr(epNum, EndpointDirectionOut))
+	if err != nil {
+		return nil, err
+	}
+	return &OutEndpoint{
+		endpoint: ep,
+		timeout:  d.WriteTimeout,
 	}, nil
 }
 
