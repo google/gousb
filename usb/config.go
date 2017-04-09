@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-// EndpointInfo contains the information about an interface endpoint, collected
+// EndpointInfo contains the information about an interface endpoint, extracted
 // from the descriptor.
 type EndpointInfo struct {
 	// Number represents the endpoint number. Note that the endpoint number is different from the
@@ -44,6 +44,7 @@ type EndpointInfo struct {
 	UsageType UsageType
 }
 
+// String returns the human-readable description of the endpoint.
 func (e EndpointInfo) String() string {
 	ret := make([]string, 0, 3)
 	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, uint8(e.Number)|uint8(e.Direction), e.TransferType))
@@ -57,35 +58,63 @@ func (e EndpointInfo) String() string {
 	return strings.Join(ret, " ")
 }
 
+// InterfaceInfo contains information about a USB interface, extracted from
+// the descriptor.
 type InterfaceInfo struct {
+	// Number is the number of this interface, a zero-based index in the array
+	// of interfaces supported by the device configuration.
 	Number uint8
+	// Setups is a list of alternate settings supported by the interface.
 	Setups []InterfaceSetup
 }
 
+// String returns a human-readable descripton of the interface and it's
+// alternate settings.
 func (i InterfaceInfo) String() string {
-	return fmt.Sprintf("Interface %02x (%d setups)", i.Number, len(i.Setups))
+	return fmt.Sprintf("Interface %02x (%d alternate settings)", i.Number, len(i.Setups))
 }
 
+// InterfaceSetup contains information about a USB interface with a particular
+// alternate setting, extracted from the descriptor.
 type InterfaceSetup struct {
-	Number     uint8
-	Alternate  uint8
-	IfClass    Class
+	// Number is the number of this interface, the same as in InterfaceInfo.
+	Number uint8
+	// Alternate is the number of the alternate setting.
+	Alternate uint8
+	// IfClass is the USB-IF class code, as defined by the USB spec.
+	IfClass Class
+	// IfClass is the USB-IF subclass code, as defined by the USB spec.
 	IfSubClass Class
+	// IfProtocol is USB protocol code, as defined by the USB spe.c
 	IfProtocol uint8
-	Endpoints  []EndpointInfo
+	// Endpoints has the list of endpoints available on this interface with
+	// this alternate setting.
+	Endpoints []EndpointInfo
 }
 
+// String returns a human-readable descripton of the particular
+// alternate setting of an interface.
 func (a InterfaceSetup) String() string {
 	return fmt.Sprintf("Interface %02x Setup %02x", a.Number, a.Alternate)
 }
 
+// ConfigInfo contains the information about a USB device configuration.
 type ConfigInfo struct {
-	Config     uint8
-	Attributes uint8
-	MaxPower   uint8
+	// Config is the configuration number.
+	Config uint8
+	// SelfPowered is true if the device is powered externally, i.e. not
+	// drawing power from the USB bus.
+	SelfPowered bool
+	// RemoteWakeup is true if the device supports remote wakeup.
+	RemoteWakeup bool
+	// MaxPower is the maximum current the device draws from the USB bus
+	// in this configuration.
+	MaxPower Milliamperes
+	// Interfaces has a list of USB interfaces available in this configuration.
 	Interfaces []InterfaceInfo
 }
 
+// String returns the human-readable description of the configuration.
 func (c ConfigInfo) String() string {
 	return fmt.Sprintf("Config %02x", c.Config)
 }

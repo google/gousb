@@ -217,3 +217,5 @@ var deviceSpeedDescription = map[DeviceSpeed]string{
 func (s DeviceSpeed) String() string {
 	return deviceSpeedDescription[s]
 }
+
+type Milliamperes uint
