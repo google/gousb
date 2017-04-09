@@ -15,6 +15,7 @@
 
 package usb
 
+// Descriptor is a representation of a USB device descriptor.
 type Descriptor struct {
 	// Bus information
 	Bus     uint8 // The bus on which the device was detected

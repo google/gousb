@@ -122,8 +122,10 @@ func (ed EndpointDirection) String() string {
 	return endpointDirectionDescription[ed]
 }
 
+// TransferType defines the endpoint transfer type.
 type TransferType uint8
 
+// Transfer types defined by the USB spec.
 const (
 	TransferTypeControl     TransferType = C.LIBUSB_TRANSFER_TYPE_CONTROL
 	TransferTypeIsochronous TransferType = C.LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
@@ -139,12 +141,15 @@ var transferTypeDescription = map[TransferType]string{
 	TransferTypeInterrupt:   "interrupt",
 }
 
+// String returns a human-readable name of the endpoint transfer type.
 func (tt TransferType) String() string {
 	return transferTypeDescription[tt]
 }
 
+// IsoSyncType defines the isochronous transfer synchronization type.
 type IsoSyncType uint8
 
+// Synchronization types defined by the USB spec.
 const (
 	IsoSyncTypeNone     IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_NONE << 2
 	IsoSyncTypeAsync    IsoSyncType = C.LIBUSB_ISO_SYNC_TYPE_ASYNC << 2
@@ -160,12 +165,16 @@ var isoSyncTypeDescription = map[IsoSyncType]string{
 	IsoSyncTypeSync:     "synchronous",
 }
 
+// String returns a human-readable description of the synchronization type.
 func (ist IsoSyncType) String() string {
 	return isoSyncTypeDescription[ist]
 }
 
+// UsageType defines the transfer usage type for isochronous and interrupt
+// transfers.
 type UsageType uint8
 
+// Usage types for iso and interrupt transfers, defined by the USB spec.
 const (
 	// Note: USB3.0 defines usage type for both isochronous and interrupt
 	// endpoints, with the same constants representing different usage types.
@@ -192,8 +201,10 @@ func (ut UsageType) String() string {
 	return usageTypeDescription[ut]
 }
 
+// RequestType identifies a control transfer request type.
 type RequestType uint8
 
+// Control request types defined in the USB spec.
 const (
 	RequestTypeStandard = C.LIBUSB_REQUEST_TYPE_STANDARD
 	RequestTypeClass    = C.LIBUSB_REQUEST_TYPE_CLASS
@@ -208,12 +219,15 @@ var requestTypeDescription = map[RequestType]string{
 	RequestTypeReserved: "reserved",
 }
 
+// String returns a human-readable name of the control transfer request type.
 func (rt RequestType) String() string {
 	return requestTypeDescription[rt]
 }
 
+// DeviceSpeed identifies the speed of the device.
 type DeviceSpeed int
 
+// Device speeds as defined in the USB spec.
 const (
 	DeviceSpeedUnknown DeviceSpeed = C.LIBUSB_SPEED_UNKNOWN
 	DeviceSpeedLow     DeviceSpeed = C.LIBUSB_SPEED_LOW
@@ -230,6 +244,7 @@ var deviceSpeedDescription = map[DeviceSpeed]string{
 	DeviceSpeedSuper:   "super",
 }
 
+// String returns a human-readable name of the device speed.
 func (s DeviceSpeed) String() string {
 	return deviceSpeedDescription[s]
 }
