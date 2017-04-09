@@ -213,9 +213,11 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 			return nil, err
 		}
 		c := ConfigInfo{
-			Config:     uint8(cfg.bConfigurationValue),
-			Attributes: uint8(cfg.bmAttributes),
-			MaxPower:   uint8(cfg.MaxPower),
+			Config:       uint8(cfg.bConfigurationValue),
+			SelfPowered:  (cfg.bmAttributes & SelfPoweredMask) != 0,
+			RemoteWakeup: (cfg.bmAttributes & RemoteWakeupMask) != 0,
+			// TODO(sebek): at GenX speeds MaxPower is expressed in units of 8mA, not 2mA.
+			MaxPower: 2 * Milliamperes(cfg.MaxPower),
 		}
 
 		var ifaces []C.struct_libusb_interface
@@ -274,8 +276,8 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 		Device:   BCD(desc.bcdDevice),
 		Vendor:   ID(desc.idVendor),
 		Product:  ID(desc.idProduct),
-		Class:    uint8(desc.bDeviceClass),
-		SubClass: uint8(desc.bDeviceSubClass),
+		Class:    Class(desc.bDeviceClass),
+		SubClass: Class(desc.bDeviceSubClass),
 		Protocol: uint8(desc.bDeviceProtocol),
 		Configs:  cfgs,
 	}, nil

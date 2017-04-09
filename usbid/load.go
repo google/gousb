@@ -34,7 +34,7 @@ var (
 	Vendors map[usb.ID]*Vendor
 
 	// Classes stores the class, subclass and protocol mappings.
-	Classes map[uint8]*Class
+	Classes map[usb.Class]*Class
 )
 
 // LoadFromURL replaces the built-in vendor and class mappings with ones loaded

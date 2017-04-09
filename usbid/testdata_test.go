@@ -46,13 +46,13 @@ var (
 			},
 		},
 	}
-	testDBClasses = map[uint8]*Class{
+	testDBClasses = map[usb.Class]*Class{
 		0x00: {
 			Name: "(Defined at Interface level)",
 		},
 		0x01: {
 			Name: "Audio",
-			SubClass: map[uint8]*SubClass{
+			SubClass: map[usb.Class]*SubClass{
 				0x01: {Name: "Control Device"},
 				0x02: {Name: "Streaming"},
 				0x03: {Name: "MIDI Streaming"},
@@ -60,7 +60,7 @@ var (
 		},
 		0x02: {
 			Name: "Communications",
-			SubClass: map[uint8]*SubClass{
+			SubClass: map[usb.Class]*SubClass{
 				0x01: {Name: "Direct Line"},
 				0x02: {
 					Name: "Abstract (modem)",

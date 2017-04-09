@@ -52,7 +52,7 @@ func (p Product) String() string {
 // A Class contains the name of the class and mappings for each subclass.
 type Class struct {
 	Name     string
-	SubClass map[uint8]*SubClass
+	SubClass map[usb.Class]*SubClass
 }
 
 // String returns the name of the class.
@@ -75,9 +75,9 @@ func (s SubClass) String() string {
 // should not be necessary, as a set of mappings is already embedded in the library.
 // If a new or specialized file is obtained, this can be used to retrieve the mappings,
 // which can be stored in the global Vendors and Classes map.
-func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[uint8]*Class, error) {
+func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 	vendors := make(map[usb.ID]*Vendor, 2800)
-	classes := make(map[uint8]*Class) // TODO(kevlar): count
+	classes := make(map[usb.Class]*Class) // TODO(kevlar): count
 
 	split := func(s string) (kind string, level int, id uint64, name string, err error) {
 		pieces := strings.SplitN(s, "  ", 2)
@@ -159,15 +159,13 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[uint8]*Class, error) {
 	var class *Class
 	var subclass *SubClass
 
-	parseClass := func(level int, raw uint64, name string) error {
-		id := uint8(raw)
-
+	parseClass := func(level int, id uint64, name string) error {
 		switch level {
 		case 0:
 			class = &Class{
 				Name: name,
 			}
-			classes[id] = class
+			classes[usb.Class(id)] = class
 
 		case 1:
 			if class == nil {
@@ -178,9 +176,9 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[uint8]*Class, error) {
 				Name: name,
 			}
 			if class.SubClass == nil {
-				class.SubClass = make(map[uint8]*SubClass)
+				class.SubClass = make(map[usb.Class]*SubClass)
 			}
-			class.SubClass[id] = subclass
+			class.SubClass[usb.Class(id)] = subclass
 
 		case 2:
 			if subclass == nil {
@@ -190,7 +188,7 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[uint8]*Class, error) {
 			if subclass.Protocol == nil {
 				subclass.Protocol = make(map[uint8]string)
 			}
-			subclass.Protocol[id] = name
+			subclass.Protocol[uint8(id)] = name
 
 		default:
 			return fmt.Errorf("too many levels of nesting for class")

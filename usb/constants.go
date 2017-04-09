@@ -218,4 +218,14 @@ func (s DeviceSpeed) String() string {
 	return deviceSpeedDescription[s]
 }
 
+const (
+	// SelfPoweredMask is the bitmask for "self powered" field of configuration
+	// descriptor bmAttributes.
+	SelfPoweredMask = 0x40
+	// RemoteWakeupMask is the bitmask for "supports remote wakeup" field of
+	// configuration descriptor bmAttributes.
+	RemoteWakeupMask = 0x20
+)
+
+// Milliamperes is a unit of electric current consumption.
 type Milliamperes uint

@@ -56,12 +56,15 @@ func Describe(val interface{}) string {
 //   - *usb.Descriptor       "Class (SubClass) Protocol"
 //   - usb.InterfaceSetup   "IfClass (IfSubClass) IfProtocol"
 func Classify(val interface{}) string {
-	var class, sub, proto uint8
+	var (
+		class, sub usb.Class
+		proto      uint8
+	)
 	switch val := val.(type) {
 	case *usb.Descriptor:
 		class, sub, proto = val.Class, val.SubClass, val.Protocol
 	case usb.InterfaceSetup:
-		class, sub, proto = val.IfClass, val.IfSubClass, val.IfProtocol
+		class, sub, proto = usb.Class(val.IfClass), usb.Class(val.IfSubClass), val.IfProtocol
 	default:
 		return fmt.Sprintf("Unknown (%T)", val)
 	}
