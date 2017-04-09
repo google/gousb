@@ -22,6 +22,7 @@ import "strconv"
 // Class represents a USB-IF class or subclass code.
 type Class uint8
 
+// Standard classes defined by USB spec.
 const (
 	ClassPerInterface Class = C.LIBUSB_CLASS_PER_INTERFACE
 	ClassAudio        Class = C.LIBUSB_CLASS_AUDIO
@@ -67,8 +68,10 @@ func (p Protocol) String() string {
 	return strconv.Itoa(int(p))
 }
 
+// DescriptorType identifies the type of a USB descriptor.
 type DescriptorType uint8
 
+// Descriptor types defined by the USB spec.
 const (
 	DescriptorTypeDevice    DescriptorType = C.LIBUSB_DT_DEVICE
 	DescriptorTypeConfig    DescriptorType = C.LIBUSB_DT_CONFIG
@@ -97,13 +100,17 @@ func (dt DescriptorType) String() string {
 	return descriptorTypeDescription[dt]
 }
 
-type EndpointDirection uint8
+// EndpointDirection defines the direction of data flow - IN (device to host)
+// or OUT (host to device).
+type EndpointDirection bool
 
 const (
-	EndpointNumMask                         = 0x0f
-	EndpointDirectionMask                   = 0x80
-	EndpointDirectionIn   EndpointDirection = C.LIBUSB_ENDPOINT_IN
-	EndpointDirectionOut  EndpointDirection = C.LIBUSB_ENDPOINT_OUT
+	EndpointNumMask       = 0x0f
+	EndpointDirectionMask = 0x80
+	// EndpointDirectionIn marks data flowing from device to host.
+	EndpointDirectionIn EndpointDirection = true
+	// EndpointDirectionOut marks data flowing from host to device.
+	EndpointDirectionOut EndpointDirection = false
 )
 
 var endpointDirectionDescription = map[EndpointDirection]string{

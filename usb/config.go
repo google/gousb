@@ -46,8 +46,12 @@ type EndpointInfo struct {
 
 // String returns the human-readable description of the endpoint.
 func (e EndpointInfo) String() string {
+	addr := e.Number
+	if e.Direction == EndpointDirectionIn {
+		addr |= 0x80
+	}
 	ret := make([]string, 0, 3)
-	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, uint8(e.Number)|uint8(e.Direction), e.TransferType))
+	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, addr, e.TransferType))
 	switch e.TransferType {
 	case TransferTypeIsochronous:
 		ret = append(ret, fmt.Sprintf("- %s %s", e.IsoSyncType, e.UsageType))
