@@ -120,7 +120,7 @@ func TestOpenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): got error %v, want nil", err)
 	}
-	got, err := dev.OpenEndpoint(6, 1, 1, 2)
+	got, err := dev.OpenEndpoint(0x86, 1, 1, 2)
 	if err != nil {
 		t.Fatalf("OpenEndpoint(cfg=1, if=1, alt=2, ep=0x86): got error %v, want nil", err)
 	}

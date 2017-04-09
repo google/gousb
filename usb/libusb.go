@@ -374,7 +374,7 @@ func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointInfo, timeout time.Durat
 		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
 	}
 	xfer.dev_handle = (*C.libusb_device_handle)(d)
-	xfer.endpoint = C.uchar(ep.addr())
+	xfer.endpoint = C.uchar(endpointAddr(ep.Number, ep.Direction))
 	xfer.timeout = C.uint(timeout / time.Millisecond)
 	xfer._type = C.uchar(ep.TransferType)
 	xfer.num_iso_packets = C.int(isoPackets)

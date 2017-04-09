@@ -27,6 +27,8 @@ type EndpointInfo struct {
 	// Number represents the endpoint number. Note that the endpoint number is different from the
 	// address field in the descriptor - address 0x82 means endpoint number 2,
 	// with endpoint direction IN.
+	// The device can have up to two endpoints with the same number but with
+	// different directions.
 	Number uint8
 	// Direction defines whether the data is flowing IN or OUT from the host perspective.
 	Direction EndpointDirection
@@ -44,9 +46,9 @@ type EndpointInfo struct {
 	UsageType UsageType
 }
 
-func (e EndpointInfo) addr() uint8 {
-	addr := e.Number
-	if e.Direction == EndpointDirectionIn {
+func endpointAddr(n uint8, d EndpointDirection) uint8 {
+	addr := n
+	if d == EndpointDirectionIn {
 		addr |= 0x80
 	}
 	return addr
@@ -55,7 +57,7 @@ func (e EndpointInfo) addr() uint8 {
 // String returns the human-readable description of the endpoint.
 func (e EndpointInfo) String() string {
 	ret := make([]string, 0, 3)
-	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, e.addr(), e.TransferType))
+	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, endpointAddr(e.Number, e.Direction), e.TransferType))
 	switch e.TransferType {
 	case TransferTypeIsochronous:
 		ret = append(ret, fmt.Sprintf("- %s %s", e.IsoSyncType, e.UsageType))

@@ -92,7 +92,7 @@ func (d *Device) Close() error {
 	return nil
 }
 
-func (d *Device) OpenEndpoint(epNum, cfgNum, ifNum, setNum uint8) (*Endpoint, error) {
+func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, error) {
 	var cfg *ConfigInfo
 	for _, c := range d.Configs {
 		if c.Config == cfgNum {
@@ -102,7 +102,7 @@ func (d *Device) OpenEndpoint(epNum, cfgNum, ifNum, setNum uint8) (*Endpoint, er
 		}
 	}
 	if cfg == nil {
-		return nil, fmt.Errorf("usb: unknown configuration %02x", cfgNum)
+		return nil, fmt.Errorf("usb: unknown configuration 0x%02x", cfgNum)
 	}
 
 	var intf *InterfaceInfo
@@ -114,7 +114,7 @@ func (d *Device) OpenEndpoint(epNum, cfgNum, ifNum, setNum uint8) (*Endpoint, er
 		}
 	}
 	if intf == nil {
-		return nil, fmt.Errorf("usb: unknown interface %02x", ifNum)
+		return nil, fmt.Errorf("usb: unknown interface 0x%02x", ifNum)
 	}
 
 	var setAlternate bool
@@ -127,18 +127,18 @@ func (d *Device) OpenEndpoint(epNum, cfgNum, ifNum, setNum uint8) (*Endpoint, er
 		}
 	}
 	if ifs == nil {
-		return nil, fmt.Errorf("usb: unknown setup %02x", setNum)
+		return nil, fmt.Errorf("usb: unknown setup 0x%02x", setNum)
 	}
 
 	var ep *EndpointInfo
 	for _, e := range ifs.Endpoints {
-		if e.Number == epNum {
-			debug.Printf("found ep %02x in %#v\n", epNum, *ifs)
+		if endpointAddr(e.Number, e.Direction) == epAddr {
+			debug.Printf("found ep 0x%02x %s in %#v\n", e.Number, e.Direction, *ifs)
 			ep = &e
 		}
 	}
 	if ep == nil {
-		return nil, fmt.Errorf("usb: unknown endpoint %02x", epNum)
+		return nil, fmt.Errorf("usb: didn't find endpoint address 0x%02x", epAddr)
 	}
 
 	end := newEndpoint(d.handle, *ifs, *ep, d.ReadTimeout, d.WriteTimeout)
