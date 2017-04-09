@@ -179,13 +179,13 @@ const (
 	// Note: USB3.0 defines usage type for both isochronous and interrupt
 	// endpoints, with the same constants representing different usage types.
 	// UsageType constants do not correspond to bmAttribute values.
-	usageTypeMask                = 0x30
 	UsageTypeUndefined UsageType = iota
 	IsoUsageTypeData
 	IsoUsageTypeFeedback
 	IsoUsageTypeImplicit
 	InterruptUsageTypePeriodic
 	InterruptUsageTypeNotification
+	usageTypeMask = 0x30
 )
 
 var usageTypeDescription = map[UsageType]string{
