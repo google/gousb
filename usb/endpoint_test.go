@@ -15,7 +15,6 @@
 package usb
 
 import (
-	"reflect"
 	"testing"
 	"time"
 )
@@ -51,90 +50,55 @@ var testIsoOutSetting = InterfaceSetting{
 	Endpoints: []EndpointInfo{testIsoOutEP},
 }
 
-func TestEndpoint(t *testing.T) {
+func TestInEndpoint(t *testing.T) {
 	defer func(i libusbIntf) { libusb = i }(libusb)
-
-	for _, epCfg := range []struct {
-		method string
-		InterfaceSetting
-		EndpointInfo
+	for _, tc := range []struct {
+		desc    string
+		buf     []byte
+		ret     int
+		status  TransferStatus
+		want    int
+		wantErr bool
 	}{
-		{"Read", testBulkInSetting, testBulkInEP},
-		{"Write", testIsoOutSetting, testIsoOutEP},
+		{
+			desc: "empty buffer",
+			buf:  nil,
+			ret:  10,
+			want: 0,
+		},
+		{
+			desc: "128B buffer, 60 transferred",
+			buf:  make([]byte, 128),
+			ret:  60,
+			want: 60,
+		},
+		{
+			desc:    "128B buffer, 10 transferred and then error",
+			buf:     make([]byte, 128),
+			ret:     10,
+			status:  TransferError,
+			want:    10,
+			wantErr: true,
+		},
 	} {
-		t.Run(epCfg.method, func(t *testing.T) {
-			for _, tc := range []struct {
-				desc    string
-				buf     []byte
-				ret     int
-				status  TransferStatus
-				want    int
-				wantErr bool
-			}{
-				{
-					desc: "empty buffer",
-					buf:  nil,
-					ret:  10,
-					want: 0,
-				},
-				{
-					desc: "128B buffer, 60 transferred",
-					buf:  make([]byte, 128),
-					ret:  60,
-					want: 60,
-				},
-				{
-					desc:    "128B buffer, 10 transferred and then error",
-					buf:     make([]byte, 128),
-					ret:     10,
-					status:  TransferError,
-					want:    10,
-					wantErr: true,
-				},
-			} {
-				lib := newFakeLibusb()
-				libusb = lib
-				ep := newEndpoint(nil, epCfg.InterfaceSetting, epCfg.EndpointInfo, time.Second, time.Second)
-				op, ok := reflect.TypeOf(ep).MethodByName(epCfg.method)
-				if !ok {
-					t.Fatalf("method %s not found in endpoint struct", epCfg.method)
-				}
-				go func() {
-					fakeT := lib.waitForSubmitted()
-					fakeT.length = tc.ret
-					fakeT.status = tc.status
-					close(fakeT.done)
-				}()
-				opv := op.Func.Interface().(func(*Endpoint, []byte) (int, error))
-				got, err := opv(ep, tc.buf)
-				if (err != nil) != tc.wantErr {
-					t.Errorf("%s: bulkInEP.Read(): got err: %v, err != nil is %v, want %v", tc.desc, err, err != nil, tc.wantErr)
-					continue
-				}
-				if got != tc.want {
-					t.Errorf("%s: bulkInEP.Read(): got %d bytes, want %d", tc.desc, got, tc.want)
-				}
-			}
-		})
-	}
-}
+		lib := newFakeLibusb()
+		libusb = lib
 
-func TestEndpointWrongDirection(t *testing.T) {
-	ep := &Endpoint{
-		InterfaceSetting: testBulkInSetting,
-		Info:             testBulkInEP,
-	}
-	_, err := ep.Write([]byte{1, 2, 3})
-	if err == nil {
-		t.Error("bulkInEP.Write(): got nil error, want non-nil")
-	}
-	ep = &Endpoint{
-		InterfaceSetting: testIsoOutSetting,
-		Info:             testIsoOutEP,
-	}
-	_, err = ep.Read(make([]byte, 64))
-	if err == nil {
-		t.Error("isoOutEP.Read(): got nil error, want non-nil")
+		ep := InEndpoint{newEndpoint(nil, testBulkInSetting, testBulkInEP), time.Second}
+		go func() {
+			fakeT := lib.waitForSubmitted()
+			fakeT.length = tc.ret
+			fakeT.status = tc.status
+			close(fakeT.done)
+		}()
+		got, err := ep.Read(tc.buf)
+		if (err != nil) != tc.wantErr {
+			t.Errorf("%s: bulkInEP.Read(): got err: %v, err != nil is %v, want %v", tc.desc, err, err != nil, tc.wantErr)
+			continue
+		}
+		if got != tc.want {
+			t.Errorf("%s: bulkInEP.Read(): got %d bytes, want %d", tc.desc, got, tc.want)
+		}
 	}
 }
 

@@ -100,8 +100,7 @@ func (d *Device) Close() error {
 	return nil
 }
 
-// OpenEndpoint prepares a device endpoint for data transfer.
-func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, error) {
+func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, error) {
 	var cfg *ConfigInfo
 	for _, c := range d.Configs {
 		if c.Config == cfgNum {
@@ -150,7 +149,7 @@ func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, e
 		return nil, fmt.Errorf("usb: didn't find endpoint address 0x%02x", epAddr)
 	}
 
-	end := newEndpoint(d.handle, *ifs, *ep, d.ReadTimeout, d.WriteTimeout)
+	end := newEndpoint(d.handle, *ifs, *ep)
 
 	// Set the configuration
 	activeConf, err := libusb.getConfig(d.handle)
@@ -181,6 +180,17 @@ func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, e
 	}
 
 	return end, nil
+}
+
+func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*InEndpoint, error) {
+	ep, err := d.openEndpoint(cfgNum, ifNum, setNum, endpointAddr(epNum, EndpointDirectionIn))
+	if err != nil {
+		return nil, err
+	}
+	return &InEndpoint{
+		endpoint: ep,
+		timeout:  d.ReadTimeout,
+	}, nil
 }
 
 // GetStringDescriptor returns a device string descriptor with the given index

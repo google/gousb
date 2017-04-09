@@ -68,41 +68,19 @@ func (e EndpointInfo) String() string {
 	return strings.Join(ret, " ")
 }
 
-// Endpoint identifies a USB endpoint opened for transfer.
-type Endpoint struct {
+type endpoint struct {
 	h *libusbDevHandle
 
 	InterfaceSetting
 	Info EndpointInfo
-
-	readTimeout  time.Duration
-	writeTimeout time.Duration
 }
 
 // String returns a human-readable description of the endpoint.
-func (e *Endpoint) String() string {
+func (e *endpoint) String() string {
 	return e.Info.String()
 }
 
-// Read reads data from an IN endpoint.
-func (e *Endpoint) Read(buf []byte) (int, error) {
-	if e.Info.Direction != EndpointDirectionIn {
-		return 0, fmt.Errorf("usb: read: not an IN endpoint")
-	}
-
-	return e.transfer(buf, e.readTimeout)
-}
-
-// Write writes data to an OUT endpoint.
-func (e *Endpoint) Write(buf []byte) (int, error) {
-	if e.Info.Direction != EndpointDirectionOut {
-		return 0, fmt.Errorf("usb: write: not an OUT endpoint")
-	}
-
-	return e.transfer(buf, e.writeTimeout)
-}
-
-func (e *Endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
+func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
@@ -124,12 +102,32 @@ func (e *Endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
 	return n, nil
 }
 
-func newEndpoint(h *libusbDevHandle, s InterfaceSetting, e EndpointInfo, rt, wt time.Duration) *Endpoint {
-	return &Endpoint{
+func newEndpoint(h *libusbDevHandle, s InterfaceSetting, e EndpointInfo) *endpoint {
+	return &endpoint{
 		InterfaceSetting: s,
 		Info:             e,
 		h:                h,
-		readTimeout:      rt,
-		writeTimeout:     wt,
 	}
+}
+
+// OutEndpoint represents an IN endpoint open for transfer.
+type InEndpoint struct {
+	*endpoint
+	timeout time.Duration
+}
+
+// Read reads data from an IN endpoint.
+func (e *InEndpoint) Read(buf []byte) (int, error) {
+	return e.transfer(buf, e.timeout)
+}
+
+// OutEndpoint represents an OUT endpoint open for transfer.
+type OutEndpoint struct {
+	*endpoint
+	timeout time.Duration
+}
+
+// Write writes data to an OUT endpoint.
+func (e *OutEndpoint) Write(buf []byte) (int, error) {
+	return e.transfer(buf, e.timeout)
 }
