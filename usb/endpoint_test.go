@@ -176,4 +176,45 @@ func TestEndpointIn(t *testing.T) {
 	} else if got != dataTransferred {
 		t.Errorf("ep.Read: got %d, want %d", got, dataTransferred)
 	}
+
+	_, err = d.InEndpoint(1, 0, 0, 1)
+	if err == nil {
+		t.Error("InEndpoint(1, 0, 0, 1): got nil, want error")
+	}
+}
+
+func TestEndpointOut(t *testing.T) {
+	defer func(i libusbIntf) { libusb = i }(libusb)
+
+	lib := newFakeLibusb()
+	libusb = lib
+
+	ctx := NewContext()
+	d, err := ctx.OpenDeviceWithVidPid(0x9999, 0x0001)
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVidPid(0x9999, 0x0001): got error %v, want nil", err)
+	}
+	ep, err := d.OutEndpoint(1, 0, 0, 1)
+	if err != nil {
+		t.Fatalf("OutEndpoint(1, 0, 0, 1): got error %v, want nil", err)
+	}
+	dataTransferred := 100
+	go func() {
+		fakeT := lib.waitForSubmitted()
+		fakeT.length = dataTransferred
+		fakeT.status = TransferCompleted
+		close(fakeT.done)
+	}()
+	buf := make([]byte, 512)
+	got, err := ep.Write(buf)
+	if err != nil {
+		t.Errorf("ep.Write: got error %v, want nil", err)
+	} else if got != dataTransferred {
+		t.Errorf("ep.Write: got %d, want %d", got, dataTransferred)
+	}
+
+	_, err = d.OutEndpoint(1, 0, 0, 2)
+	if err == nil {
+		t.Error("OutEndpoint(1, 0, 0, 2): got nil, want error")
+	}
 }
