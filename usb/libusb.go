@@ -420,8 +420,8 @@ var (
 	libusbIsoOffset = unsafe.Offsetof(C.struct_libusb_transfer{}.iso_packet_desc)
 )
 
-//export xfer_callback
-func xfer_callback(cptr unsafe.Pointer) {
+//export xferCallback
+func xferCallback(cptr unsafe.Pointer) {
 	ch := *(*chan struct{})(cptr)
 	close(ch)
 }

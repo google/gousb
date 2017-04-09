@@ -19,30 +19,39 @@ import (
 	"fmt"
 )
 
+// BCD is a binary-coded decimal version number, with first 8 bits representing
+// the major version number, an latter 8 bits the minor version number.
+// Major and minor are composed of 4+4 bits, where each 4 bits represents
+// a decimal digit.
+// Example: BCD(0x1234) means major 12 (decimal) and minor 34 (decimal).
 type BCD uint16
 
-const (
-	USB_2_0 BCD = 0x0200
-	USB_1_1 BCD = 0x0110
-	USB_1_0 BCD = 0x0100
-)
-
-func (d BCD) Int() (i int) {
-	ten := 1
-	for o := uint(0); o < 4; o++ {
-		n := ((0xF << (o * 4)) & d) >> (o * 4)
-		i += int(n) * ten
-		ten *= 10
-	}
-	return
+// Major is the major number of the BCD.
+func (s BCD) Major() uint8 {
+	maj := uint8(s >> 8)
+	return 10*(maj>>4) + maj&0x0f
 }
 
-func (d BCD) String() string {
-	return fmt.Sprintf("%02x.%02x", int(d>>8), int(d&0xFF))
+// Minor is the minor number of the BCD.
+func (s BCD) Minor() uint8 {
+	min := uint8(s & 0xff)
+	return 10*(min>>4) + min&0x0f
 }
 
+// String returns a dotted representation of the BCD (major.minor).
+func (s BCD) String() string {
+	return fmt.Sprintf("%d.%02d", s.Major(), s.Minor())
+}
+
+// Version returns a BCD version number with given major/minor.
+func Version(major, minor uint8) BCD {
+	return (BCD(major)/10)<<12 | (BCD(major)%10)<<8 | (BCD(minor)/10)<<4 | BCD(minor)%10
+}
+
+// ID represents a vendor or product ID.
 type ID uint16
 
+// String returns a hexadecimal ID.
 func (id ID) String() string {
 	return fmt.Sprintf("%04x", int(id))
 }

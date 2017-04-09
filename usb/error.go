@@ -76,6 +76,7 @@ var errorString = map[Error]string{
 // TransferStatus contains information about the result of a transfer.
 type TransferStatus uint8
 
+// Transfer status values provided by libusb.
 const (
 	TransferCompleted TransferStatus = C.LIBUSB_TRANSFER_COMPLETED
 	TransferError     TransferStatus = C.LIBUSB_TRANSFER_ERROR

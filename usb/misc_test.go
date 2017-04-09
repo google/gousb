@@ -21,19 +21,22 @@ import (
 
 func TestBCD(t *testing.T) {
 	tests := []struct {
-		BCD
-		Int int
-		Str string
+		major, minor uint8
+		bcd          BCD
+		str          string
 	}{
-		{0x1234, 1234, "12.34"},
+		{1, 1, 0x0101, "1.01"},
+		{12, 34, 0x1234, "12.34"},
 	}
 
 	for _, test := range tests {
-		if got, want := test.BCD.Int(), test.Int; got != want {
-			t.Errorf("Int(%x) = %d, want %d", test.BCD, got, want)
+		bcd := Version(test.major, test.minor)
+		if bcd != test.bcd {
+			t.Errorf("Version(%d, %d): got BCD %04x, want %04x", test.major, test.minor, uint16(bcd), uint16(test.bcd))
+			continue
 		}
-		if got, want := test.BCD.String(), test.Str; got != want {
-			t.Errorf("String(%x) = %q, want %q", test.BCD, got, want)
+		if got, want := bcd.String(), test.str; got != want {
+			t.Errorf("String(%04x) = %q, want %q", uint16(test.bcd), got, want)
 		}
 	}
 }

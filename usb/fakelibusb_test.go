@@ -30,8 +30,8 @@ var (
 		&Descriptor{
 			Bus:      1,
 			Address:  1,
-			Spec:     USB_2_0,
-			Device:   BCD(0x0100), // 1.00
+			Spec:     Version(2, 0),
+			Device:   Version(1, 0),
 			Vendor:   ID(0x9999),
 			Product:  ID(0x0001),
 			Protocol: 255,
@@ -66,8 +66,8 @@ var (
 		&Descriptor{
 			Bus:      1,
 			Address:  2,
-			Spec:     USB_2_0,
-			Device:   BCD(0x0103), // 1.03
+			Spec:     Version(2, 0),
+			Device:   Version(1, 3),
 			Vendor:   ID(0x8888),
 			Product:  ID(0x0002),
 			Protocol: 255,
