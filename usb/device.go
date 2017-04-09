@@ -21,10 +21,16 @@ import (
 	"time"
 )
 
-var DefaultReadTimeout = 1 * time.Second
-var DefaultWriteTimeout = 1 * time.Second
-var DefaultControlTimeout = 250 * time.Millisecond //5 * time.Second
+var (
+	// DefaultReadTimeout controls the default timeout for IN endpoint transfers.
+	DefaultReadTimeout = 1 * time.Second
+	// DefaultWriteTimeout controls the default timeout for OUT endpoint transfers.
+	DefaultWriteTimeout = 1 * time.Second
+	// DefaultControlTimeout controls the default timeout for control transfers.
+	DefaultControlTimeout = 250 * time.Millisecond
+)
 
+// Device represents an opened USB device.
 type Device struct {
 	handle *libusbDevHandle
 
@@ -56,10 +62,12 @@ func newDevice(handle *libusbDevHandle, desc *Descriptor) *Device {
 	return d
 }
 
+// Reset performs a USB port reset to reinitialize a device.
 func (d *Device) Reset() error {
 	return libusb.reset(d.handle)
 }
 
+// Control sends a control request to the device.
 func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
 	return libusb.control(d.handle, d.ControlTimeout, rType, request, val, idx, data)
 }
@@ -77,7 +85,7 @@ func (d *Device) SetConfig(cfg uint8) error {
 	return libusb.setConfig(d.handle, cfg)
 }
 
-// Close the device.
+// Close closes the device.
 func (d *Device) Close() error {
 	if d.handle == nil {
 		return fmt.Errorf("usb: double close on device")
@@ -92,6 +100,7 @@ func (d *Device) Close() error {
 	return nil
 }
 
+// OpenEndpoint prepares a device endpoint for data transfer.
 func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, error) {
 	var cfg *ConfigInfo
 	for _, c := range d.Configs {
@@ -174,8 +183,12 @@ func (d *Device) OpenEndpoint(epAddr, cfgNum, ifNum, setNum uint8) (*Endpoint, e
 	return end, nil
 }
 
-func (d *Device) GetStringDescriptor(desc_index int) (string, error) {
-	return libusb.getStringDesc(d.handle, desc_index)
+// GetStringDescriptor returns a device string descriptor with the given index
+// number. The first supported language is always used and the returned
+// descriptor string is converted to ASCII (non-ASCII characters are replaced
+// with "?").
+func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
+	return libusb.getStringDesc(d.handle, descIndex)
 }
 
 // SetAutoDetach enables/disables libusb's automatic kernel driver detachment.

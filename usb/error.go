@@ -22,16 +22,16 @@ import (
 // #include <libusb.h>
 import "C"
 
-// USBError is an error code returned by libusb.
-type USBError C.int
+// Error is an error code returned by libusb.
+type Error C.int
 
 // Error implements the error interface.
-func (e USBError) Error() string {
-	return fmt.Sprintf("libusb: %s [code %d]", USBErrorString[e], e)
+func (e Error) Error() string {
+	return fmt.Sprintf("libusb: %s [code %d]", errorString[e], e)
 }
 
-func fromUSBError(errno C.int) error {
-	err := USBError(errno)
+func fromErrNo(errno C.int) error {
+	err := Error(errno)
 	if err == Success {
 		return nil
 	}
@@ -40,23 +40,23 @@ func fromUSBError(errno C.int) error {
 
 // Error codes defined by libusb.
 const (
-	Success           USBError = C.LIBUSB_SUCCESS
-	ErrorIO           USBError = C.LIBUSB_ERROR_IO
-	ErrorInvalidParam USBError = C.LIBUSB_ERROR_INVALID_PARAM
-	ErrorAccess       USBError = C.LIBUSB_ERROR_ACCESS
-	ErrorNoDevice     USBError = C.LIBUSB_ERROR_NO_DEVICE
-	ErrorNotFound     USBError = C.LIBUSB_ERROR_NOT_FOUND
-	ErrorBusy         USBError = C.LIBUSB_ERROR_BUSY
-	ErrorTimeout      USBError = C.LIBUSB_ERROR_TIMEOUT
-	ErrorOverflow     USBError = C.LIBUSB_ERROR_OVERFLOW
-	ErrorPipe         USBError = C.LIBUSB_ERROR_PIPE
-	ErrorInterrupted  USBError = C.LIBUSB_ERROR_INTERRUPTED
-	ErrorNoMem        USBError = C.LIBUSB_ERROR_NO_MEM
-	ErrorNotSupported USBError = C.LIBUSB_ERROR_NOT_SUPPORTED
-	ErrorOther        USBError = C.LIBUSB_ERROR_OTHER
+	Success           Error = C.LIBUSB_SUCCESS
+	ErrorIO           Error = C.LIBUSB_ERROR_IO
+	ErrorInvalidParam Error = C.LIBUSB_ERROR_INVALID_PARAM
+	ErrorAccess       Error = C.LIBUSB_ERROR_ACCESS
+	ErrorNoDevice     Error = C.LIBUSB_ERROR_NO_DEVICE
+	ErrorNotFound     Error = C.LIBUSB_ERROR_NOT_FOUND
+	ErrorBusy         Error = C.LIBUSB_ERROR_BUSY
+	ErrorTimeout      Error = C.LIBUSB_ERROR_TIMEOUT
+	ErrorOverflow     Error = C.LIBUSB_ERROR_OVERFLOW
+	ErrorPipe         Error = C.LIBUSB_ERROR_PIPE
+	ErrorInterrupted  Error = C.LIBUSB_ERROR_INTERRUPTED
+	ErrorNoMem        Error = C.LIBUSB_ERROR_NO_MEM
+	ErrorNotSupported Error = C.LIBUSB_ERROR_NOT_SUPPORTED
+	ErrorOther        Error = C.LIBUSB_ERROR_OTHER
 )
 
-var USBErrorString = map[USBError]string{
+var errorString = map[Error]string{
 	Success:           "success",
 	ErrorIO:           "i/o error",
 	ErrorInvalidParam: "invalid param",

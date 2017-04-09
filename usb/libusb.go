@@ -151,7 +151,7 @@ type libusbImpl struct{}
 
 func (libusbImpl) init() (*libusbContext, error) {
 	var ctx *C.libusb_context
-	if err := fromUSBError(C.libusb_init(&ctx)); err != nil {
+	if err := fromErrNo(C.libusb_init(&ctx)); err != nil {
 		return nil, err
 	}
 	return (*libusbContext)(ctx), nil
@@ -166,7 +166,7 @@ func (libusbImpl) handleEvents(c *libusbContext, done <-chan struct{}) {
 		default:
 		}
 		if errno := C.libusb_handle_events_timeout_completed((*C.libusb_context)(c), &tv, nil); errno < 0 {
-			log.Printf("handle_events: error: %s", USBError(errno))
+			log.Printf("handle_events: error: %s", Error(errno))
 		}
 	}
 }
@@ -175,7 +175,7 @@ func (libusbImpl) getDevices(ctx *libusbContext) ([]*libusbDevice, error) {
 	var list **C.libusb_device
 	cnt := C.libusb_get_device_list((*C.libusb_context)(ctx), &list)
 	if cnt < 0 {
-		return nil, fromUSBError(C.int(cnt))
+		return nil, fromErrNo(C.int(cnt))
 	}
 	var devs []*C.libusb_device
 	*(*reflect.SliceHeader)(unsafe.Pointer(&devs)) = reflect.SliceHeader{
@@ -202,14 +202,14 @@ func (libusbImpl) setDebug(c *libusbContext, lvl int) {
 
 func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 	var desc C.struct_libusb_device_descriptor
-	if err := fromUSBError(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
+	if err := fromErrNo(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
 		return nil, err
 	}
 	// Enumerate configurations
 	var cfgs []ConfigInfo
 	for i := 0; i < int(desc.bNumConfigurations); i++ {
 		var cfg *C.struct_libusb_config_descriptor
-		if err := fromUSBError(C.libusb_get_config_descriptor((*C.libusb_device)(d), C.uint8_t(i), &cfg)); err != nil {
+		if err := fromErrNo(C.libusb_get_config_descriptor((*C.libusb_device)(d), C.uint8_t(i), &cfg)); err != nil {
 			return nil, err
 		}
 		c := ConfigInfo{
@@ -289,7 +289,7 @@ func (libusbImpl) dereference(d *libusbDevice) {
 
 func (libusbImpl) open(d *libusbDevice) (*libusbDevHandle, error) {
 	var handle *C.libusb_device_handle
-	if err := fromUSBError(C.libusb_open((*C.libusb_device)(d), &handle)); err != nil {
+	if err := fromErrNo(C.libusb_open((*C.libusb_device)(d), &handle)); err != nil {
 		return nil, err
 	}
 	return (*libusbDevHandle)(handle), nil
@@ -300,7 +300,7 @@ func (libusbImpl) close(d *libusbDevHandle) {
 }
 
 func (libusbImpl) reset(d *libusbDevHandle) error {
-	return fromUSBError(C.libusb_reset_device((*C.libusb_device_handle)(d)))
+	return fromErrNo(C.libusb_reset_device((*C.libusb_device_handle)(d)))
 }
 
 func (libusbImpl) control(d *libusbDevHandle, timeout time.Duration, rType, request uint8, val, idx uint16, data []byte) (int, error) {
@@ -315,7 +315,7 @@ func (libusbImpl) control(d *libusbDevHandle, timeout time.Duration, rType, requ
 		C.uint16_t(len(data)),
 		C.uint(timeout/time.Millisecond))
 	if n < 0 {
-		return int(n), fromUSBError(n)
+		return int(n), fromErrNo(n)
 	}
 	return int(n), nil
 }
@@ -323,15 +323,18 @@ func (libusbImpl) control(d *libusbDevHandle, timeout time.Duration, rType, requ
 func (libusbImpl) getConfig(d *libusbDevHandle) (uint8, error) {
 	var cfg C.int
 	if errno := C.libusb_get_configuration((*C.libusb_device_handle)(d), &cfg); errno < 0 {
-		return 0, fromUSBError(errno)
+		return 0, fromErrNo(errno)
 	}
 	return uint8(cfg), nil
 }
 
 func (libusbImpl) setConfig(d *libusbDevHandle, cfg uint8) error {
-	return fromUSBError(C.libusb_set_configuration((*C.libusb_device_handle)(d), C.int(cfg)))
+	return fromErrNo(C.libusb_set_configuration((*C.libusb_device_handle)(d), C.int(cfg)))
 }
 
+// TODO(sebek): device string descriptors are natively in UTF16 and support
+// multiple languages. get_string_descriptor_ascii uses always the first
+// language and discards non-ascii bytes. We could do better if needed.
 func (libusbImpl) getStringDesc(d *libusbDevHandle, index int) (string, error) {
 	// allocate 200-byte array limited the length of string descriptor
 	buf := make([]byte, 200)
@@ -343,13 +346,13 @@ func (libusbImpl) getStringDesc(d *libusbDevHandle, index int) (string, error) {
 		(*C.uchar)(unsafe.Pointer(&buf[0])),
 		200)
 	if errno < 0 {
-		return "", fmt.Errorf("usb: getstr: %s", fromUSBError(errno))
+		return "", fmt.Errorf("usb: getstr: %s", fromErrNo(errno))
 	}
 	return string(buf[:errno]), nil
 }
 
 func (libusbImpl) setAutoDetach(d *libusbDevHandle, val int) error {
-	err := fromUSBError(C.libusb_set_auto_detach_kernel_driver((*C.libusb_device_handle)(d), C.int(val)))
+	err := fromErrNo(C.libusb_set_auto_detach_kernel_driver((*C.libusb_device_handle)(d), C.int(val)))
 	if err != nil && err != ErrorNotSupported {
 		return err
 	}
@@ -357,7 +360,7 @@ func (libusbImpl) setAutoDetach(d *libusbDevHandle, val int) error {
 }
 
 func (libusbImpl) claim(d *libusbDevHandle, iface uint8) error {
-	return fromUSBError(C.libusb_claim_interface((*C.libusb_device_handle)(d), C.int(iface)))
+	return fromErrNo(C.libusb_claim_interface((*C.libusb_device_handle)(d), C.int(iface)))
 }
 
 func (libusbImpl) release(d *libusbDevHandle, iface uint8) {
@@ -365,7 +368,7 @@ func (libusbImpl) release(d *libusbDevHandle, iface uint8) {
 }
 
 func (libusbImpl) setAlt(d *libusbDevHandle, iface, setup uint8) error {
-	return fromUSBError(C.libusb_set_interface_alt_setting((*C.libusb_device_handle)(d), C.int(iface), C.int(setup)))
+	return fromErrNo(C.libusb_set_interface_alt_setting((*C.libusb_device_handle)(d), C.int(iface), C.int(setup)))
 }
 
 func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointInfo, timeout time.Duration, isoPackets int, buf []byte) (*libusbTransfer, error) {
@@ -384,12 +387,12 @@ func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointInfo, timeout time.Durat
 }
 
 func (libusbImpl) cancel(t *libusbTransfer) error {
-	return fromUSBError(C.libusb_cancel_transfer((*C.struct_libusb_transfer)(t)))
+	return fromErrNo(C.libusb_cancel_transfer((*C.struct_libusb_transfer)(t)))
 }
 
 func (libusbImpl) submit(t *libusbTransfer, done chan struct{}) error {
 	t.user_data = (unsafe.Pointer)(&done)
-	return fromUSBError(C.submit((*C.struct_libusb_transfer)(t)))
+	return fromErrNo(C.submit((*C.struct_libusb_transfer)(t)))
 }
 
 func (libusbImpl) data(t *libusbTransfer) (int, TransferStatus) {
