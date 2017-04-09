@@ -14,7 +14,7 @@ Supported platforms include:
 - windows
 
 [ciimg]:  https://travis-ci.org/kylelemons/gousb.svg?branch=gousb2.0-dev
-[ci]:     https://travis-ci.org/kylelemons/gousb
+[ci]:     https://travis-ci.org/kylelemons/gousb?branch=gousb2.0-dev
 [docimg]: https://godoc.org/github.com/kylelemons/gousb?status.svg
 [doc]:    https://godoc.org/github.com/kylelemons/gousb
 
