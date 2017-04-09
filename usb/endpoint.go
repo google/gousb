@@ -17,8 +17,56 @@ package usb
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
+
+// EndpointInfo contains the information about an interface endpoint, extracted
+// from the descriptor.
+type EndpointInfo struct {
+	// Number represents the endpoint number. Note that the endpoint number is different from the
+	// address field in the descriptor - address 0x82 means endpoint number 2,
+	// with endpoint direction IN.
+	// The device can have up to two endpoints with the same number but with
+	// different directions.
+	Number uint8
+	// Direction defines whether the data is flowing IN or OUT from the host perspective.
+	Direction EndpointDirection
+	// MaxPacketSize is the maximum USB packet size for a single frame/microframe.
+	MaxPacketSize uint32
+	// TransferType defines the endpoint type - bulk, interrupt, isochronous.
+	TransferType TransferType
+	// PollInterval is the maximum time between transfers for interrupt and isochronous transfer,
+	// or the NAK interval for a control transfer. See endpoint descriptor bInterval documentation
+	// in the USB spec for details.
+	PollInterval time.Duration
+	// IsoSyncType is the isochronous endpoint synchronization type, as defined by USB spec.
+	IsoSyncType IsoSyncType
+	// UsageType is the isochronous or interrupt endpoint usage type, as defined by USB spec.
+	UsageType UsageType
+}
+
+func endpointAddr(n uint8, d EndpointDirection) uint8 {
+	addr := n
+	if d == EndpointDirectionIn {
+		addr |= 0x80
+	}
+	return addr
+}
+
+// String returns the human-readable description of the endpoint.
+func (e EndpointInfo) String() string {
+	ret := make([]string, 0, 3)
+	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, endpointAddr(e.Number, e.Direction), e.TransferType))
+	switch e.TransferType {
+	case TransferTypeIsochronous:
+		ret = append(ret, fmt.Sprintf("- %s %s", e.IsoSyncType, e.UsageType))
+	case TransferTypeInterrupt:
+		ret = append(ret, fmt.Sprintf("- %s", e.UsageType))
+	}
+	ret = append(ret, fmt.Sprintf("[%d bytes]", e.MaxPacketSize))
+	return strings.Join(ret, " ")
+}
 
 // Endpoint identifies a USB endpoint opened for transfer.
 type Endpoint struct {
