@@ -44,7 +44,7 @@ func (t *usbTransfer) submit() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.submitted {
-		return errors.New("transfer was already submitted and is not finished yet.")
+		return errors.New("transfer was already submitted and is not finished yet")
 	}
 	t.done = make(chan struct{})
 	if err := libusb.submit(t.xfer, t.done); err != nil {

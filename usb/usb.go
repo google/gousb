@@ -16,15 +16,18 @@
 // Package usb provides a wrapper around libusb-1.0.
 package usb
 
+// Context is the libusb context instance.
 type Context struct {
 	ctx  *libusbContext
 	done chan struct{}
 }
 
+// Debug changes the libusb debug level.
 func (c *Context) Debug(level int) {
 	libusb.setDebug(c.ctx, level)
 }
 
+// NewContext initializes libusb and returns a new context instance.
 func NewContext() *Context {
 	c, err := libusb.init()
 	if err != nil {
@@ -97,6 +100,7 @@ func (c *Context) OpenDeviceWithVidPid(vid, pid int) (*Device, error) {
 	return devs[0], nil
 }
 
+// Close releases the libusb context.
 func (c *Context) Close() error {
 	c.done <- struct{}{}
 	if c.ctx != nil {
