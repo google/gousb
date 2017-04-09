@@ -91,19 +91,19 @@ func TestTransferProtocol(t *testing.T) {
 	go func() {
 		ft := f.waitForSubmitted()
 		ft.length = 5
-		ft.status = LIBUSB_TRANSFER_COMPLETED
+		ft.status = TransferCompleted
 		copy(ft.buf, []byte{1, 2, 3, 4, 5})
 		close(ft.done)
 
 		ft = f.waitForSubmitted()
 		ft.length = 99
-		ft.status = LIBUSB_TRANSFER_COMPLETED
+		ft.status = TransferCompleted
 		copy(ft.buf, []byte{12, 12, 12, 12, 12})
 		close(ft.done)
 
 		ft = f.waitForSubmitted()
 		ft.length = 123
-		ft.status = LIBUSB_TRANSFER_CANCELLED
+		ft.status = TransferCancelled
 		close(ft.done)
 	}()
 

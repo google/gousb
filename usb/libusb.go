@@ -166,7 +166,7 @@ func (libusbImpl) handleEvents(c *libusbContext, done <-chan struct{}) {
 		default:
 		}
 		if errno := C.libusb_handle_events_timeout_completed((*C.libusb_context)(c), &tv, nil); errno < 0 {
-			log.Printf("handle_events: error: %s", usbError(errno))
+			log.Printf("handle_events: error: %s", USBError(errno))
 		}
 	}
 }
@@ -350,7 +350,7 @@ func (libusbImpl) getStringDesc(d *libusbDevHandle, index int) (string, error) {
 
 func (libusbImpl) setAutoDetach(d *libusbDevHandle, val int) error {
 	err := fromUSBError(C.libusb_set_auto_detach_kernel_driver((*C.libusb_device_handle)(d), C.int(val)))
-	if err != nil && err != ERROR_NOT_SUPPORTED {
+	if err != nil && err != ErrorNotSupported {
 		return err
 	}
 	return nil

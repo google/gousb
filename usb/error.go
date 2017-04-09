@@ -22,80 +22,86 @@ import (
 // #include <libusb.h>
 import "C"
 
-type usbError C.int
+// USBError is an error code returned by libusb.
+type USBError C.int
 
-func (e usbError) Error() string {
-	return fmt.Sprintf("libusb: %s [code %d]", usbErrorString[e], int(e))
+// Error implements the error interface.
+func (e USBError) Error() string {
+	return fmt.Sprintf("libusb: %s [code %d]", USBErrorString[e], e)
 }
 
 func fromUSBError(errno C.int) error {
-	err := usbError(errno)
-	if err == SUCCESS {
+	err := USBError(errno)
+	if err == Success {
 		return nil
 	}
 	return err
 }
 
+// Error codes defined by libusb.
 const (
-	SUCCESS             usbError = C.LIBUSB_SUCCESS
-	ERROR_IO            usbError = C.LIBUSB_ERROR_IO
-	ERROR_INVALID_PARAM usbError = C.LIBUSB_ERROR_INVALID_PARAM
-	ERROR_ACCESS        usbError = C.LIBUSB_ERROR_ACCESS
-	ERROR_NO_DEVICE     usbError = C.LIBUSB_ERROR_NO_DEVICE
-	ERROR_NOT_FOUND     usbError = C.LIBUSB_ERROR_NOT_FOUND
-	ERROR_BUSY          usbError = C.LIBUSB_ERROR_BUSY
-	ERROR_TIMEOUT       usbError = C.LIBUSB_ERROR_TIMEOUT
-	ERROR_OVERFLOW      usbError = C.LIBUSB_ERROR_OVERFLOW
-	ERROR_PIPE          usbError = C.LIBUSB_ERROR_PIPE
-	ERROR_INTERRUPTED   usbError = C.LIBUSB_ERROR_INTERRUPTED
-	ERROR_NO_MEM        usbError = C.LIBUSB_ERROR_NO_MEM
-	ERROR_NOT_SUPPORTED usbError = C.LIBUSB_ERROR_NOT_SUPPORTED
-	ERROR_OTHER         usbError = C.LIBUSB_ERROR_OTHER
+	Success           USBError = C.LIBUSB_SUCCESS
+	ErrorIO           USBError = C.LIBUSB_ERROR_IO
+	ErrorInvalidParam USBError = C.LIBUSB_ERROR_INVALID_PARAM
+	ErrorAccess       USBError = C.LIBUSB_ERROR_ACCESS
+	ErrorNoDevice     USBError = C.LIBUSB_ERROR_NO_DEVICE
+	ErrorNotFound     USBError = C.LIBUSB_ERROR_NOT_FOUND
+	ErrorBusy         USBError = C.LIBUSB_ERROR_BUSY
+	ErrorTimeout      USBError = C.LIBUSB_ERROR_TIMEOUT
+	ErrorOverflow     USBError = C.LIBUSB_ERROR_OVERFLOW
+	ErrorPipe         USBError = C.LIBUSB_ERROR_PIPE
+	ErrorInterrupted  USBError = C.LIBUSB_ERROR_INTERRUPTED
+	ErrorNoMem        USBError = C.LIBUSB_ERROR_NO_MEM
+	ErrorNotSupported USBError = C.LIBUSB_ERROR_NOT_SUPPORTED
+	ErrorOther        USBError = C.LIBUSB_ERROR_OTHER
 )
 
-var usbErrorString = map[usbError]string{
-	C.LIBUSB_SUCCESS:             "success",
-	C.LIBUSB_ERROR_IO:            "i/o error",
-	C.LIBUSB_ERROR_INVALID_PARAM: "invalid param",
-	C.LIBUSB_ERROR_ACCESS:        "bad access",
-	C.LIBUSB_ERROR_NO_DEVICE:     "no device",
-	C.LIBUSB_ERROR_NOT_FOUND:     "not found",
-	C.LIBUSB_ERROR_BUSY:          "device or resource busy",
-	C.LIBUSB_ERROR_TIMEOUT:       "timeout",
-	C.LIBUSB_ERROR_OVERFLOW:      "overflow",
-	C.LIBUSB_ERROR_PIPE:          "pipe error",
-	C.LIBUSB_ERROR_INTERRUPTED:   "interrupted",
-	C.LIBUSB_ERROR_NO_MEM:        "out of memory",
-	C.LIBUSB_ERROR_NOT_SUPPORTED: "not supported",
-	C.LIBUSB_ERROR_OTHER:         "unknown error",
+var USBErrorString = map[USBError]string{
+	Success:           "success",
+	ErrorIO:           "i/o error",
+	ErrorInvalidParam: "invalid param",
+	ErrorAccess:       "bad access",
+	ErrorNoDevice:     "no device",
+	ErrorNotFound:     "not found",
+	ErrorBusy:         "device or resource busy",
+	ErrorTimeout:      "timeout",
+	ErrorOverflow:     "overflow",
+	ErrorPipe:         "pipe error",
+	ErrorInterrupted:  "interrupted",
+	ErrorNoMem:        "out of memory",
+	ErrorNotSupported: "not supported",
+	ErrorOther:        "unknown error",
 }
 
+// TransferStatus contains information about the result of a transfer.
 type TransferStatus uint8
 
 const (
-	LIBUSB_TRANSFER_COMPLETED TransferStatus = C.LIBUSB_TRANSFER_COMPLETED
-	LIBUSB_TRANSFER_ERROR     TransferStatus = C.LIBUSB_TRANSFER_ERROR
-	LIBUSB_TRANSFER_TIMED_OUT TransferStatus = C.LIBUSB_TRANSFER_TIMED_OUT
-	LIBUSB_TRANSFER_CANCELLED TransferStatus = C.LIBUSB_TRANSFER_CANCELLED
-	LIBUSB_TRANSFER_STALL     TransferStatus = C.LIBUSB_TRANSFER_STALL
-	LIBUSB_TRANSFER_NO_DEVICE TransferStatus = C.LIBUSB_TRANSFER_NO_DEVICE
-	LIBUSB_TRANSFER_OVERFLOW  TransferStatus = C.LIBUSB_TRANSFER_OVERFLOW
+	TransferCompleted TransferStatus = C.LIBUSB_TRANSFER_COMPLETED
+	TransferError     TransferStatus = C.LIBUSB_TRANSFER_ERROR
+	TransferTimedOut  TransferStatus = C.LIBUSB_TRANSFER_TIMED_OUT
+	TransferCancelled TransferStatus = C.LIBUSB_TRANSFER_CANCELLED
+	TransferStall     TransferStatus = C.LIBUSB_TRANSFER_STALL
+	TransferNoDevice  TransferStatus = C.LIBUSB_TRANSFER_NO_DEVICE
+	TransferOverflow  TransferStatus = C.LIBUSB_TRANSFER_OVERFLOW
 )
 
 var transferStatusDescription = map[TransferStatus]string{
-	LIBUSB_TRANSFER_COMPLETED: "transfer completed without error",
-	LIBUSB_TRANSFER_ERROR:     "transfer failed",
-	LIBUSB_TRANSFER_TIMED_OUT: "transfer timed out",
-	LIBUSB_TRANSFER_CANCELLED: "transfer was cancelled",
-	LIBUSB_TRANSFER_STALL:     "halt condition detected (endpoint stalled) or control request not supported",
-	LIBUSB_TRANSFER_NO_DEVICE: "device was disconnected",
-	LIBUSB_TRANSFER_OVERFLOW:  "device sent more data than requested",
+	TransferCompleted: "transfer completed without error",
+	TransferError:     "transfer failed",
+	TransferTimedOut:  "transfer timed out",
+	TransferCancelled: "transfer was cancelled",
+	TransferStall:     "halt condition detected (endpoint stalled) or control request not supported",
+	TransferNoDevice:  "device was disconnected",
+	TransferOverflow:  "device sent more data than requested",
 }
 
+// String returns a human-readable transfer status.
 func (ts TransferStatus) String() string {
 	return transferStatusDescription[ts]
 }
 
+// Error implements the error interface.
 func (ts TransferStatus) Error() string {
-	return "libusb: " + ts.String()
+	return ts.String()
 }

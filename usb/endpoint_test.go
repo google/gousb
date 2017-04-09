@@ -55,7 +55,7 @@ func TestEndpoint(t *testing.T) {
 					desc:    "128B buffer, 10 transferred and then error",
 					buf:     make([]byte, 128),
 					ret:     10,
-					status:  LIBUSB_TRANSFER_ERROR,
+					status:  TransferError,
 					want:    10,
 					wantErr: true,
 				},

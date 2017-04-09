@@ -72,7 +72,7 @@ func (t *usbTransfer) wait() (n int, err error) {
 	}
 	t.submitted = false
 	n, status := libusb.data(t.xfer)
-	if status != LIBUSB_TRANSFER_COMPLETED {
+	if status != TransferCompleted {
 		return n, status
 	}
 	return n, err
@@ -87,7 +87,7 @@ func (t *usbTransfer) cancel() error {
 		return nil
 	}
 	err := libusb.cancel(t.xfer)
-	if err == ERROR_NOT_FOUND {
+	if err == ErrorNotFound {
 		// transfer already completed
 		return nil
 	}
