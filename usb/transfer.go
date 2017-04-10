@@ -114,11 +114,14 @@ func (t *usbTransfer) free() error {
 // given device/endpoint, with buf as the underlying transfer buffer.
 func newUSBTransfer(dev *libusbDevHandle, ei *EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets int
+	var isoPktSize uint32
 	if ei.TransferType == TransferTypeIsochronous {
-		isoPackets = len(buf) / int(ei.MaxPacketSize)
-		if int(ei.MaxPacketSize)*isoPackets < len(buf) {
-			isoPackets++
+		isoPktSize = ei.MaxPacketSize
+		if len(buf) < int(isoPktSize) {
+			isoPktSize = uint32(len(buf))
 		}
+		isoPackets = len(buf) / int(isoPktSize)
+		debug.Printf("New isochronous transfer - buffer length %d, using %d packets of %d bytes each", len(buf), isoPackets, isoPktSize)
 	}
 
 	xfer, err := libusb.alloc(dev, ei, timeout, isoPackets, buf)
@@ -127,7 +130,7 @@ func newUSBTransfer(dev *libusbDevHandle, ei *EndpointInfo, buf []byte, timeout 
 	}
 
 	if ei.TransferType == TransferTypeIsochronous {
-		libusb.setIsoPacketLengths(xfer, ei.MaxPacketSize)
+		libusb.setIsoPacketLengths(xfer, isoPktSize)
 	}
 
 	t := &usbTransfer{
