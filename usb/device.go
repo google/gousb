@@ -132,6 +132,7 @@ func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, e
 			setAlternate = i != 0
 			debug.Printf("found setup: %+v [default: %v]\n", s, !setAlternate)
 			ifs = &s
+			break
 		}
 	}
 	if ifs == nil {
@@ -143,6 +144,7 @@ func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, e
 		if endpointAddr(e.Number, e.Direction) == epAddr {
 			debug.Printf("found ep #%d %s in %+v\n", e.Number, e.Direction, *ifs)
 			ep = &e
+			break
 		}
 	}
 	if ep == nil {
