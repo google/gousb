@@ -33,11 +33,11 @@ func TestOpenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): got error %v, want nil", err)
 	}
-	got, err := dev.InEndpoint(1, 1, 2, 6)
+	got, err := dev.InEndpoint(1, 1, 1, 6)
 	if err != nil {
-		t.Fatalf("InEndpoint(cfg=1, if=1, alt=2, ep=6IN): got error %v, want nil", err)
+		t.Fatalf("InEndpoint(cfg=1, if=1, alt=1, ep=6IN): got error %v, want nil", err)
 	}
-	if want := fakeDevices[1].Configs[0].Interfaces[1].AltSettings[2].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
-		t.Errorf("InEndpoint(cfg=1, if=1, alt=2, ep=6IN): got %+v, want %+v", got, want)
+	if want := fakeDevices[1].Configs[0].Interfaces[1].AltSettings[1].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
+		t.Errorf("InEndpoint(cfg=1, if=1, alt=1, ep=6IN): got %+v, want %+v", got, want)
 	}
 }
