@@ -28,15 +28,15 @@ import (
 )
 
 var (
-	vidPID   = flag.String("vidpid", "", "VID:PID of the device to which to connect. Exclusive with busaddr flag.")
-	busAddr  = flag.String("busaddr", "", "Bus:address of the device to which to connect. Exclusive with vidpid flag.")
-	config   = flag.Uint("config", 1, "Configuration number to use with the device.")
-	iface    = flag.Uint("interface", 0, "Interface to use on the device.")
-	setup    = flag.Uint("setup", 0, "Alternate setting to use on the interface.")
-	endpoint = flag.Uint("endpoint", 1, "Endpoint number to which to connect (without the leading 0x8).")
-	debug    = flag.Int("debug", 3, "Debug level for libusb.")
-	size     = flag.Uint("read_size", 1024, "Number of bytes of data to read in a single transaction.")
-	num      = flag.Uint("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
+	vidPID    = flag.String("vidpid", "", "VID:PID of the device to which to connect. Exclusive with busaddr flag.")
+	busAddr   = flag.String("busaddr", "", "Bus:address of the device to which to connect. Exclusive with vidpid flag.")
+	config    = flag.Uint("config", 1, "Configuration number to use with the device.")
+	iface     = flag.Uint("interface", 0, "Interface to use on the device.")
+	alternate = flag.Uint("alternate", 0, "Alternate setting to use on the interface.")
+	endpoint  = flag.Uint("endpoint", 1, "Endpoint number to which to connect (without the leading 0x8).")
+	debug     = flag.Int("debug", 3, "Debug level for libusb.")
+	size      = flag.Uint("read_size", 1024, "Number of bytes of data to read in a single transaction.")
+	num       = flag.Uint("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
 )
 
 func parseVIDPID(vidPid string) (usb.ID, usb.ID, error) {
@@ -139,10 +139,11 @@ func main() {
 	dev := devs[0]
 
 	log.Printf("Connecting to endpoint %d...", *endpoint)
-	ep, err := dev.InEndpoint(uint8(*config), uint8(*iface), uint8(*setup), uint8(*endpoint))
+	ep, err := dev.InEndpoint(uint8(*config), uint8(*iface), uint8(*alternate), uint8(*endpoint))
 	if err != nil {
 		log.Fatalf("open: %s", err)
 	}
+	log.Printf("Found endpoint: %s", ep)
 	log.Print("Reading...")
 
 	buf := make([]byte, *size)
