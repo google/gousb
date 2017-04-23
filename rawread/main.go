@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -36,6 +37,7 @@ var (
 	endpoint  = flag.Uint("endpoint", 1, "Endpoint number to which to connect (without the leading 0x8).")
 	debug     = flag.Int("debug", 3, "Debug level for libusb.")
 	size      = flag.Uint("read_size", 1024, "Number of bytes of data to read in a single transaction.")
+	bufSize   = flag.Uint("buffer_size", 0, "Number of buffer transfers, for data prefetching.")
 	num       = flag.Uint("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
 )
 
@@ -141,14 +143,24 @@ func main() {
 	log.Printf("Connecting to endpoint %d...", *endpoint)
 	ep, err := dev.InEndpoint(uint8(*config), uint8(*iface), uint8(*alternate), uint8(*endpoint))
 	if err != nil {
-		log.Fatalf("open: %s", err)
+		log.Fatalf("dev.InEndpoint(): %s", err)
 	}
 	log.Printf("Found endpoint: %s", ep)
+	var rdr io.Reader = ep
+	if *bufSize > 1 {
+		log.Print("Creating buffer...")
+		s, err := ep.NewStream(*size, *bufSize)
+		if err != nil {
+			log.Fatalf("ep.NewStream(): %v", err)
+		}
+		defer s.Close()
+		rdr = s
+	}
 	log.Print("Reading...")
 
 	buf := make([]byte, *size)
 	for i := uint(0); *num == 0 || i < *num; i++ {
-		num, err := ep.Read(buf)
+		num, err := rdr.Read(buf)
 		if err != nil {
 			log.Fatalf("Reading from device failed: %v", err)
 		}

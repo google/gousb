@@ -190,9 +190,9 @@ func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*InEndpoint, er
 	if err != nil {
 		return nil, err
 	}
+	ep.SetTimeout(d.ReadTimeout)
 	return &InEndpoint{
 		endpoint: ep,
-		timeout:  d.ReadTimeout,
 	}, nil
 }
 
@@ -202,9 +202,9 @@ func (d *Device) OutEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*OutEndpoint, 
 	if err != nil {
 		return nil, err
 	}
+	ep.SetTimeout(d.WriteTimeout)
 	return &OutEndpoint{
 		endpoint: ep,
-		timeout:  d.WriteTimeout,
 	}, nil
 }
 

@@ -33,7 +33,7 @@ type usbTransfer struct {
 	// done is blocking until the transfer is complete and data and transfer
 	// status are available.
 	done chan struct{}
-	// submitted is true if this transfer was passed to libusb through submit()
+	// submitted is true if submit() was called on this transfer.
 	submitted bool
 }
 
@@ -108,6 +108,11 @@ func (t *usbTransfer) free() error {
 	t.buf = nil
 	t.done = nil
 	return nil
+}
+
+// data returns the slice containing transfer buffer.
+func (t *usbTransfer) data() []byte {
+	return t.buf
 }
 
 // newUSBTransfer allocates a new transfer structure for communication with a

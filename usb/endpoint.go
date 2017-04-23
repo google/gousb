@@ -73,6 +73,8 @@ type endpoint struct {
 
 	InterfaceSetting
 	Info EndpointInfo
+
+	timeout time.Duration
 }
 
 // String returns a human-readable description of the endpoint.
@@ -80,12 +82,18 @@ func (e *endpoint) String() string {
 	return e.Info.String()
 }
 
-func (e *endpoint) transfer(buf []byte, timeout time.Duration) (int, error) {
+// SetTimeout sets a timeout duration for all new USB involving
+// this endpoint.
+func (e *endpoint) SetTimeout(t time.Duration) {
+	e.timeout = t
+}
+
+func (e *endpoint) transfer(buf []byte) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.h, &e.Info, buf, timeout)
+	t, err := newUSBTransfer(e.h, &e.Info, buf, e.timeout)
 	if err != nil {
 		return 0, err
 	}
@@ -113,21 +121,19 @@ func newEndpoint(h *libusbDevHandle, s InterfaceSetting, e EndpointInfo) *endpoi
 // InEndpoint represents an IN endpoint open for transfer.
 type InEndpoint struct {
 	*endpoint
-	timeout time.Duration
 }
 
 // Read reads data from an IN endpoint.
 func (e *InEndpoint) Read(buf []byte) (int, error) {
-	return e.transfer(buf, e.timeout)
+	return e.transfer(buf)
 }
 
 // OutEndpoint represents an OUT endpoint open for transfer.
 type OutEndpoint struct {
 	*endpoint
-	timeout time.Duration
 }
 
 // Write writes data to an OUT endpoint.
 func (e *OutEndpoint) Write(buf []byte) (int, error) {
-	return e.transfer(buf, e.timeout)
+	return e.transfer(buf)
 }

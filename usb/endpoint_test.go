@@ -93,7 +93,7 @@ func TestEndpoint(t *testing.T) {
 				fakeT.status = tc.status
 				close(fakeT.done)
 			}()
-			got, err := ep.transfer(tc.buf, time.Second)
+			got, err := ep.transfer(tc.buf)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("%s, %s: ep.transfer(...): got err: %v, err != nil is %v, want %v", epData.ei, tc.desc, err, err != nil, tc.wantErr)
 				continue
