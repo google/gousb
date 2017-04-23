@@ -15,8 +15,12 @@
 package usb
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"io"
+	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -42,7 +46,7 @@ func (f *fakeStreamTransfer) submit() error {
 		return errors.New("submit() called twice")
 	}
 	if len(f.res) == 0 {
-		return io.ErrUnexpectedEOF
+		return errors.New("submit() called but fake result missing")
 	}
 	f.inFlight = true
 	res := f.res[0]
@@ -61,11 +65,13 @@ func (f *fakeStreamTransfer) wait() (int, error) {
 		return 0, errors.New("wait() called without submit()")
 	}
 	if len(f.res) == 0 {
-		return 0, io.ErrUnexpectedEOF
+		return 0, errors.New("wait() called but fake result missing")
 	}
 	f.inFlight = false
 	res := f.res[0]
-	if res.waitErr != nil {
+	if res.waitErr == nil {
+		f.res = f.res[1:]
+	} else {
 		f.res = nil
 	}
 	return res.n, res.waitErr
@@ -84,49 +90,148 @@ func (f *fakeStreamTransfer) data() []byte  { return fakeTransferBuf }
 
 var sentinelError = errors.New("sentinel error")
 
+type readRes struct {
+	n   int
+	err error
+}
+
+func (r readRes) String() string {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "<%d bytes", r.n)
+	if r.err != nil {
+		fmt.Fprintf(&buf, ", error: %s", r.err.Error())
+	}
+	buf.WriteString(">")
+	return buf.String()
+}
+
 func TestReadStream(t *testing.T) {
-	transfers := []*fakeStreamTransfer{
-		{res: []fakeStreamResult{
-			{n: 500},
-		}},
-		{res: []fakeStreamResult{
-			{n: 500},
-		}},
-		{res: []fakeStreamResult{
-			{n: 123, waitErr: sentinelError},
-		}},
-		{res: []fakeStreamResult{
-			{n: 500},
-		}},
-	}
-	intfs := make([]transferIntf, len(transfers))
-	for i := range transfers {
-		intfs[i] = transfers[i]
-	}
-	s := ReadStream{newStream(intfs, true)}
-	buf := make([]byte, 400)
-	for _, rs := range []struct {
-		want int
-		err  error
+	for tcNum, tc := range []struct {
+		desc        string
+		closeBefore int
+		// transfers is a list of allocated transfers, each transfers
+		// carries a list of results for subsequent submits/waits.
+		transfers [][]fakeStreamResult
+		want      []readRes
 	}{
-		{400, nil},
-		{100, nil},
-		{400, nil},
-		{100, nil},
-		{123, sentinelError},
-		{0, io.ErrClosedPipe},
+		{
+			desc:        "two transfers submitted, close, read returns both and EOF",
+			closeBefore: 1,
+			transfers: [][]fakeStreamResult{
+				{{n: 400}},
+				{{n: 400}},
+			},
+			want: []readRes{
+				{n: 400},
+				{n: 400},
+				{err: io.EOF},
+				{err: io.ErrClosedPipe},
+			},
+		},
+		{
+			desc:        "two transfers, two and a half cycles through transfer queue",
+			closeBefore: 4,
+			transfers: [][]fakeStreamResult{
+				{{n: 400}, {n: 400}, {n: 400}, {waitErr: errors.New("fake wait error")}},
+				{{n: 400}, {n: 400}, {waitErr: errors.New("fake wait error")}},
+			},
+			want: []readRes{
+				{n: 400},
+				{n: 400},
+				{n: 400},
+				{n: 400},
+				{n: 400},
+				{err: io.EOF},
+				{err: io.ErrClosedPipe},
+			},
+		},
+		{
+			desc: "4 transfers submitted, two return, third fails on wait",
+			transfers: [][]fakeStreamResult{
+				{{n: 500}},
+				{{n: 500}},
+				{{n: 123, waitErr: sentinelError}},
+				{{n: 500}},
+			},
+			want: []readRes{
+				{n: 400},
+				{n: 100},
+				{n: 400},
+				{n: 100},
+				{n: 123, err: sentinelError},
+				{err: io.ErrClosedPipe},
+			},
+		},
+		{
+			desc: "2 transfers, second submit fails initialization but error overshadowed by wait error",
+			transfers: [][]fakeStreamResult{
+				{{n: 123, waitErr: sentinelError}},
+				{{submitErr: errors.New("fake submit error")}},
+			},
+			want: []readRes{
+				{n: 123, err: sentinelError},
+				{err: io.ErrClosedPipe},
+			},
+		},
+		{
+			desc: "2 transfers, second submit fails during initialization",
+			transfers: [][]fakeStreamResult{
+				{{n: 400}},
+				{{submitErr: sentinelError}},
+			},
+			want: []readRes{
+				{n: 400},
+				{err: sentinelError},
+				{err: io.ErrClosedPipe},
+			},
+		},
+		{
+			desc: "2 transfers, 3rd submit fails during second round",
+			transfers: [][]fakeStreamResult{
+				{{n: 400}, {submitErr: sentinelError}},
+				{{n: 400}},
+			},
+			want: []readRes{
+				{n: 400},
+				{n: 400},
+				{err: sentinelError},
+				{err: io.ErrClosedPipe},
+			},
+		},
 	} {
-		n, err := s.Read(buf)
-		if n != rs.want {
-			t.Errorf("Read(): got %d bytes, want %d", n, rs.want)
-		}
-		if err != rs.err {
-			t.Errorf("Read(): got error %v, want %v", err, rs.err)
-		}
-	}
-	for i := range transfers {
-		if !transfers[i].released {
-			t.Errorf("Transfer #%d was not freed after stream completed", i)
-		}
+		t.Run(strconv.Itoa(tcNum), func(t *testing.T) {
+			t.Logf("Case %d: %s", tcNum, tc.desc)
+			ftt := make([]*fakeStreamTransfer, len(tc.transfers))
+			tt := make([]transferIntf, len(tc.transfers))
+			for i := range tc.transfers {
+				ftt[i] = &fakeStreamTransfer{
+					res: tc.transfers[i],
+				}
+				tt[i] = ftt[i]
+			}
+			s := ReadStream{newStream(tt, true)}
+			buf := make([]byte, 400)
+			got := make([]readRes, len(tc.want))
+			for i := range tc.want {
+				if i == tc.closeBefore-1 {
+					t.Logf("Close()", tcNum)
+					s.Close()
+				}
+				n, err := s.Read(buf)
+				t.Logf("Read(): got %d, %v", tcNum, n, err)
+				got[i] = readRes{
+					n:   n,
+					err: err,
+				}
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("Got Read() results:\n%v\nwant Read() results:\n%v\n", got, tc.want)
+			}
+			for i := range ftt {
+				if !ftt[i].released {
+					t.Errorf("Transfer #%d was not freed after stream completed", i)
+				}
+			}
+		})
 	}
 }

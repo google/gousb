@@ -31,20 +31,25 @@ type stream struct {
 	current transferIntf
 	// total/used are the number of all/used bytes in the current transfer.
 	total, used int
-	// err is the first error encountered, returned to the user as soon
-	// as all remaining data was read.
-	err error
+	// delayedErr is the delayed error, returned to the user after all
+	// remaining data was read.
+	delayedErr error
 }
 
-func (s *stream) cleanup() {
-	close(s.transfers)
-	for t := range s.transfers {
-		t.cancel()
-		t.wait()
-		t.free()
+func (s *stream) setDelayedErr(err error) {
+	if s.delayedErr == nil {
+		s.delayedErr = err
+		close(s.transfers)
 	}
 }
 
+// ReadStream is a buffer that tries to prefetch data from the IN endpoint,
+// reducing the latency between subsequent Read()s.
+// ReadStream keeps prefetching data until Close() is called or until
+// an error is encountered. After Close(), the buffer might still have
+// data left from transfers that were initiated before Close. Read()ing
+// from the ReadStream will keep returning available data. When no more
+// data is left, io.EOF is returned.
 type ReadStream struct {
 	s *stream
 }
@@ -56,20 +61,27 @@ type ReadStream struct {
 // return io.ErrClosedPipe.
 func (r ReadStream) Read(p []byte) (int, error) {
 	s := r.s
+	if s.transfers == nil {
+		return 0, io.ErrClosedPipe
+	}
 	if s.current == nil {
 		t, ok := <-s.transfers
 		if !ok {
 			// no more transfers in flight
-			retErr := io.ErrClosedPipe
-			if s.err != nil {
-				retErr = s.err
-				s.err = nil
-			}
-			return 0, retErr
+			s.transfers = nil
+			return 0, s.delayedErr
 		}
 		n, err := t.wait()
 		if err != nil {
-			s.err = err
+			// wait error aborts immediately, all remaining data is invalid.
+			t.free()
+			for t := range s.transfers {
+				t.cancel()
+				t.wait()
+				t.free()
+			}
+			s.transfers = nil
+			return n, err
 		}
 		s.current = t
 		s.total = n
@@ -82,26 +94,20 @@ func (r ReadStream) Read(p []byte) (int, error) {
 	copy(p, s.current.data()[s.used:s.used+use])
 	s.used += use
 	if s.used == s.total {
-		if s.err == nil {
+		if s.delayedErr == nil {
 			if err := s.current.submit(); err == nil {
 				// guaranteed to not block, len(transfers) == number of allocated transfers
 				s.transfers <- s.current
 			} else {
-				s.err = err
+				s.setDelayedErr(err)
 			}
 		}
-		if s.err != nil {
+		if s.delayedErr != nil {
 			s.current.free()
 		}
 		s.current = nil
 	}
-	var retErr error
-	if s.current == nil && s.err != nil {
-		s.cleanup()
-		retErr = s.err
-		s.err = nil
-	}
-	return use, retErr
+	return use, nil
 }
 
 // Close signals that the transfer should stop. After Close is called,
@@ -109,10 +115,40 @@ func (r ReadStream) Read(p []byte) (int, error) {
 // in progress before returning an io.EOF error, unless another error
 // was encountered earlier.
 func (r ReadStream) Close() {
-	s := r.s
-	if s.err != nil {
-		s.err = io.EOF
+	r.s.setDelayedErr(io.EOF)
+}
+
+// WriteStream is a buffer that will send data asynchronously, reducing
+// the latency between subsequent Write()s.
+type WriteStream struct {
+	s *stream
+}
+
+// Write sends the data to the endpoint. Write returning a nil error doesn't
+// mean that data was written to the device, only that it was written to the
+// buffer. Only a call to Flush() that returns nil error guarantees that
+// all transfers have succeeded.
+func (w WriteStream) Write(p []byte) (int, error) {
+	s := w.s
+	written := 0
+	all := len(p)
+	for written < all {
+		if s.current == nil {
+			s.current = <-s.transfers
+			s.total = len(s.current.data())
+			s.used = 0
+		}
+		use := all - written
+		if use > s.total {
+			use = s.total
+		}
+		copy(s.current.data()[s.used:], p[written:written+use])
 	}
+	return 0, nil
+}
+
+func (w WriteStream) Flush() error {
+	return nil
 }
 
 func newStream(tt []transferIntf, submit bool) *stream {
@@ -120,15 +156,14 @@ func newStream(tt []transferIntf, submit bool) *stream {
 		transfers: make(chan transferIntf, len(tt)),
 	}
 	for _, t := range tt {
-		s.transfers <- t
-	}
-	if submit {
-		for _, t := range tt {
+		if submit {
 			if err := t.submit(); err != nil {
-				s.err = err
+				t.free()
+				s.setDelayedErr(err)
 				break
 			}
 		}
+		s.transfers <- t
 	}
 	return s
 }
