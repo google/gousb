@@ -14,9 +14,9 @@
 
 package usb
 
-func (e *endpoint) newStream(size, count uint, submit bool) (*stream, error) {
+func (e *endpoint) newStream(size, count int, submit bool) (*stream, error) {
 	var ts []transferIntf
-	for i := uint(0); i < count; i++ {
+	for i := 0; i < count; i++ {
 		t, err := newUSBTransfer(e.h, &e.Info, make([]byte, size), e.timeout)
 		if err != nil {
 			for _, t := range ts {
@@ -35,10 +35,10 @@ func (e *endpoint) newStream(size, count uint, submit bool) (*stream, error) {
 // defines how many transactions should be active at any time.
 // By keeping multiple transfers active at the same time, a Stream reduces
 // the latency between subsequent transfers and increases reading throughput.
-func (e *InEndpoint) NewStream(size, count uint) (ReadStream, error) {
+func (e *InEndpoint) NewStream(size, count int) (*ReadStream, error) {
 	s, err := e.newStream(size, count, true)
 	if err != nil {
-		return ReadStream{}, err
+		return nil, err
 	}
-	return ReadStream{s}, nil
+	return &ReadStream{s}, nil
 }
