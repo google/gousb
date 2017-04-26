@@ -131,6 +131,8 @@ type WriteStream struct {
 // mean that data was written to the device, only that it was written to the
 // buffer. Only a call to Flush() that returns nil error guarantees that
 // all transfers have succeeded.
+// TODO(sebek): not implemented and tested yet
+/*
 func (w WriteStream) Write(p []byte) (int, error) {
 	s := w.s
 	written := 0
@@ -153,6 +155,7 @@ func (w WriteStream) Write(p []byte) (int, error) {
 func (w WriteStream) Flush() error {
 	return nil
 }
+*/
 
 func newStream(tt []transferIntf, submit bool) *stream {
 	s := &stream{
