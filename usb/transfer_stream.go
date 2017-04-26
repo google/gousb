@@ -59,6 +59,7 @@ type ReadStream struct {
 // might be smaller than the length of p.
 // After a non-nil error is returned, all subsequent attempts to read will
 // return io.ErrClosedPipe.
+// Read cannot be called concurrently with other Read or Close.
 func (r ReadStream) Read(p []byte) (int, error) {
 	s := r.s
 	if s.transfers == nil {
@@ -117,6 +118,7 @@ func (r ReadStream) Read(p []byte) (int, error) {
 // subsequent Read()s will return data from all transfers that were already
 // in progress before returning an io.EOF error, unless another error
 // was encountered earlier.
+// Close cannot be called concurrently with Read.
 func (r ReadStream) Close() {
 	r.s.setDelayedErr(io.EOF)
 }
