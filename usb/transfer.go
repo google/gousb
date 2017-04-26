@@ -16,7 +16,6 @@ package usb
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 	"sync"
 	"time"
@@ -46,15 +45,14 @@ func (t *usbTransfer) submit() error {
 	if t.submitted {
 		return errors.New("transfer was already submitted and is not finished yet")
 	}
-	t.done = make(chan struct{})
-	if err := libusb.submit(t.xfer, t.done); err != nil {
+	if err := libusb.submit(t.xfer); err != nil {
 		return err
 	}
 	t.submitted = true
 	return nil
 }
 
-// wait waits for libusb to signal the release of transfer data.
+// waits for libusb to signal the release of transfer data.
 // After wait returns, the transfer contents are safe to access
 // via t.buf. The number returned by wait indicates how many bytes
 // of the buffer were read or written by libusb, and it can be
@@ -65,11 +63,7 @@ func (t *usbTransfer) wait() (n int, err error) {
 	if !t.submitted {
 		return 0, nil
 	}
-	select {
-	case <-time.After(10 * time.Second):
-		return 0, fmt.Errorf("wait timed out after 10s")
-	case <-t.done:
-	}
+	<-t.done
 	t.submitted = false
 	n, status := libusb.data(t.xfer)
 	if status != TransferCompleted {
@@ -129,7 +123,8 @@ func newUSBTransfer(dev *libusbDevHandle, ei *EndpointInfo, buf []byte, timeout 
 		debug.Printf("New isochronous transfer - buffer length %d, using %d packets of %d bytes each", len(buf), isoPackets, isoPktSize)
 	}
 
-	xfer, err := libusb.alloc(dev, ei, timeout, isoPackets, buf)
+	done := make(chan struct{}, 1)
+	xfer, err := libusb.alloc(dev, ei, timeout, isoPackets, buf, done)
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +136,7 @@ func newUSBTransfer(dev *libusbDevHandle, ei *EndpointInfo, buf []byte, timeout 
 	t := &usbTransfer{
 		xfer: xfer,
 		buf:  buf,
+		done: done,
 	}
 	runtime.SetFinalizer(t, func(t *usbTransfer) {
 		t.cancel()
