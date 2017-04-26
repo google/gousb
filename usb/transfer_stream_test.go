@@ -198,6 +198,18 @@ func TestReadStream(t *testing.T) {
 				{err: io.ErrClosedPipe},
 			},
 		},
+		{
+			desc: "fail quickly",
+			transfers: [][]fakeStreamResult{
+				{{waitErr: sentinelError}},
+				{{n: 500}},
+				{{n: 500}},
+			},
+			want: []readRes{
+				{err: sentinelError},
+				{err: io.ErrClosedPipe},
+			},
+		},
 	} {
 		t.Run(strconv.Itoa(tcNum), func(t *testing.T) {
 			t.Logf("Case %d: %s", tcNum, tc.desc)

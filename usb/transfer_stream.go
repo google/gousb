@@ -75,6 +75,9 @@ func (r ReadStream) Read(p []byte) (int, error) {
 		if err != nil {
 			// wait error aborts immediately, all remaining data is invalid.
 			t.free()
+			if s.delayedErr == nil {
+				close(s.transfers)
+			}
 			for t := range s.transfers {
 				t.cancel()
 				t.wait()
