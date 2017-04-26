@@ -44,7 +44,7 @@ func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
 		Number:        int(ep.bEndpointAddress & endpointNumMask),
 		Direction:     EndpointDirection((ep.bEndpointAddress & endpointDirectionMask) != 0),
 		TransferType:  TransferType(ep.bmAttributes & transferTypeMask),
-		MaxPacketSize: uint32(ep.wMaxPacketSize),
+		MaxPacketSize: int(ep.wMaxPacketSize),
 	}
 	if ei.TransferType == TransferTypeIsochronous {
 		// bits 0-10 identify the packet size, bits 11-12 are the number of additional transactions per microframe.
@@ -52,7 +52,7 @@ func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
 		// regardless of alternative setting used, where different alternative settings might define different
 		// max packet sizes.
 		// See http://libusb.org/ticket/77 for more background.
-		ei.MaxPacketSize = uint32(ep.wMaxPacketSize) & 0x07ff * (uint32(ep.wMaxPacketSize)>>11&3 + 1)
+		ei.MaxPacketSize = int(ep.wMaxPacketSize) & 0x07ff * (int(ep.wMaxPacketSize)>>11&3 + 1)
 		ei.IsoSyncType = IsoSyncType(ep.bmAttributes & isoSyncTypeMask)
 		switch ep.bmAttributes & usageTypeMask {
 		case C.LIBUSB_ISO_USAGE_TYPE_DATA:

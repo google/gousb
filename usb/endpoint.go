@@ -33,7 +33,7 @@ type EndpointInfo struct {
 	// Direction defines whether the data is flowing IN or OUT from the host perspective.
 	Direction EndpointDirection
 	// MaxPacketSize is the maximum USB packet size for a single frame/microframe.
-	MaxPacketSize uint32
+	MaxPacketSize int
 	// TransferType defines the endpoint type - bulk, interrupt, isochronous.
 	TransferType TransferType
 	// PollInterval is the maximum time between transfers for interrupt and isochronous transfer,

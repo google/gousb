@@ -27,7 +27,7 @@ func TestNewTransfer(t *testing.T) {
 		desc        string
 		dir         EndpointDirection
 		tt          TransferType
-		maxPkt      uint32
+		maxPkt      int
 		buf         int
 		timeout     time.Duration
 		wantIso     int
