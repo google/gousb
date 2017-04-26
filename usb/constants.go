@@ -224,28 +224,28 @@ func (rt RequestType) String() string {
 	return requestTypeDescription[rt]
 }
 
-// DeviceSpeed identifies the speed of the device.
-type DeviceSpeed int
+// Speed identifies the speed of the device.
+type Speed int
 
 // Device speeds as defined in the USB spec.
 const (
-	DeviceSpeedUnknown DeviceSpeed = C.LIBUSB_SPEED_UNKNOWN
-	DeviceSpeedLow     DeviceSpeed = C.LIBUSB_SPEED_LOW
-	DeviceSpeedFull    DeviceSpeed = C.LIBUSB_SPEED_FULL
-	DeviceSpeedHigh    DeviceSpeed = C.LIBUSB_SPEED_HIGH
-	DeviceSpeedSuper   DeviceSpeed = C.LIBUSB_SPEED_SUPER
+	SpeedUnknown Speed = C.LIBUSB_SPEED_UNKNOWN
+	SpeedLow     Speed = C.LIBUSB_SPEED_LOW
+	SpeedFull    Speed = C.LIBUSB_SPEED_FULL
+	SpeedHigh    Speed = C.LIBUSB_SPEED_HIGH
+	SpeedSuper   Speed = C.LIBUSB_SPEED_SUPER
 )
 
-var deviceSpeedDescription = map[DeviceSpeed]string{
-	DeviceSpeedUnknown: "unknown",
-	DeviceSpeedLow:     "low",
-	DeviceSpeedFull:    "full",
-	DeviceSpeedHigh:    "high",
-	DeviceSpeedSuper:   "super",
+var deviceSpeedDescription = map[Speed]string{
+	SpeedUnknown: "unknown",
+	SpeedLow:     "low",
+	SpeedFull:    "full",
+	SpeedHigh:    "high",
+	SpeedSuper:   "super",
 }
 
 // String returns a human-readable name of the device speed.
-func (s DeviceSpeed) String() string {
+func (s Speed) String() string {
 	return deviceSpeedDescription[s]
 }
 
