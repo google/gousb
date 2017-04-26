@@ -22,7 +22,7 @@ import "fmt"
 type InterfaceInfo struct {
 	// Number is the number of this interface, a zero-based index in the array
 	// of interfaces supported by the device configuration.
-	Number uint8
+	Number int
 	// AltSettings is a list of alternate settings supported by the interface.
 	AltSettings []InterfaceSetting
 }
@@ -37,9 +37,9 @@ func (i InterfaceInfo) String() string {
 // alternate setting, extracted from the descriptor.
 type InterfaceSetting struct {
 	// Number is the number of this interface, the same as in InterfaceInfo.
-	Number uint8
+	Number int
 	// Alternate is the number of this alternate setting.
-	Alternate uint8
+	Alternate int
 	// Class is the USB-IF class code, as defined by the USB spec.
 	Class Class
 	// SubClass is the USB-IF subclass code, as defined by the USB spec.
@@ -60,7 +60,7 @@ func (a InterfaceSetting) String() string {
 // ConfigInfo contains the information about a USB device configuration.
 type ConfigInfo struct {
 	// Config is the configuration number.
-	Config uint8
+	Config int
 	// SelfPowered is true if the device is powered externally, i.e. not
 	// drawing power from the USB bus.
 	SelfPowered bool

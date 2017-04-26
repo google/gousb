@@ -44,7 +44,7 @@ type Device struct {
 
 	// Claimed interfaces
 	lock    *sync.Mutex
-	claimed map[uint8]int
+	claimed map[int]int
 }
 
 func newDevice(handle *libusbDevHandle, desc *Descriptor) *Device {
@@ -56,7 +56,7 @@ func newDevice(handle *libusbDevHandle, desc *Descriptor) *Device {
 		WriteTimeout:   DefaultWriteTimeout,
 		ControlTimeout: DefaultControlTimeout,
 		lock:           new(sync.Mutex),
-		claimed:        make(map[uint8]int, ifaces),
+		claimed:        make(map[int]int, ifaces),
 	}
 
 	return d
@@ -74,15 +74,16 @@ func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (in
 
 // ActiveConfig returns the config id (not the index) of the active configuration.
 // This corresponds to the ConfigInfo.Config field.
-func (d *Device) ActiveConfig() (uint8, error) {
-	return libusb.getConfig(d.handle)
+func (d *Device) ActiveConfig() (int, error) {
+	ret, err := libusb.getConfig(d.handle)
+	return int(ret), err
 }
 
 // SetConfig attempts to change the active configuration.
 // The cfg provided is the config id (not the index) of the configuration to set,
 // which corresponds to the ConfigInfo.Config field.
-func (d *Device) SetConfig(cfg uint8) error {
-	return libusb.setConfig(d.handle, cfg)
+func (d *Device) SetConfig(cfg int) error {
+	return libusb.setConfig(d.handle, uint8(cfg))
 }
 
 // Close closes the device.
@@ -93,14 +94,14 @@ func (d *Device) Close() error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	for iface := range d.claimed {
-		libusb.release(d.handle, iface)
+		libusb.release(d.handle, uint8(iface))
 	}
 	libusb.close(d.handle)
 	d.handle = nil
 	return nil
 }
 
-func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, error) {
+func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr int) (*endpoint, error) {
 	var cfg *ConfigInfo
 	for _, c := range d.Configs {
 		if c.Config == cfgNum {
@@ -158,14 +159,14 @@ func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, e
 	if err != nil {
 		return nil, fmt.Errorf("usb: getcfg: %s", err)
 	}
-	if activeConf != cfgNum {
-		if err := libusb.setConfig(d.handle, cfgNum); err != nil {
+	if activeConf != uint8(cfgNum) {
+		if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
 			return nil, fmt.Errorf("usb: setcfg: %s", err)
 		}
 	}
 
 	// Claim the interface
-	if err := libusb.claim(d.handle, ifNum); err != nil {
+	if err := libusb.claim(d.handle, uint8(ifNum)); err != nil {
 		return nil, fmt.Errorf("usb: claim: %s", err)
 	}
 
@@ -176,7 +177,7 @@ func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, e
 
 	// Choose the alternate
 	if setAlternate {
-		if err := libusb.setAlt(d.handle, ifNum, setNum); err != nil {
+		if err := libusb.setAlt(d.handle, uint8(ifNum), uint8(setNum)); err != nil {
 			return nil, fmt.Errorf("usb: setalt: %s", err)
 		}
 	}
@@ -185,7 +186,7 @@ func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr uint8) (*endpoint, e
 }
 
 // InEndpoint prepares an IN endpoint for transfer.
-func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*InEndpoint, error) {
+func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum int) (*InEndpoint, error) {
 	ep, err := d.openEndpoint(cfgNum, ifNum, setNum, endpointAddr(epNum, EndpointDirectionIn))
 	if err != nil {
 		return nil, err
@@ -197,7 +198,7 @@ func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*InEndpoint, er
 }
 
 // OutEndpoint prepares an OUT endpoint for transfer.
-func (d *Device) OutEndpoint(cfgNum, ifNum, setNum, epNum uint8) (*OutEndpoint, error) {
+func (d *Device) OutEndpoint(cfgNum, ifNum, setNum, epNum int) (*OutEndpoint, error) {
 	ep, err := d.openEndpoint(cfgNum, ifNum, setNum, endpointAddr(epNum, EndpointDirectionOut))
 	if err != nil {
 		return nil, err

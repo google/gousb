@@ -29,7 +29,7 @@ type EndpointInfo struct {
 	// with endpoint direction IN.
 	// The device can have up to two endpoints with the same number but with
 	// different directions.
-	Number uint8
+	Number int
 	// Direction defines whether the data is flowing IN or OUT from the host perspective.
 	Direction EndpointDirection
 	// MaxPacketSize is the maximum USB packet size for a single frame/microframe.
@@ -46,7 +46,7 @@ type EndpointInfo struct {
 	UsageType UsageType
 }
 
-func endpointAddr(n uint8, d EndpointDirection) uint8 {
+func endpointAddr(n int, d EndpointDirection) int {
 	addr := n
 	if d == EndpointDirectionIn {
 		addr |= 0x80

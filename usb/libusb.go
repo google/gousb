@@ -41,7 +41,7 @@ type libusbEndpoint C.struct_libusb_endpoint_descriptor
 
 func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
 	ei := EndpointInfo{
-		Number:        uint8(ep.bEndpointAddress & endpointNumMask),
+		Number:        int(ep.bEndpointAddress & endpointNumMask),
 		Direction:     EndpointDirection((ep.bEndpointAddress & endpointDirectionMask) != 0),
 		TransferType:  TransferType(ep.bmAttributes & transferTypeMask),
 		MaxPacketSize: uint32(ep.wMaxPacketSize),
@@ -214,7 +214,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 			return nil, err
 		}
 		c := ConfigInfo{
-			Config:       uint8(cfg.bConfigurationValue),
+			Config:       int(cfg.bConfigurationValue),
 			SelfPowered:  (cfg.bmAttributes & selfPoweredMask) != 0,
 			RemoteWakeup: (cfg.bmAttributes & remoteWakeupMask) != 0,
 			// TODO(sebek): at GenX speeds MaxPower is expressed in units of 8mA, not 2mA.
@@ -242,8 +242,8 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 			descs := make([]InterfaceSetting, 0, len(alts))
 			for _, alt := range alts {
 				i := InterfaceSetting{
-					Number:    uint8(alt.bInterfaceNumber),
-					Alternate: uint8(alt.bAlternateSetting),
+					Number:    int(alt.bInterfaceNumber),
+					Alternate: int(alt.bAlternateSetting),
 					Class:     Class(alt.bInterfaceClass),
 					SubClass:  Class(alt.bInterfaceSubClass),
 					Protocol:  Protocol(alt.bInterfaceProtocol),
