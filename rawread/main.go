@@ -149,7 +149,7 @@ func main() {
 	var rdr io.Reader = ep
 	if *bufSize > 1 {
 		log.Print("Creating buffer...")
-		s, err := ep.NewStream(*size, *bufSize)
+		s, err := ep.NewStream(int(*size), int(*bufSize))
 		if err != nil {
 			log.Fatalf("ep.NewStream(): %v", err)
 		}
