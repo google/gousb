@@ -82,7 +82,7 @@ func (e *endpoint) String() string {
 	return e.Info.String()
 }
 
-// SetTimeout sets a timeout duration for all new USB involving
+// SetTimeout sets a timeout duration for all new USB transfers involving
 // this endpoint.
 func (e *endpoint) SetTimeout(t time.Duration) {
 	e.timeout = t
