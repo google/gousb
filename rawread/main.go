@@ -31,14 +31,14 @@ import (
 var (
 	vidPID    = flag.String("vidpid", "", "VID:PID of the device to which to connect. Exclusive with busaddr flag.")
 	busAddr   = flag.String("busaddr", "", "Bus:address of the device to which to connect. Exclusive with vidpid flag.")
-	config    = flag.Uint("config", 1, "Configuration number to use with the device.")
-	iface     = flag.Uint("interface", 0, "Interface to use on the device.")
-	alternate = flag.Uint("alternate", 0, "Alternate setting to use on the interface.")
-	endpoint  = flag.Uint("endpoint", 1, "Endpoint number to which to connect (without the leading 0x8).")
+	config    = flag.Int("config", 1, "Configuration number to use with the device.")
+	iface     = flag.Int("interface", 0, "Interface to use on the device.")
+	alternate = flag.Int("alternate", 0, "Alternate setting to use on the interface.")
+	endpoint  = flag.Int("endpoint", 1, "Endpoint number to which to connect (without the leading 0x8).")
 	debug     = flag.Int("debug", 3, "Debug level for libusb.")
-	size      = flag.Uint("read_size", 1024, "Number of bytes of data to read in a single transaction.")
-	bufSize   = flag.Uint("buffer_size", 0, "Number of buffer transfers, for data prefetching.")
-	num       = flag.Uint("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
+	size      = flag.Int("read_size", 1024, "Number of bytes of data to read in a single transaction.")
+	bufSize   = flag.Int("buffer_size", 0, "Number of buffer transfers, for data prefetching.")
+	num       = flag.Int("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
 )
 
 func parseVIDPID(vidPid string) (usb.ID, usb.ID, error) {
@@ -141,7 +141,7 @@ func main() {
 	dev := devs[0]
 
 	log.Printf("Connecting to endpoint %d...", *endpoint)
-	ep, err := dev.InEndpoint(uint8(*config), uint8(*iface), uint8(*alternate), uint8(*endpoint))
+	ep, err := dev.InEndpoint(*config, *iface, *alternate, *endpoint)
 	if err != nil {
 		log.Fatalf("dev.InEndpoint(): %s", err)
 	}
@@ -149,7 +149,7 @@ func main() {
 	var rdr io.Reader = ep
 	if *bufSize > 1 {
 		log.Print("Creating buffer...")
-		s, err := ep.NewStream(int(*size), int(*bufSize))
+		s, err := ep.NewStream(*size, *bufSize)
 		if err != nil {
 			log.Fatalf("ep.NewStream(): %v", err)
 		}
@@ -159,7 +159,7 @@ func main() {
 	log.Print("Reading...")
 
 	buf := make([]byte, *size)
-	for i := uint(0); *num == 0 || i < *num; i++ {
+	for i := 0; *num == 0 || i < *num; i++ {
 		num, err := rdr.Read(buf)
 		if err != nil {
 			log.Fatalf("Reading from device failed: %v", err)
