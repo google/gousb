@@ -292,7 +292,8 @@ func (f *fakeLibusb) waitForSubmitted() *fakeTransfer {
 	return <-f.submitted
 }
 
-func newFakeLibusb() *fakeLibusb {
+func newFakeLibusb() (*fakeLibusb, func() error) {
+	origLibusb := libusb
 	fl := &fakeLibusb{
 		fakeDevices: make(map[*libusbDevice]*fakeDevice),
 		ts:          make(map[*libusbTransfer]*fakeTransfer),
@@ -310,5 +311,15 @@ func newFakeLibusb() *fakeLibusb {
 			alt:  0,
 		}
 	}
-	return fl
+	libusb = fl
+	return fl, func() error {
+		defer func() { libusb = origLibusb }()
+		if got := len(fl.ts); got > 0 {
+			for t := range fl.ts {
+				fl.free(t)
+			}
+			return fmt.Errorf("fakeLibusb has %d remaining transfers that should have been freed", got)
+		}
+		return nil
+	}
 }
