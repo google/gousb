@@ -20,8 +20,8 @@ import (
 )
 
 func TestNewTransfer(t *testing.T) {
-	defer func(i libusbIntf) { libusb = i }(libusb)
-	libusb = newFakeLibusb()
+	_, done := newFakeLibusb()
+	defer done()
 
 	for _, tc := range []struct {
 		desc        string
@@ -62,6 +62,7 @@ func TestNewTransfer(t *testing.T) {
 		if err != nil {
 			t.Fatalf("newUSBTransfer(): %v", err)
 		}
+		defer xfer.free()
 		if got, want := len(xfer.buf), tc.wantLength; got != want {
 			t.Errorf("xfer.buf: got %d bytes, want %d", got, want)
 		}
@@ -69,10 +70,8 @@ func TestNewTransfer(t *testing.T) {
 }
 
 func TestTransferProtocol(t *testing.T) {
-	defer func(i libusbIntf) { libusb = i }(libusb)
-
-	f := newFakeLibusb()
-	libusb = f
+	f, done := newFakeLibusb()
+	defer done()
 
 	xfers := make([]*usbTransfer, 2)
 	var err error
@@ -139,4 +138,21 @@ func TestTransferProtocol(t *testing.T) {
 		x.wait()
 		x.free()
 	}
+}
+
+func BenchmarkSubSlice(b *testing.B) {
+	x := make([]byte, 512)
+	start, len := 50, 50
+	b.Run("start:start+len", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			y := x
+			y = y[start : start+len]
+		}
+	})
+	b.Run("[start:][:len]", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			y := x
+			y = y[start:][:len]
+		}
+	})
 }

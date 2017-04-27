@@ -20,9 +20,8 @@ import (
 )
 
 func TestOpenEndpoint(t *testing.T) {
-	origLib := libusb
-	defer func() { libusb = origLib }()
-	libusb = newFakeLibusb()
+	_, done := newFakeLibusb()
+	defer done()
 
 	c := NewContext()
 	defer c.Close()

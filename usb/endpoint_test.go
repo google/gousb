@@ -20,7 +20,9 @@ import (
 )
 
 func TestEndpoint(t *testing.T) {
-	defer func(i libusbIntf) { libusb = i }(libusb)
+	lib, done := newFakeLibusb()
+	defer done()
+
 	for _, epData := range []struct {
 		ei   EndpointInfo
 		intf InterfaceSetting
@@ -83,9 +85,6 @@ func TestEndpoint(t *testing.T) {
 				wantErr: true,
 			},
 		} {
-			lib := newFakeLibusb()
-			libusb = lib
-
 			ep := newEndpoint(nil, epData.intf, epData.ei)
 			go func() {
 				fakeT := lib.waitForSubmitted()
@@ -150,8 +149,8 @@ func TestEndpointInfo(t *testing.T) {
 func TestEndpointIn(t *testing.T) {
 	defer func(i libusbIntf) { libusb = i }(libusb)
 
-	lib := newFakeLibusb()
-	libusb = lib
+	lib, done := newFakeLibusb()
+	defer done()
 
 	ctx := NewContext()
 	defer ctx.Close()
@@ -187,8 +186,8 @@ func TestEndpointIn(t *testing.T) {
 func TestEndpointOut(t *testing.T) {
 	defer func(i libusbIntf) { libusb = i }(libusb)
 
-	lib := newFakeLibusb()
-	libusb = lib
+	lib, done := newFakeLibusb()
+	defer done()
 
 	ctx := NewContext()
 	defer ctx.Close()

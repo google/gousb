@@ -18,9 +18,8 @@ package usb
 import "testing"
 
 func TestListDevices(t *testing.T) {
-	orig := libusb
-	defer func() { libusb = orig }()
-	libusb = newFakeLibusb()
+	_, done := newFakeLibusb()
+	defer done()
 
 	c := NewContext()
 	defer c.Close()
@@ -55,9 +54,8 @@ func TestListDevices(t *testing.T) {
 }
 
 func TestOpenDeviceWithVidPid(t *testing.T) {
-	orig := libusb
-	defer func() { libusb = orig }()
-	libusb = newFakeLibusb()
+	_, done := newFakeLibusb()
+	defer done()
 
 	for _, d := range []struct {
 		vid, pid ID
