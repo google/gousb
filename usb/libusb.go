@@ -451,3 +451,7 @@ func libusbSetDebug(c *libusbContext, lvl int) {
 func newDevicePointer() *libusbDevice {
 	return (*libusbDevice)(unsafe.Pointer(C.malloc(1)))
 }
+
+func newFakeTransferPointer() *libusbTransfer {
+	return (*libusbTransfer)(unsafe.Pointer(C.malloc(1)))
+}
