@@ -39,6 +39,7 @@ func BenchmarkCGo(b *testing.B) {
 			if err != nil {
 				b.Fatalf("libusb_init() failed: %v", err)
 			}
+			defer libusbImpl{}.exit(ctx)
 			b.ResetTimer()
 			bc.bfunc(ctx, b.N)
 		})
