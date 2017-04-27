@@ -119,8 +119,9 @@ func (r ReadStream) Read(p []byte) (int, error) {
 // in progress before returning an io.EOF error, unless another error
 // was encountered earlier.
 // Close cannot be called concurrently with Read.
-func (r ReadStream) Close() {
+func (r ReadStream) Close() error {
 	r.s.setDelayedErr(io.EOF)
+	return nil
 }
 
 // WriteStream is a buffer that will send data asynchronously, reducing
