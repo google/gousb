@@ -70,6 +70,7 @@ func TestOpenDeviceWithVidPid(t *testing.T) {
 		{0x9999, 0x0002, false},
 	} {
 		c := NewContext()
+		defer c.Close()
 		dev, err := c.OpenDeviceWithVidPid(d.vid, d.pid)
 		if (dev != nil) != d.exists {
 			t.Errorf("OpenDeviceWithVidPid(%s/%s): device != nil is %v, want %v", ID(d.vid), ID(d.pid), dev != nil, d.exists)
