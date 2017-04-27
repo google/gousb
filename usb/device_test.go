@@ -25,6 +25,7 @@ func TestOpenEndpoint(t *testing.T) {
 	libusb = newFakeLibusb()
 
 	c := NewContext()
+	defer c.Close()
 	dev, err := c.OpenDeviceWithVidPid(0x8888, 0x0002)
 	if dev == nil {
 		t.Fatal("OpenDeviceWithVidPid(0x8888, 0x0002): got nil device, need non-nil")
