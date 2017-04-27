@@ -154,6 +154,7 @@ func TestEndpointIn(t *testing.T) {
 	libusb = lib
 
 	ctx := NewContext()
+	defer ctx.Close()
 	d, err := ctx.OpenDeviceWithVidPid(0x9999, 0x0001)
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVidPid(0x9999, 0x0001): got error %v, want nil", err)
@@ -190,6 +191,7 @@ func TestEndpointOut(t *testing.T) {
 	libusb = lib
 
 	ctx := NewContext()
+	defer ctx.Close()
 	d, err := ctx.OpenDeviceWithVidPid(0x9999, 0x0001)
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVidPid(0x9999, 0x0001): got error %v, want nil", err)
