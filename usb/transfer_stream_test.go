@@ -230,7 +230,7 @@ func TestReadStream(t *testing.T) {
 					s.Close()
 				}
 				n, err := s.Read(buf)
-				t.Logf("Read(): got %d, %v", tcNum, n, err)
+				t.Logf("Read(): got %d, %v", n, err)
 				got[i] = readRes{
 					n:   n,
 					err: err,
