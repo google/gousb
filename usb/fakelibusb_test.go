@@ -262,7 +262,7 @@ func (f *fakeLibusb) setAlt(d *libusbDevHandle, intf, alt uint8) error {
 func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointInfo, _ time.Duration, _ int, buf []byte, done chan struct{}) (*libusbTransfer, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	t := new(libusbTransfer)
+	t := newFakeTransferPointer()
 	f.ts[t] = &fakeTransfer{buf: buf, done: done}
 	return t, nil
 }
