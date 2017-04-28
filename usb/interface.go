@@ -29,10 +29,10 @@ type InterfaceInfo struct {
 	AltSettings []InterfaceSetting
 }
 
-// String returns a human-readable descripton of the interface and it's
-// alternate settings.
+// String returns a human-readable descripton of the interface descriptor and
+// it's alternate settings.
 func (i InterfaceInfo) String() string {
-	return fmt.Sprintf("if=%d", i.Number)
+	return fmt.Sprintf("Interface %d (%d alternate settings)", i.Number, len(i.AltSettings))
 }
 
 // InterfaceSetting contains information about a USB interface with a particular

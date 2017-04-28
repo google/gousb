@@ -20,6 +20,38 @@ import (
 	"sync"
 )
 
+// Descriptor is a representation of a USB device descriptor.
+type Descriptor struct {
+	// Bus information
+	Bus     uint8 // The bus on which the device was detected
+	Address uint8 // The address of the device on the bus
+
+	// Version information
+	Spec   BCD // USB Specification Release Number
+	Device BCD // The device version
+
+	// Product information
+	Vendor  ID // The Vendor identifer
+	Product ID // The Product identifier
+
+	// Protocol information
+	Class    Class    // The class of this device
+	SubClass Class    // The sub-class (within the class) of this device
+	Protocol Protocol // The protocol (within the sub-class) of this device
+
+	// Configuration information
+	Configs []ConfigInfo
+}
+
+// String returns a human-readable version of the device descriptor.
+func (d *Descriptor) String() string {
+	var cfgs []int
+	for _, c := range d.Configs {
+		cfgs = append(cfgs, c.Config)
+	}
+	return fmt.Sprintf("%d:%d: %s:%s (available configs: %v)", d.Bus, d.Address, d.Vendor, d.Product, cfgs)
+}
+
 // Device represents an opened USB device.
 type Device struct {
 	handle *libusbDevHandle
@@ -30,6 +62,11 @@ type Device struct {
 	// Claimed config
 	mu      sync.Mutex
 	claimed *Config
+}
+
+// String represents a human readable representation of the device.
+func (d *Device) String() string {
+	return fmt.Sprintf("vid=%s,pid=%s,bus=%d,addr=%d", d.Vendor, d.Product, d.Bus, d.Address)
 }
 
 // Reset performs a USB port reset to reinitialize a device.
