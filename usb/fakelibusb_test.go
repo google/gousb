@@ -296,6 +296,11 @@ func (f *fakeLibusb) waitForSubmitted() *fakeTransfer {
 	return <-f.submitted
 }
 
+// empty can be used to confirm that all transfers were cleaned up.
+func (f *fakeLibusb) empty() bool {
+	return len(f.submitted) == 0
+}
+
 func newFakeLibusb() (*fakeLibusb, func() error) {
 	origLibusb := libusb
 	fl := &fakeLibusb{

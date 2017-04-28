@@ -57,41 +57,47 @@ func TestEndpoint(t *testing.T) {
 	} {
 		epData.intf.Endpoints = []EndpointInfo{epData.ei}
 		for _, tc := range []struct {
-			desc    string
-			buf     []byte
-			ret     int
-			status  TransferStatus
-			want    int
-			wantErr bool
+			desc       string
+			buf        []byte
+			ret        int
+			wantSubmit bool
+			status     TransferStatus
+			want       int
+			wantErr    bool
 		}{
 			{
-				desc: "empty buffer",
-				buf:  nil,
-				ret:  10,
-				want: 0,
+				desc:       "empty buffer",
+				buf:        nil,
+				ret:        10,
+				wantSubmit: false,
+				want:       0,
 			},
 			{
-				desc: "128B buffer, 60 transferred",
-				buf:  make([]byte, 128),
-				ret:  60,
-				want: 60,
+				desc:       "128B buffer, 60 transferred",
+				buf:        make([]byte, 128),
+				ret:        60,
+				wantSubmit: true,
+				want:       60,
 			},
 			{
-				desc:    "128B buffer, 10 transferred and then error",
-				buf:     make([]byte, 128),
-				ret:     10,
-				status:  TransferError,
-				want:    10,
-				wantErr: true,
+				desc:       "128B buffer, 10 transferred and then error",
+				buf:        make([]byte, 128),
+				ret:        10,
+				wantSubmit: true,
+				status:     TransferError,
+				want:       10,
+				wantErr:    true,
 			},
 		} {
 			ep := &endpoint{h: nil, InterfaceSetting: epData.intf, Info: epData.ei}
-			go func() {
-				fakeT := lib.waitForSubmitted()
-				fakeT.length = tc.ret
-				fakeT.status = tc.status
-				close(fakeT.done)
-			}()
+			if tc.wantSubmit {
+				go func() {
+					fakeT := lib.waitForSubmitted()
+					fakeT.length = tc.ret
+					fakeT.status = tc.status
+					close(fakeT.done)
+				}()
+			}
 			got, err := ep.transfer(tc.buf)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("%s, %s: ep.transfer(...): got err: %v, err != nil is %v, want %v", epData.ei, tc.desc, err, err != nil, tc.wantErr)
@@ -99,6 +105,9 @@ func TestEndpoint(t *testing.T) {
 			}
 			if got != tc.want {
 				t.Errorf("%s, %s: ep.transfer(...): got %d bytes, want %d", epData.ei, tc.desc, got, tc.want)
+			}
+			if !lib.empty() {
+				t.Fatalf("%s, %s: transfers still pending when none were expected", epData.ei, tc.desc)
 			}
 		}
 	}
