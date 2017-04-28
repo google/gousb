@@ -37,9 +37,9 @@ type ConfigInfo struct {
 	Interfaces []InterfaceInfo
 }
 
-// String returns the human-readable description of the configuration.
+// String returns the human-readable description of the configuration descriptor.
 func (c ConfigInfo) String() string {
-	return fmt.Sprintf("config=%d", c.Config)
+	return fmt.Sprintf("Configuration %d", c.Config)
 }
 
 // Config represents a USB device set to use a particular configuration.
@@ -76,8 +76,9 @@ func (c *Config) Close() error {
 	return nil
 }
 
+// String returns the human-readable description of the configuration.
 func (c *Config) String() string {
-	return fmt.Sprintf("%s,%s", c.dev.String(), c.Info.String())
+	return fmt.Sprintf("%s,config=%s", c.dev.String(), c.Info.Config)
 }
 
 // Control sends a control request to the device.
