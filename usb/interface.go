@@ -93,7 +93,7 @@ func (i *Interface) openEndpoint(epNum int) (*endpoint, error) {
 		}
 	}
 	if !found {
-		return nil, fmt.Errorf("%s does not have endpoint number %d. Available endpoints: %v", epNum, i.Setting.Endpoints)
+		return nil, fmt.Errorf("%s does not have endpoint number %d. Available endpoints: %v", i, epNum, i.Setting.Endpoints)
 	}
 	return &endpoint{
 		InterfaceSetting: i.Setting,

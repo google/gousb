@@ -77,7 +77,11 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 		}
 	}
 	if !found {
-		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s", cfg, d)
+		var cfgs []int
+		for _, c := range d.Descriptor.Configs {
+			cfgs = append(cfgs, c.Config)
+		}
+		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, cfgs)
 	}
 	if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
 		return nil, fmt.Errorf("failed to set active config %d for the device %s: %v", cfgNum, d, err)

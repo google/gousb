@@ -94,11 +94,11 @@ func (c *Config) Interface(intf, alt int) (*Interface, error) {
 		return nil, fmt.Errorf("Interface(%d, %d) called on %s after Close", intf, alt, c)
 	}
 	if intf < 0 || intf >= len(c.Info.Interfaces) {
-		return nil, fmt.Errorf("interface %d not found in %s. Interface number needs to be a 0-based index into the interface table, which has %d elements.", intf, c, len(c.Info.Interfaces))
+		return nil, fmt.Errorf("interface %d not found in %s, available interfaces 0..%d", intf, c, len(c.Info.Interfaces)-1)
 	}
 	ifInfo := c.Info.Interfaces[intf]
 	if alt < 0 || alt >= len(ifInfo.AltSettings) {
-		return nil, fmt.Errorf("Inteface %d does not have alternate setting %d. Alt setting needs to be a 0-based index into the settings table, which has %d elements.", ifInfo, alt, len(ifInfo.AltSettings))
+		return nil, fmt.Errorf("alternate setting %d not found for %s in %s, available alt settings 0..%d", alt, ifInfo, c, len(ifInfo.AltSettings)-1)
 	}
 
 	c.mu.Lock()

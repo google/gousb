@@ -140,8 +140,19 @@ func main() {
 	}
 	dev := devs[0]
 
-	log.Printf("Connecting to endpoint %d...", *endpoint)
-	ep, err := dev.InEndpoint(*config, *iface, *alternate, *endpoint)
+	log.Printf("Setting configuration %d...", *config)
+	cfg, err := dev.Config(*config)
+	if err != nil {
+		log.Fatalf("dev.Config(%d): %v", *config, err)
+	}
+	log.Printf("Claiming interface %d (alt setting %d)...", *iface, *alternate)
+	intf, err := cfg.Interface(*iface, *alternate)
+	if err != nil {
+		log.Fatalf("cfg.Interface(%d, %d): %v", *iface, *alternate, err)
+	}
+
+	log.Printf("Using endpoint %d...", *endpoint)
+	ep, err := intf.InEndpoint(*endpoint)
 	if err != nil {
 		log.Fatalf("dev.InEndpoint(): %s", err)
 	}
