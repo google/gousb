@@ -353,7 +353,7 @@ func (libusbImpl) getStringDesc(d *libusbDevHandle, index int) (string, error) {
 		(*C.uchar)(unsafe.Pointer(&buf[0])),
 		200)
 	if errno < 0 {
-		return "", fmt.Errorf("usb: getstr: %s", fromErrNo(errno))
+		return "", fmt.Errorf("failed to get string descriptor %d: %s", index, fromErrNo(errno))
 	}
 	return string(buf[:errno]), nil
 }
