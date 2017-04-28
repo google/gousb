@@ -71,10 +71,14 @@ func (i *Interface) String() string {
 
 // Close releases the interface.
 func (i *Interface) Close() {
+	if i.config == nil {
+		return
+	}
 	libusb.release(i.config.dev.handle, uint8(i.Setting.Number))
 	i.config.mu.Lock()
 	defer i.config.mu.Unlock()
 	delete(i.config.claimed, i.Setting.Number)
+	i.config = nil
 }
 
 func (i *Interface) openEndpoint(epNum int) (*endpoint, error) {
@@ -100,6 +104,9 @@ func (i *Interface) openEndpoint(epNum int) (*endpoint, error) {
 
 // InEndpoint prepares an IN endpoint for transfer.
 func (i *Interface) InEndpoint(epNum int) (*InEndpoint, error) {
+	if i.config == nil {
+		return nil, fmt.Errorf("InEndpoint(%d) called on %s after Close", epNum, i)
+	}
 	ep, err := i.openEndpoint(epNum)
 	if err != nil {
 		return nil, err
@@ -114,6 +121,9 @@ func (i *Interface) InEndpoint(epNum int) (*InEndpoint, error) {
 
 // OutEndpoint prepares an OUT endpoint for transfer.
 func (i *Interface) OutEndpoint(epNum int) (*OutEndpoint, error) {
+	if i.config == nil {
+		return nil, fmt.Errorf("OutEndpoint(%d) called on %s after Close", epNum, i)
+	}
 	ep, err := i.openEndpoint(epNum)
 	if err != nil {
 		return nil, err

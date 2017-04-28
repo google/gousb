@@ -50,4 +50,12 @@ func TestOpenEndpoint(t *testing.T) {
 	if want := fakeDevices[1].Configs[0].Interfaces[1].AltSettings[1].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
 		t.Errorf("InEndpoint(cfg=1, if=1, alt=1, ep=6IN): got %+v, want %+v", got, want)
 	}
+
+	if err := cfg.Close(); err == nil {
+		t.Fatalf("cfg.Close(): returned nil, want non nil, because the Interface was not release.")
+	}
+	if err := dev.Close(); err == nil {
+		t.Fatalf("dev.Close(): returned nil, want non nil, because the Config was not released.")
+	}
+	intf.Close()
 }

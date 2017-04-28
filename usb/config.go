@@ -69,6 +69,7 @@ func (c *Config) Close() error {
 	c.dev.mu.Lock()
 	defer c.dev.mu.Unlock()
 	c.dev.claimed = nil
+	c.dev = nil
 	return nil
 }
 
@@ -78,11 +79,17 @@ func (c *Config) String() string {
 
 // Control sends a control request to the device.
 func (c *Config) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
+	if c.dev == nil {
+		return 0, fmt.Errorf("Control() called on %s after Close", c)
+	}
 	return libusb.control(c.dev.handle, c.ControlTimeout, rType, request, val, idx, data)
 }
 
 // Interface claims and returns an interface on a USB device.
 func (c *Config) Interface(intf, alt int) (*Interface, error) {
+	if c.dev == nil {
+		return nil, fmt.Errorf("Interface(%d, %d) called on %s after Close", intf, alt, c)
+	}
 	if intf < 0 || intf >= len(c.Info.Interfaces) {
 		return nil, fmt.Errorf("interface %d not found in %s. Interface number needs to be a 0-based index into the interface table, which has %d elements.", intf, c, len(c.Info.Interfaces))
 	}

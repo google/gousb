@@ -34,10 +34,13 @@ type Device struct {
 
 // Reset performs a USB port reset to reinitialize a device.
 func (d *Device) Reset() error {
+	if d.handle == nil {
+		return fmt.Errorf("Reset() called on %s after Close", d)
+	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.claimed != nil {
-		return fmt.Errorf("can't reset a device with an open configuration")
+		return fmt.Errorf("can't reset device %s while it has an active configuration %s", d, d.claimed)
 	}
 	return libusb.reset(d.handle)
 }
@@ -45,6 +48,9 @@ func (d *Device) Reset() error {
 // ActiveConfig returns the config id (not the index) of the active configuration.
 // This corresponds to the ConfigInfo.Config field.
 func (d *Device) ActiveConfig() (int, error) {
+	if d.handle == nil {
+		return 0, fmt.Errorf("ActiveConfig() called on %s after Close", d)
+	}
 	ret, err := libusb.getConfig(d.handle)
 	return int(ret), err
 }
@@ -55,6 +61,9 @@ func (d *Device) ActiveConfig() (int, error) {
 // USB supports only one active config per device at a time. Config claims the
 // device before setting the desired config and keeps it locked until Close is called.
 func (d *Device) Config(cfgNum int) (*Config, error) {
+	if d.handle == nil {
+		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
+	}
 	cfg := &Config{
 		dev:     d,
 		claimed: make(map[int]bool),
@@ -82,7 +91,7 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 // Close closes the device.
 func (d *Device) Close() error {
 	if d.handle == nil {
-		return fmt.Errorf("double close on device %s", d)
+		return nil
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -99,6 +108,9 @@ func (d *Device) Close() error {
 // descriptor string is converted to ASCII (non-ASCII characters are replaced
 // with "?").
 func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
+	if d.handle == nil {
+		return "", fmt.Errorf("GetStringDescriptor(%d) called on %s after Close", descIndex, d)
+	}
 	return libusb.getStringDesc(d.handle, descIndex)
 }
 
@@ -107,6 +119,9 @@ func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
 // on the interface and reattach it when releasing the interface.
 // Automatic kernel driver detachment is disabled on newly opened device handles by default.
 func (d *Device) SetAutoDetach(autodetach bool) error {
+	if d.handle == nil {
+		return fmt.Errorf("SetAutoDetach(%v) called on %s after Close", autodetach, d)
+	}
 	var autodetachInt int
 	switch autodetach {
 	case true:
