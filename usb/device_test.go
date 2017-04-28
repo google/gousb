@@ -35,27 +35,57 @@ func TestOpenEndpoint(t *testing.T) {
 	}
 	cfg, err := dev.Config(1)
 	if err != nil {
-		t.Fatalf("%s Config(1): %v", dev, err)
+		t.Fatalf("%s.Config(1): %v", dev, err)
 	}
 	defer cfg.Close()
 	intf, err := cfg.Interface(1, 1)
 	if err != nil {
-		t.Fatalf("%s Interface(1, 1): %v", cfg, err)
+		t.Fatalf("%s.Interface(1, 1): %v", cfg, err)
 	}
 	defer intf.Close()
 	got, err := intf.InEndpoint(6)
 	if err != nil {
-		t.Fatalf("InEndpoint(cfg=1, if=1, alt=1, ep=6IN): got error %v, want nil", err)
+		t.Fatalf("%s.InEndpoint(6): got error %v, want nil", intf, err)
 	}
 	if want := fakeDevices[1].Configs[0].Interfaces[1].AltSettings[1].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
-		t.Errorf("InEndpoint(cfg=1, if=1, alt=1, ep=6IN): got %+v, want %+v", got, want)
+		t.Errorf("%s.InEndpoint(6): got %+v, want %+v", intf, got, want)
+	}
+
+	if _, err := cfg.Interface(1, 0); err == nil {
+		t.Fatalf("%s.Interface(1, 0): got nil, want non nil, because Interface 1 is already claimed.", cfg)
+	}
+
+	// intf2 is interface #0, not claimed yet.
+	intf2, err := cfg.Interface(0, 0)
+	if err != nil {
+		t.Fatalf("%s.Interface(0, 0): got %v, want nil", cfg, err)
 	}
 
 	if err := cfg.Close(); err == nil {
-		t.Fatalf("cfg.Close(): returned nil, want non nil, because the Interface was not release.")
+		t.Fatalf("%s.Close(): got nil, want non nil, because the Interface was not released.", cfg)
 	}
 	if err := dev.Close(); err == nil {
-		t.Fatalf("dev.Close(): returned nil, want non nil, because the Config was not released.")
+		t.Fatalf("%s.Close(): got nil, want non nil, because the Config was not released.", cfg)
 	}
+
 	intf.Close()
+	if err := cfg.Close(); err == nil {
+		t.Fatalf("%s.Close(): got nil, want non nil, because the Interface was not released.", cfg)
+	}
+	if err := dev.Close(); err == nil {
+		t.Fatalf("%s.Close(): got nil, want non nil, because the Config was not released.", dev)
+	}
+
+	intf2.Close()
+	if err := dev.Close(); err == nil {
+		t.Fatalf("%s.Close(): got nil, want non nil, because the Config was not released.", dev)
+	}
+
+	if err := cfg.Close(); err != nil {
+		t.Fatalf("%s.Close(): got error %v, want nil", cfg, err)
+	}
+
+	if err := dev.Close(); err != nil {
+		t.Fatalf("%s.Close(): got error %v, want nil", dev, err)
+	}
 }

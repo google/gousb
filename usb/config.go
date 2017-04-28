@@ -57,6 +57,9 @@ type Config struct {
 
 // Close releases the underlying device, allowing the caller to switch the device to a different configuration.
 func (c *Config) Close() error {
+	if c.dev == nil {
+		return nil
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if len(c.claimed) > 0 {
@@ -98,6 +101,12 @@ func (c *Config) Interface(intf, alt int) (*Interface, error) {
 		return nil, fmt.Errorf("Inteface %d does not have alternate setting %d. Alt setting needs to be a 0-based index into the settings table, which has %d elements.", ifInfo, alt, len(ifInfo.AltSettings))
 	}
 
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.claimed[intf] {
+		return nil, fmt.Errorf("interface %d on %s is already claimed", intf, c)
+	}
+
 	// Claim the interface
 	if err := libusb.claim(c.dev.handle, uint8(intf)); err != nil {
 		return nil, fmt.Errorf("failed to claim interface %d on %s: %v", intf, c, err)
@@ -108,8 +117,6 @@ func (c *Config) Interface(intf, alt int) (*Interface, error) {
 		return nil, fmt.Errorf("failed to set alternate config %d on interface %d of %s: %v", alt, intf, c, err)
 	}
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.claimed[intf] = true
 	return &Interface{
 		Setting: ifInfo.AltSettings[alt],
