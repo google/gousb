@@ -49,7 +49,7 @@ func (d *Descriptor) String() string {
 	for _, c := range d.Configs {
 		cfgs = append(cfgs, c.Config)
 	}
-	return fmt.Sprintf("%d:%d: %s:%s (available configs: %v)", d.Bus, d.Address, d.Vendor, d.Product, cfgs)
+	return fmt.Sprintf("%d.%d: %s:%s (available configs: %v)", d.Bus, d.Address, d.Vendor, d.Product, cfgs)
 }
 
 // Device represents an opened USB device.
