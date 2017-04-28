@@ -214,6 +214,7 @@ func (f *fakeLibusb) control(*libusbDevHandle, time.Duration, uint8, uint8, uint
 }
 func (f *fakeLibusb) getConfig(*libusbDevHandle) (uint8, error) { return 1, nil }
 func (f *fakeLibusb) setConfig(d *libusbDevHandle, cfg uint8) error {
+	debug.Printf("setConfig(%p, %d)\n", d, cfg)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if len(f.claims[f.handles[d]]) != 0 {
@@ -230,6 +231,7 @@ func (f *fakeLibusb) getStringDesc(*libusbDevHandle, int) (string, error) {
 func (f *fakeLibusb) setAutoDetach(*libusbDevHandle, int) error { return nil }
 
 func (f *fakeLibusb) claim(d *libusbDevHandle, intf uint8) error {
+	debug.Printf("claim(%p, %d)\n", d, intf)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	c := f.claims[f.handles[d]]
@@ -241,6 +243,7 @@ func (f *fakeLibusb) claim(d *libusbDevHandle, intf uint8) error {
 	return nil
 }
 func (f *fakeLibusb) release(d *libusbDevHandle, intf uint8) {
+	debug.Printf("release(%p, %d)\n", d, intf)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	c := f.claims[f.handles[d]]
@@ -250,6 +253,7 @@ func (f *fakeLibusb) release(d *libusbDevHandle, intf uint8) {
 	c[intf] = false
 }
 func (f *fakeLibusb) setAlt(d *libusbDevHandle, intf, alt uint8) error {
+	debug.Printf("setAlt(%p, %d, %d)\n", d, intf, alt)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if !f.claims[f.handles[d]][intf] {

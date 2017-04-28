@@ -18,16 +18,6 @@ package usb
 import (
 	"fmt"
 	"sync"
-	"time"
-)
-
-var (
-	// DefaultReadTimeout controls the default timeout for IN endpoint transfers.
-	DefaultReadTimeout = 1 * time.Second
-	// DefaultWriteTimeout controls the default timeout for OUT endpoint transfers.
-	DefaultWriteTimeout = 1 * time.Second
-	// DefaultControlTimeout controls the default timeout for control transfers.
-	DefaultControlTimeout = 250 * time.Millisecond
 )
 
 // Device represents an opened USB device.
@@ -37,39 +27,19 @@ type Device struct {
 	// Embed the device information for easy access
 	*Descriptor
 
-	// Timeouts
-	ReadTimeout    time.Duration
-	WriteTimeout   time.Duration
-	ControlTimeout time.Duration
-
-	// Claimed interfaces
-	lock    *sync.Mutex
-	claimed map[int]int
-}
-
-func newDevice(handle *libusbDevHandle, desc *Descriptor) *Device {
-	ifaces := 0
-	d := &Device{
-		handle:         handle,
-		Descriptor:     desc,
-		ReadTimeout:    DefaultReadTimeout,
-		WriteTimeout:   DefaultWriteTimeout,
-		ControlTimeout: DefaultControlTimeout,
-		lock:           new(sync.Mutex),
-		claimed:        make(map[int]int, ifaces),
-	}
-
-	return d
+	// Claimed config
+	mu      sync.Mutex
+	claimed *Config
 }
 
 // Reset performs a USB port reset to reinitialize a device.
 func (d *Device) Reset() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.claimed != nil {
+		return fmt.Errorf("can't reset a device with an open configuration")
+	}
 	return libusb.reset(d.handle)
-}
-
-// Control sends a control request to the device.
-func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
-	return libusb.control(d.handle, d.ControlTimeout, rType, request, val, idx, data)
 }
 
 // ActiveConfig returns the config id (not the index) of the active configuration.
@@ -79,134 +49,49 @@ func (d *Device) ActiveConfig() (int, error) {
 	return int(ret), err
 }
 
-// SetConfig attempts to change the active configuration.
+// Config returns a USB device set to use a particular config.
 // The cfg provided is the config id (not the index) of the configuration to set,
 // which corresponds to the ConfigInfo.Config field.
-func (d *Device) SetConfig(cfg int) error {
-	return libusb.setConfig(d.handle, uint8(cfg))
+// USB supports only one active config per device at a time. Config claims the
+// device before setting the desired config and keeps it locked until Close is called.
+func (d *Device) Config(cfgNum int) (*Config, error) {
+	cfg := &Config{
+		dev:     d,
+		claimed: make(map[int]bool),
+	}
+	var found bool
+	for _, info := range d.Descriptor.Configs {
+		if info.Config == cfgNum {
+			found = true
+			cfg.Info = info
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s", cfg, d)
+	}
+	if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
+		return nil, fmt.Errorf("failed to set active config %d for the device %s: %v", cfgNum, d, err)
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.claimed = cfg
+	return cfg, nil
 }
 
 // Close closes the device.
 func (d *Device) Close() error {
 	if d.handle == nil {
-		return fmt.Errorf("usb: double close on device")
+		return fmt.Errorf("double close on device %s", d)
 	}
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	for iface := range d.claimed {
-		libusb.release(d.handle, uint8(iface))
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.claimed != nil {
+		return fmt.Errorf("can't release the device %s, it has an open config %s", d, d.claimed.Info.Config)
 	}
 	libusb.close(d.handle)
 	d.handle = nil
 	return nil
-}
-
-func (d *Device) openEndpoint(cfgNum, ifNum, setNum, epAddr int) (*endpoint, error) {
-	var cfg *ConfigInfo
-	for _, c := range d.Configs {
-		if c.Config == cfgNum {
-			debug.Printf("found conf: %+v\n", c)
-			cfg = &c
-			break
-		}
-	}
-	if cfg == nil {
-		return nil, fmt.Errorf("usb: unknown configuration 0x%02x", cfgNum)
-	}
-
-	var intf *InterfaceInfo
-	for _, i := range cfg.Interfaces {
-		if i.Number == ifNum {
-			debug.Printf("found iface: %+v\n", i)
-			intf = &i
-			break
-		}
-	}
-	if intf == nil {
-		return nil, fmt.Errorf("usb: unknown interface 0x%02x", ifNum)
-	}
-
-	var setAlternate bool
-	var ifs *InterfaceSetting
-	for i, s := range intf.AltSettings {
-		if s.Alternate == setNum {
-			setAlternate = i != 0
-			debug.Printf("found setup: %+v [default: %v]\n", s, !setAlternate)
-			ifs = &s
-			break
-		}
-	}
-	if ifs == nil {
-		return nil, fmt.Errorf("usb: unknown setup 0x%02x", setNum)
-	}
-
-	var ep *EndpointInfo
-	for _, e := range ifs.Endpoints {
-		if endpointAddr(e.Number, e.Direction) == epAddr {
-			debug.Printf("found ep #%d %s in %+v\n", e.Number, e.Direction, *ifs)
-			ep = &e
-			break
-		}
-	}
-	if ep == nil {
-		return nil, fmt.Errorf("usb: didn't find endpoint address 0x%02x", epAddr)
-	}
-
-	end := newEndpoint(d.handle, *ifs, *ep)
-
-	// Set the configuration
-	activeConf, err := libusb.getConfig(d.handle)
-	if err != nil {
-		return nil, fmt.Errorf("usb: getcfg: %s", err)
-	}
-	if activeConf != uint8(cfgNum) {
-		if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
-			return nil, fmt.Errorf("usb: setcfg: %s", err)
-		}
-	}
-
-	// Claim the interface
-	if err := libusb.claim(d.handle, uint8(ifNum)); err != nil {
-		return nil, fmt.Errorf("usb: claim: %s", err)
-	}
-
-	// Increment the claim count
-	d.lock.Lock()
-	d.claimed[ifNum]++
-	d.lock.Unlock() // unlock immediately because the next calls may block
-
-	// Choose the alternate
-	if setAlternate {
-		if err := libusb.setAlt(d.handle, uint8(ifNum), uint8(setNum)); err != nil {
-			return nil, fmt.Errorf("usb: setalt: %s", err)
-		}
-	}
-
-	return end, nil
-}
-
-// InEndpoint prepares an IN endpoint for transfer.
-func (d *Device) InEndpoint(cfgNum, ifNum, setNum, epNum int) (*InEndpoint, error) {
-	ep, err := d.openEndpoint(cfgNum, ifNum, setNum, endpointAddr(epNum, EndpointDirectionIn))
-	if err != nil {
-		return nil, err
-	}
-	ep.SetTimeout(d.ReadTimeout)
-	return &InEndpoint{
-		endpoint: ep,
-	}, nil
-}
-
-// OutEndpoint prepares an OUT endpoint for transfer.
-func (d *Device) OutEndpoint(cfgNum, ifNum, setNum, epNum int) (*OutEndpoint, error) {
-	ep, err := d.openEndpoint(cfgNum, ifNum, setNum, endpointAddr(epNum, EndpointDirectionOut))
-	if err != nil {
-		return nil, err
-	}
-	ep.SetTimeout(d.WriteTimeout)
-	return &OutEndpoint{
-		endpoint: ep,
-	}, nil
 }
 
 // GetStringDescriptor returns a device string descriptor with the given index

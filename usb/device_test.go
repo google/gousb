@@ -31,9 +31,19 @@ func TestOpenEndpoint(t *testing.T) {
 	}
 	defer dev.Close()
 	if err != nil {
-		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): got error %v, want nil", err)
+		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): %v", err)
 	}
-	got, err := dev.InEndpoint(1, 1, 1, 6)
+	cfg, err := dev.Config(1)
+	if err != nil {
+		t.Fatalf("%s Config(1): %v", dev, err)
+	}
+	defer cfg.Close()
+	intf, err := cfg.Interface(1, 1)
+	if err != nil {
+		t.Fatalf("%s Interface(1, 1): %v", cfg, err)
+	}
+	defer intf.Close()
+	got, err := intf.InEndpoint(6)
 	if err != nil {
 		t.Fatalf("InEndpoint(cfg=1, if=1, alt=1, ep=6IN): got error %v, want nil", err)
 	}

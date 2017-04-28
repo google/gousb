@@ -57,7 +57,7 @@ func endpointAddr(n int, d EndpointDirection) int {
 // String returns the human-readable description of the endpoint.
 func (e EndpointInfo) String() string {
 	ret := make([]string, 0, 3)
-	ret = append(ret, fmt.Sprintf("Endpoint #%d %s (address 0x%02x) %s", e.Number, e.Direction, endpointAddr(e.Number, e.Direction), e.TransferType))
+	ret = append(ret, fmt.Sprintf("ep #%d %s (address 0x%02x) %s", e.Number, e.Direction, endpointAddr(e.Number, e.Direction), e.TransferType))
 	switch e.TransferType {
 	case TransferTypeIsochronous:
 		ret = append(ret, fmt.Sprintf("- %s %s", e.IsoSyncType, e.UsageType))
@@ -74,7 +74,7 @@ type endpoint struct {
 	InterfaceSetting
 	Info EndpointInfo
 
-	timeout time.Duration
+	Timeout time.Duration
 }
 
 // String returns a human-readable description of the endpoint.
@@ -82,18 +82,12 @@ func (e *endpoint) String() string {
 	return e.Info.String()
 }
 
-// SetTimeout sets a timeout duration for all new USB transfers involving
-// this endpoint.
-func (e *endpoint) SetTimeout(t time.Duration) {
-	e.timeout = t
-}
-
 func (e *endpoint) transfer(buf []byte) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.h, &e.Info, buf, e.timeout)
+	t, err := newUSBTransfer(e.h, &e.Info, buf, e.Timeout)
 	if err != nil {
 		return 0, err
 	}
@@ -108,14 +102,6 @@ func (e *endpoint) transfer(buf []byte) (int, error) {
 		return n, err
 	}
 	return n, nil
-}
-
-func newEndpoint(h *libusbDevHandle, s InterfaceSetting, e EndpointInfo) *endpoint {
-	return &endpoint{
-		InterfaceSetting: s,
-		Info:             e,
-		h:                h,
-	}
 }
 
 // InEndpoint represents an IN endpoint open for transfer.

@@ -68,7 +68,7 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 				reterr = err
 				continue
 			}
-			ret = append(ret, newDevice(handle, desc))
+			ret = append(ret, &Device{handle: handle, Descriptor: desc})
 		} else {
 			libusb.dereference(dev)
 		}

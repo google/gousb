@@ -15,47 +15,11 @@
 
 package usb
 
-import "fmt"
-
-// InterfaceInfo contains information about a USB interface, extracted from
-// the descriptor.
-type InterfaceInfo struct {
-	// Number is the number of this interface, a zero-based index in the array
-	// of interfaces supported by the device configuration.
-	Number int
-	// AltSettings is a list of alternate settings supported by the interface.
-	AltSettings []InterfaceSetting
-}
-
-// String returns a human-readable descripton of the interface and it's
-// alternate settings.
-func (i InterfaceInfo) String() string {
-	return fmt.Sprintf("Interface %d (%d alternate settings)", i.Number, len(i.AltSettings))
-}
-
-// InterfaceSetting contains information about a USB interface with a particular
-// alternate setting, extracted from the descriptor.
-type InterfaceSetting struct {
-	// Number is the number of this interface, the same as in InterfaceInfo.
-	Number int
-	// Alternate is the number of this alternate setting.
-	Alternate int
-	// Class is the USB-IF class code, as defined by the USB spec.
-	Class Class
-	// SubClass is the USB-IF subclass code, as defined by the USB spec.
-	SubClass Class
-	// Protocol is USB protocol code, as defined by the USB spe.c
-	Protocol Protocol
-	// Endpoints has the list of endpoints available on this interface with
-	// this alternate setting.
-	Endpoints []EndpointInfo
-}
-
-// String returns a human-readable descripton of the particular
-// alternate setting of an interface.
-func (a InterfaceSetting) String() string {
-	return fmt.Sprintf("Interface %d alternate setting %d", a.Number, a.Alternate)
-}
+import (
+	"fmt"
+	"sync"
+	"time"
+)
 
 // ConfigInfo contains the information about a USB device configuration.
 type ConfigInfo struct {
@@ -75,5 +39,73 @@ type ConfigInfo struct {
 
 // String returns the human-readable description of the configuration.
 func (c ConfigInfo) String() string {
-	return fmt.Sprintf("Config %d", c.Config)
+	return fmt.Sprintf("config=%d", c.Config)
+}
+
+// Config represents a USB device set to use a particular configuration.
+// Only one Config of a particular device can be used at any one time.
+type Config struct {
+	Info           ConfigInfo
+	ControlTimeout time.Duration
+
+	dev *Device
+
+	// Claimed interfaces
+	mu      sync.Mutex
+	claimed map[int]bool
+}
+
+// Close releases the underlying device, allowing the caller to switch the device to a different configuration.
+func (c *Config) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if len(c.claimed) > 0 {
+		var ifs []int
+		for k := range c.claimed {
+			ifs = append(ifs, k)
+		}
+		return fmt.Errorf("failed to release %s, interfaces %v are still open", c, ifs)
+	}
+	c.dev.mu.Lock()
+	defer c.dev.mu.Unlock()
+	c.dev.claimed = nil
+	return nil
+}
+
+func (c *Config) String() string {
+	return fmt.Sprintf("%s,%s", c.dev.String(), c.Info.String())
+}
+
+// Control sends a control request to the device.
+func (c *Config) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
+	return libusb.control(c.dev.handle, c.ControlTimeout, rType, request, val, idx, data)
+}
+
+// Interface claims and returns an interface on a USB device.
+func (c *Config) Interface(intf, alt int) (*Interface, error) {
+	if intf < 0 || intf >= len(c.Info.Interfaces) {
+		return nil, fmt.Errorf("interface %d not found in %s. Interface number needs to be a 0-based index into the interface table, which has %d elements.", intf, c, len(c.Info.Interfaces))
+	}
+	ifInfo := c.Info.Interfaces[intf]
+	if alt < 0 || alt >= len(ifInfo.AltSettings) {
+		return nil, fmt.Errorf("Inteface %d does not have alternate setting %d. Alt setting needs to be a 0-based index into the settings table, which has %d elements.", ifInfo, alt, len(ifInfo.AltSettings))
+	}
+
+	// Claim the interface
+	if err := libusb.claim(c.dev.handle, uint8(intf)); err != nil {
+		return nil, fmt.Errorf("failed to claim interface %d on %s: %v", intf, c, err)
+	}
+
+	if err := libusb.setAlt(c.dev.handle, uint8(intf), uint8(alt)); err != nil {
+		libusb.release(c.dev.handle, uint8(intf))
+		return nil, fmt.Errorf("failed to set alternate config %d on interface %d of %s: %v", alt, intf, c, err)
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.claimed[intf] = true
+	return &Interface{
+		Setting: ifInfo.AltSettings[alt],
+		config:  c,
+	}, nil
 }

@@ -15,6 +15,8 @@
 
 package usb
 
+import "fmt"
+
 // Descriptor is a representation of a USB device descriptor.
 type Descriptor struct {
 	// Bus information
@@ -36,4 +38,9 @@ type Descriptor struct {
 
 	// Configuration information
 	Configs []ConfigInfo
+}
+
+// String represents a human readable representation of the device in the descriptor.
+func (d *Descriptor) String() string {
+	return fmt.Sprintf("vid=%s,pid=%s,bus=%d,addr=%d", d.Vendor, d.Product, d.Bus, d.Address)
 }
