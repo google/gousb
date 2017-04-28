@@ -226,11 +226,11 @@ func TestReadStream(t *testing.T) {
 			got := make([]readRes, len(tc.want))
 			for i := range tc.want {
 				if i == tc.closeBefore-1 {
-					t.Logf("Close()", tcNum)
+					t.Log("Close()")
 					s.Close()
 				}
 				n, err := s.Read(buf)
-				t.Logf("Read(): got %d, %v", tcNum, n, err)
+				t.Logf("Read(): got %d, %v", n, err)
 				got[i] = readRes{
 					n:   n,
 					err: err,
