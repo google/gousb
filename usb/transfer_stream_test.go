@@ -226,7 +226,7 @@ func TestReadStream(t *testing.T) {
 			got := make([]readRes, len(tc.want))
 			for i := range tc.want {
 				if i == tc.closeBefore-1 {
-					t.Logf("Close()", tcNum)
+					t.Log("Close()")
 					s.Close()
 				}
 				n, err := s.Read(buf)

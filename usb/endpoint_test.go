@@ -85,7 +85,7 @@ func TestEndpoint(t *testing.T) {
 				wantErr: true,
 			},
 		} {
-			ep := newEndpoint(nil, epData.intf, epData.ei)
+			ep := &endpoint{h: nil, InterfaceSetting: epData.intf, Info: epData.ei}
 			go func() {
 				fakeT := lib.waitForSubmitted()
 				fakeT.length = tc.ret
@@ -116,7 +116,7 @@ func TestEndpointInfo(t *testing.T) {
 				TransferType:  TransferTypeBulk,
 				MaxPacketSize: 512,
 			},
-			want: "Endpoint #6 IN (address 0x86) bulk [512 bytes]",
+			want: "ep #6 IN (address 0x86) bulk [512 bytes]",
 		},
 		{
 			ep: EndpointInfo{
@@ -127,7 +127,7 @@ func TestEndpointInfo(t *testing.T) {
 				IsoSyncType:   IsoSyncTypeAsync,
 				UsageType:     IsoUsageTypeData,
 			},
-			want: "Endpoint #2 OUT (address 0x02) isochronous - asynchronous data [512 bytes]",
+			want: "ep #2 OUT (address 0x02) isochronous - asynchronous data [512 bytes]",
 		},
 		{
 			ep: EndpointInfo{
@@ -137,7 +137,7 @@ func TestEndpointInfo(t *testing.T) {
 				MaxPacketSize: 16,
 				UsageType:     InterruptUsageTypePeriodic,
 			},
-			want: "Endpoint #3 IN (address 0x83) interrupt - periodic [16 bytes]",
+			want: "ep #3 IN (address 0x83) interrupt - periodic [16 bytes]",
 		},
 	} {
 		if got := tc.ep.String(); got != tc.want {
@@ -146,7 +146,7 @@ func TestEndpointInfo(t *testing.T) {
 	}
 }
 
-func TestEndpointIn(t *testing.T) {
+func TestEndpointInOut(t *testing.T) {
 	defer func(i libusbIntf) { libusb = i }(libusb)
 
 	lib, done := newFakeLibusb()
@@ -158,9 +158,30 @@ func TestEndpointIn(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVidPid(0x9999, 0x0001): got error %v, want nil", err)
 	}
-	ep, err := d.InEndpoint(1, 0, 0, 2)
+	defer func() {
+		if err := d.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", d, err)
+		}
+	}()
+	cfg, err := d.Config(1)
 	if err != nil {
-		t.Fatalf("InEndpoint(1, 0, 0, 2): got error %v, want nil", err)
+		t.Fatalf("%s.Config(1): %v", d, err)
+	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", cfg, err)
+		}
+	}()
+	intf, err := cfg.Interface(0, 0)
+	if err != nil {
+		t.Fatalf("%s.Interface(0, 0): %v", cfg, err)
+	}
+	defer intf.Close()
+
+	// IN endpoint 2
+	iep, err := intf.InEndpoint(2)
+	if err != nil {
+		t.Fatalf("%s.InEndpoint(2): got error %v, want nil", intf, err)
 	}
 	dataTransferred := 100
 	go func() {
@@ -170,52 +191,38 @@ func TestEndpointIn(t *testing.T) {
 		close(fakeT.done)
 	}()
 	buf := make([]byte, 512)
-	got, err := ep.Read(buf)
+	got, err := iep.Read(buf)
 	if err != nil {
-		t.Errorf("ep.Read: got error %v, want nil", err)
+		t.Errorf("%s.Read: got error %v, want nil", iep, err)
 	} else if got != dataTransferred {
-		t.Errorf("ep.Read: got %d, want %d", got, dataTransferred)
+		t.Errorf("%s.Read: got %d, want %d", iep, got, dataTransferred)
 	}
 
-	_, err = d.InEndpoint(1, 0, 0, 1)
+	_, err = intf.InEndpoint(1)
 	if err == nil {
-		t.Error("InEndpoint(1, 0, 0, 1): got nil, want error")
+		t.Errorf("%s.InEndpoint(1): got nil, want error", intf)
 	}
-}
 
-func TestEndpointOut(t *testing.T) {
-	defer func(i libusbIntf) { libusb = i }(libusb)
-
-	lib, done := newFakeLibusb()
-	defer done()
-
-	ctx := NewContext()
-	defer ctx.Close()
-	d, err := ctx.OpenDeviceWithVidPid(0x9999, 0x0001)
+	// OUT endpoint 1
+	oep, err := intf.OutEndpoint(1)
 	if err != nil {
-		t.Fatalf("OpenDeviceWithVidPid(0x9999, 0x0001): got error %v, want nil", err)
+		t.Fatalf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
 	}
-	ep, err := d.OutEndpoint(1, 0, 0, 1)
-	if err != nil {
-		t.Fatalf("OutEndpoint(1, 0, 0, 1): got error %v, want nil", err)
-	}
-	dataTransferred := 100
 	go func() {
 		fakeT := lib.waitForSubmitted()
 		fakeT.length = dataTransferred
 		fakeT.status = TransferCompleted
 		close(fakeT.done)
 	}()
-	buf := make([]byte, 512)
-	got, err := ep.Write(buf)
+	got, err = oep.Write(buf)
 	if err != nil {
-		t.Errorf("ep.Write: got error %v, want nil", err)
+		t.Errorf("%s.Write: got error %v, want nil", oep, err)
 	} else if got != dataTransferred {
-		t.Errorf("ep.Write: got %d, want %d", got, dataTransferred)
+		t.Errorf("%s.Write: got %d, want %d", oep, got, dataTransferred)
 	}
 
-	_, err = d.OutEndpoint(1, 0, 0, 2)
+	_, err = intf.OutEndpoint(2)
 	if err == nil {
-		t.Error("OutEndpoint(1, 0, 0, 2): got nil, want error")
+		t.Errorf("%s.OutEndpoint(2): got nil, want error", intf)
 	}
 }

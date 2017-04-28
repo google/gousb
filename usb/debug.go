@@ -33,5 +33,5 @@ func init() {
 	if os.Getenv(debugEnvVarName) != "" {
 		out = os.Stderr
 	}
-	debug = log.New(out, "usb", log.LstdFlags|log.Lshortfile)
+	debug = log.New(out, "gousb: ", log.LstdFlags|log.Lshortfile)
 }
