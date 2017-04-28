@@ -228,7 +228,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 			Cap:  int(cfg.bNumInterfaces),
 		}
 		c.Interfaces = make([]InterfaceInfo, 0, len(ifaces))
-		for _, iface := range ifaces {
+		for ifNum, iface := range ifaces {
 			if iface.num_altsetting == 0 {
 				continue
 			}
@@ -240,13 +240,19 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 				Cap:  int(iface.num_altsetting),
 			}
 			descs := make([]InterfaceSetting, 0, len(alts))
-			for _, alt := range alts {
+			for altNum, alt := range alts {
 				i := InterfaceSetting{
 					Number:    int(alt.bInterfaceNumber),
 					Alternate: int(alt.bAlternateSetting),
 					Class:     Class(alt.bInterfaceClass),
 					SubClass:  Class(alt.bInterfaceSubClass),
 					Protocol:  Protocol(alt.bInterfaceProtocol),
+				}
+				if ifNum != i.Number {
+					return nil, fmt.Errorf("config %d interface at index %d has number %d, USB standard states they should be identical", c.Config, ifNum, i.Number)
+				}
+				if altNum != i.Alternate {
+					return nil, fmt.Errorf("config %d interface %d alternate settings at index %d has number %d, USB standard states they should be identical", c.Config, i.Number, altNum, i.Alternate)
 				}
 				var ends []C.struct_libusb_endpoint_descriptor
 				*(*reflect.SliceHeader)(unsafe.Pointer(&ends)) = reflect.SliceHeader{
