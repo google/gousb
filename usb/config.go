@@ -78,7 +78,7 @@ func (c *Config) Close() error {
 
 // String returns the human-readable description of the configuration.
 func (c *Config) String() string {
-	return fmt.Sprintf("%s,config=%s", c.dev.String(), c.Info.Config)
+	return fmt.Sprintf("%s,config=%d", c.dev.String(), c.Info.Config)
 }
 
 // Control sends a control request to the device.
