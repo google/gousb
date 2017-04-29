@@ -277,8 +277,8 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 	}
 
 	return &Descriptor{
-		Bus:      uint8(C.libusb_get_bus_number((*C.libusb_device)(d))),
-		Address:  uint8(C.libusb_get_device_address((*C.libusb_device)(d))),
+		Bus:      int(C.libusb_get_bus_number((*C.libusb_device)(d))),
+		Address:  int(C.libusb_get_device_address((*C.libusb_device)(d))),
 		Spec:     BCD(desc.bcdUSB),
 		Device:   BCD(desc.bcdDevice),
 		Vendor:   ID(desc.idVendor),

@@ -23,8 +23,8 @@ import (
 // Descriptor is a representation of a USB device descriptor.
 type Descriptor struct {
 	// Bus information
-	Bus     uint8 // The bus on which the device was detected
-	Address uint8 // The address of the device on the bus
+	Bus     int // The bus on which the device was detected
+	Address int // The address of the device on the bus
 
 	// Version information
 	Spec   BCD // USB Specification Release Number

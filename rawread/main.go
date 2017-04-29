@@ -57,7 +57,7 @@ func parseVIDPID(vidPid string) (usb.ID, usb.ID, error) {
 	return usb.ID(vid), usb.ID(pid), nil
 }
 
-func parseBusAddr(busAddr string) (uint8, uint8, error) {
+func parseBusAddr(busAddr string) (int, int, error) {
 	s := strings.Split(busAddr, ":")
 	if len(s) != 2 {
 		return 0, 0, fmt.Errorf("want bus:addr, two 8-bit decimal unsigned integers separated by colon, e.g. 1:1")
@@ -70,7 +70,7 @@ func parseBusAddr(busAddr string) (uint8, uint8, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("device address must be an 8-bit decimal unsigned integer")
 	}
-	return uint8(bus), uint8(addr), nil
+	return int(bus), int(addr), nil
 }
 
 func main() {
@@ -84,7 +84,7 @@ func main() {
 
 	var devName string
 	var vid, pid usb.ID
-	var bus, addr uint8
+	var bus, addr int
 	switch {
 	case *vidPID == "" && *busAddr == "":
 		log.Fatal("You need to specify the device through a --vidpid flag or through a --busaddr flag.")
