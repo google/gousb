@@ -105,7 +105,7 @@ func (r readRes) String() string {
 	return buf.String()
 }
 
-func TestReadStream(t *testing.T) {
+func TestTransferReadStream(t *testing.T) {
 	for tcNum, tc := range []struct {
 		desc        string
 		closeBefore int

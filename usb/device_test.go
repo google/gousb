@@ -34,13 +34,13 @@ func TestClaimAndRelease(t *testing.T) {
 	)
 	c := NewContext()
 	defer c.Close()
-	dev, err := c.OpenDeviceWithVidPid(0x8888, 0x0002)
+	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
 	if dev == nil {
-		t.Fatal("OpenDeviceWithVidPid(0x8888, 0x0002): got nil device, need non-nil")
+		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
 	}
 	defer dev.Close()
 	if err != nil {
-		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): %v", err)
+		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
 	}
 	cfg, err := dev.Config(cfgNum)
 	if err != nil {

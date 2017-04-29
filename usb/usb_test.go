@@ -53,7 +53,7 @@ func TestListDevices(t *testing.T) {
 	}
 }
 
-func TestOpenDeviceWithVidPid(t *testing.T) {
+func TestOpenDeviceWithVIDPID(t *testing.T) {
 	_, done := newFakeLibusb()
 	defer done()
 
@@ -69,16 +69,16 @@ func TestOpenDeviceWithVidPid(t *testing.T) {
 	} {
 		c := NewContext()
 		defer c.Close()
-		dev, err := c.OpenDeviceWithVidPid(d.vid, d.pid)
+		dev, err := c.OpenDeviceWithVIDPID(d.vid, d.pid)
 		if (dev != nil) != d.exists {
-			t.Errorf("OpenDeviceWithVidPid(%s/%s): device != nil is %v, want %v", ID(d.vid), ID(d.pid), dev != nil, d.exists)
+			t.Errorf("OpenDeviceWithVIDPID(%s/%s): device != nil is %v, want %v", ID(d.vid), ID(d.pid), dev != nil, d.exists)
 		}
 		if err != nil {
-			t.Errorf("OpenDeviceWithVidPid(%s/%s): got error %v, want nil", ID(d.vid), ID(d.pid), err)
+			t.Errorf("OpenDeviceWithVIDPID(%s/%s): got error %v, want nil", ID(d.vid), ID(d.pid), err)
 		}
 		if dev != nil {
 			if dev.Descriptor.Vendor != ID(d.vid) || dev.Descriptor.Product != ID(d.pid) {
-				t.Errorf("OpenDeviceWithVidPid(%s/%s): the device returned has VID/PID %s/%s, different from specified in the arguments", ID(d.vid), ID(d.pid), dev.Descriptor.Vendor, dev.Descriptor.Product)
+				t.Errorf("OpenDeviceWithVIDPID(%s/%s): the device returned has VID/PID %s/%s, different from specified in the arguments", ID(d.vid), ID(d.pid), dev.Descriptor.Vendor, dev.Descriptor.Product)
 			}
 			dev.Close()
 		}

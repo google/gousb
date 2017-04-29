@@ -120,6 +120,9 @@ func (r ReadStream) Read(p []byte) (int, error) {
 // was encountered earlier.
 // Close cannot be called concurrently with Read.
 func (r ReadStream) Close() error {
+	if r.s.transfers == nil {
+		return nil
+	}
 	r.s.setDelayedErr(io.EOF)
 	return nil
 }

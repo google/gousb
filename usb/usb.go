@@ -76,13 +76,13 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 	return ret, reterr
 }
 
-// OpenDeviceWithVidPid opens Device from specific VendorId and ProductId.
+// OpenDeviceWithVIDPID opens Device from specific VendorId and ProductId.
 // If none is found, it returns nil and nil error. If there are multiple devices
 // with the same VID/PID, it will return one of them, picked arbitrarily.
 // If there were any errors during device list traversal, it is possible
 // it will return a non-nil device and non-nil error. A Device.Close() must
 // be called to release the device if the returned device wasn't nil.
-func (c *Context) OpenDeviceWithVidPid(vid, pid ID) (*Device, error) {
+func (c *Context) OpenDeviceWithVIDPID(vid, pid ID) (*Device, error) {
 	var found bool
 	devs, err := c.ListDevices(func(desc *Descriptor) bool {
 		if found {

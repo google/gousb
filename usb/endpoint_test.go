@@ -163,9 +163,9 @@ func TestEndpointInOut(t *testing.T) {
 
 	ctx := NewContext()
 	defer ctx.Close()
-	d, err := ctx.OpenDeviceWithVidPid(0x9999, 0x0001)
+	d, err := ctx.OpenDeviceWithVIDPID(0x9999, 0x0001)
 	if err != nil {
-		t.Fatalf("OpenDeviceWithVidPid(0x9999, 0x0001): got error %v, want nil", err)
+		t.Fatalf("OpenDeviceWithVIDPID(0x9999, 0x0001): got error %v, want nil", err)
 	}
 	defer func() {
 		if err := d.Close(); err != nil {
