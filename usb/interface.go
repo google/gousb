@@ -17,6 +17,7 @@ package usb
 
 import (
 	"fmt"
+	"sort"
 )
 
 // InterfaceInfo contains information about a USB interface, extracted from
@@ -48,15 +49,24 @@ type InterfaceSetting struct {
 	SubClass Class
 	// Protocol is USB protocol code, as defined by the USB spe.c
 	Protocol Protocol
-	// Endpoints has the list of endpoints available on this interface with
+	// Endpoints enumerates the endpoints available on this interface with
 	// this alternate setting.
-	Endpoints []EndpointInfo
+	Endpoints map[int]EndpointInfo
+}
+
+func (a InterfaceSetting) sortedEndpointIds() []string {
+	var eps []string
+	for _, ei := range a.Endpoints {
+		eps = append(eps, fmt.Sprintf("%d(%s)", ei.Number, ei.Direction))
+	}
+	sort.Strings(eps)
+	return eps
 }
 
 // String returns a human-readable descripton of the particular
 // alternate setting of an interface.
 func (a InterfaceSetting) String() string {
-	return fmt.Sprintf("Interface %d alternate setting %d", a.Number, a.Alternate)
+	return fmt.Sprintf("Interface %d alternate setting %d (available endpoints: %v)", a.Number, a.Alternate, a.sortedEndpointIds())
 }
 
 type Interface struct {
@@ -83,17 +93,9 @@ func (i *Interface) Close() {
 
 func (i *Interface) openEndpoint(epNum int) (*endpoint, error) {
 	var ep EndpointInfo
-	var found bool
-	for _, e := range i.Setting.Endpoints {
-		if e.Number == epNum {
-			debug.Printf("found ep %s in %s\n", e, i)
-			ep = e
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil, fmt.Errorf("%s does not have endpoint number %d. Available endpoints: %v", i, epNum, i.Setting.Endpoints)
+	ep, ok := i.Setting.Endpoints[epNum]
+	if !ok {
+		return nil, fmt.Errorf("%s does not have endpoint number %d. Available endpoints: %v", i, epNum, i.Setting.sortedEndpointIds())
 	}
 	return &endpoint{
 		InterfaceSetting: i.Setting,

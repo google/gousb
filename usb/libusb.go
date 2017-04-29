@@ -260,10 +260,11 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 					Len:  int(alt.bNumEndpoints),
 					Cap:  int(alt.bNumEndpoints),
 				}
-				i.Endpoints = make([]EndpointInfo, len(ends))
-				for n, end := range ends {
+				i.Endpoints = make(map[int]EndpointInfo, len(ends))
+				for _, end := range ends {
 					// TODO(sebek): pass the device descriptor too.
-					i.Endpoints[n] = libusbEndpoint(end).endpointInfo(nil)
+					epi := libusbEndpoint(end).endpointInfo(nil)
+					i.Endpoints[epi.Number] = epi
 				}
 				descs = append(descs, i)
 			}

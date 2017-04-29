@@ -55,7 +55,7 @@ func TestEndpoint(t *testing.T) {
 			},
 		},
 	} {
-		epData.intf.Endpoints = []EndpointInfo{epData.ei}
+		epData.intf.Endpoints = map[int]EndpointInfo{epData.ei.Number: epData.ei}
 		for _, tc := range []struct {
 			desc       string
 			buf        []byte
