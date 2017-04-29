@@ -19,10 +19,19 @@ import (
 	"testing"
 )
 
-func TestOpenEndpoint(t *testing.T) {
+func TestClaimAndRelease(t *testing.T) {
 	_, done := newFakeLibusb()
 	defer done()
 
+	const (
+		devIdx  = 1
+		cfgNum  = 1
+		if1Num  = 1
+		alt1Num = 1
+		ep1Num  = 6
+		alt2Num = 0
+		if2Num  = 0
+	)
 	c := NewContext()
 	defer c.Close()
 	dev, err := c.OpenDeviceWithVidPid(0x8888, 0x0002)
@@ -33,22 +42,28 @@ func TestOpenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVidPid(0x8888, 0x0002): %v", err)
 	}
-	cfg, err := dev.Config(1)
+	cfg, err := dev.Config(cfgNum)
 	if err != nil {
 		t.Fatalf("%s.Config(1): %v", dev, err)
 	}
 	defer cfg.Close()
-	intf, err := cfg.Interface(1, 1)
+	if got, err := dev.ActiveConfig(); err != nil {
+		t.Errorf("%s.ActiveConfig(): got error %v, want nil", dev, err)
+	} else if got != cfgNum {
+		t.Errorf("%s.ActiveConfig(): got %d, want %d", dev, got, cfgNum)
+	}
+
+	intf, err := cfg.Interface(if1Num, alt1Num)
 	if err != nil {
-		t.Fatalf("%s.Interface(1, 1): %v", cfg, err)
+		t.Fatalf("%s.Interface(%d, %d): %v", cfg, if1Num, alt1Num, err)
 	}
 	defer intf.Close()
-	got, err := intf.InEndpoint(6)
+	got, err := intf.InEndpoint(ep1Num)
 	if err != nil {
-		t.Fatalf("%s.InEndpoint(6): got error %v, want nil", intf, err)
+		t.Fatalf("%s.InEndpoint(%d): got error %v, want nil", intf, ep1Num, err)
 	}
-	if want := fakeDevices[1].Configs[1].Interfaces[1].AltSettings[1].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
-		t.Errorf("%s.InEndpoint(6): got %+v, want %+v", intf, got, want)
+	if want := fakeDevices[devIdx].Configs[cfgNum].Interfaces[if1Num].AltSettings[alt1Num].Endpoints[ep1Num]; !reflect.DeepEqual(got.Info, want) {
+		t.Errorf("%s.InEndpoint(%d): got %+v, want %+v", intf, ep1Num, got, want)
 	}
 
 	if _, err := cfg.Interface(1, 0); err == nil {
@@ -81,8 +96,16 @@ func TestOpenEndpoint(t *testing.T) {
 		t.Fatalf("%s.Close(): got nil, want non nil, because the Config was not released.", dev)
 	}
 
+	if err := dev.Reset(); err == nil {
+		t.Fatalf("%s.Reset(): got nil, want non nil, because Device is still has an active Config.", dev)
+	}
+
 	if err := cfg.Close(); err != nil {
 		t.Fatalf("%s.Close(): got error %v, want nil", cfg, err)
+	}
+
+	if err := dev.Reset(); err != nil {
+		t.Fatalf("%s.Reset(): got error %v, want nil", dev, err)
 	}
 
 	if err := dev.Close(); err != nil {
