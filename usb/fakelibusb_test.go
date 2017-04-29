@@ -35,7 +35,7 @@ var (
 			Vendor:   ID(0x9999),
 			Product:  ID(0x0001),
 			Protocol: 255,
-			Configs: []ConfigInfo{{
+			Configs: map[int]ConfigInfo{1: {
 				Config:   1,
 				MaxPower: Milliamperes(100),
 				Interfaces: []InterfaceInfo{{
@@ -71,7 +71,7 @@ var (
 			Vendor:   ID(0x8888),
 			Product:  ID(0x0002),
 			Protocol: 255,
-			Configs: []ConfigInfo{{
+			Configs: map[int]ConfigInfo{1: {
 				Config:   1,
 				MaxPower: Milliamperes(100),
 				Interfaces: []InterfaceInfo{{

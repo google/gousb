@@ -207,7 +207,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 		return nil, err
 	}
 	// Enumerate configurations
-	var cfgs []ConfigInfo
+	cfgs := make(map[int]ConfigInfo)
 	for i := 0; i < int(desc.bNumConfigurations); i++ {
 		var cfg *C.struct_libusb_config_descriptor
 		if err := fromErrNo(C.libusb_get_config_descriptor((*C.libusb_device)(d), C.uint8_t(i), &cfg)); err != nil {
@@ -273,7 +273,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 			})
 		}
 		C.libusb_free_config_descriptor(cfg)
-		cfgs = append(cfgs, c)
+		cfgs[c.Config] = c
 	}
 
 	return &Descriptor{

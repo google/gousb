@@ -47,7 +47,7 @@ func TestOpenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%s.InEndpoint(6): got error %v, want nil", intf, err)
 	}
-	if want := fakeDevices[1].Configs[0].Interfaces[1].AltSettings[1].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
+	if want := fakeDevices[1].Configs[1].Interfaces[1].AltSettings[1].Endpoints[1]; !reflect.DeepEqual(got.Info, want) {
 		t.Errorf("%s.InEndpoint(6): got %+v, want %+v", intf, got, want)
 	}
 

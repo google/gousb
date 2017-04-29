@@ -17,6 +17,7 @@ package usb
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 )
 
@@ -40,16 +41,12 @@ type Descriptor struct {
 	Protocol Protocol // The protocol (within the sub-class) of this device
 
 	// Configuration information
-	Configs []ConfigInfo
+	Configs map[int]ConfigInfo
 }
 
 // String returns a human-readable version of the device descriptor.
 func (d *Descriptor) String() string {
-	var cfgs []int
-	for _, c := range d.Configs {
-		cfgs = append(cfgs, c.Config)
-	}
-	return fmt.Sprintf("%d.%d: %s:%s (available configs: %v)", d.Bus, d.Address, d.Vendor, d.Product, cfgs)
+	return fmt.Sprintf("%d.%d: %s:%s (available configs: %v)", d.Bus, d.Address, d.Vendor, d.Product, d.sortedConfigIds())
 }
 
 // Device represents an opened USB device.
@@ -62,6 +59,15 @@ type Device struct {
 	// Claimed config
 	mu      sync.Mutex
 	claimed *Config
+}
+
+func (d *Descriptor) sortedConfigIds() []int {
+	var cfgs []int
+	for c := range d.Configs {
+		cfgs = append(cfgs, c)
+	}
+	sort.Ints(cfgs)
+	return cfgs
 }
 
 // String represents a human readable representation of the device.
@@ -101,24 +107,14 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
 	}
+	info, ok := d.Descriptor.Configs[cfgNum]
+	if !ok {
+		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, d.Descriptor.sortedConfigIds())
+	}
 	cfg := &Config{
+		Info:    info,
 		dev:     d,
 		claimed: make(map[int]bool),
-	}
-	var found bool
-	for _, info := range d.Descriptor.Configs {
-		if info.Config == cfgNum {
-			found = true
-			cfg.Info = info
-			break
-		}
-	}
-	if !found {
-		var cfgs []int
-		for _, c := range d.Descriptor.Configs {
-			cfgs = append(cfgs, c.Config)
-		}
-		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, cfgs)
 	}
 	if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
 		return nil, fmt.Errorf("failed to set active config %d for the device %s: %v", cfgNum, d, err)
