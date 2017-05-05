@@ -1,4 +1,4 @@
-package usb
+package gousb
 
 import "testing"
 

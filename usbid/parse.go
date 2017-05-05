@@ -22,14 +22,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/gousb/usb"
+	"github.com/google/gousb"
 )
 
 // A Vendor contains the name of the vendor and mappings corresponding to all
 // known products by their ID.
 type Vendor struct {
 	Name    string
-	Product map[usb.ID]*Product
+	Product map[gousb.ID]*Product
 }
 
 // String returns the name of the vendor.
@@ -41,7 +41,7 @@ func (v Vendor) String() string {
 // the names of any interfaces that were specified.
 type Product struct {
 	Name      string
-	Interface map[usb.ID]string
+	Interface map[gousb.ID]string
 }
 
 // String returns the name of the product.
@@ -52,7 +52,7 @@ func (p Product) String() string {
 // A Class contains the name of the class and mappings for each subclass.
 type Class struct {
 	Name     string
-	SubClass map[usb.Class]*SubClass
+	SubClass map[gousb.Class]*SubClass
 }
 
 // String returns the name of the class.
@@ -63,7 +63,7 @@ func (c Class) String() string {
 // A SubClass contains the name of the subclass and any associated protocols.
 type SubClass struct {
 	Name     string
-	Protocol map[usb.Protocol]string
+	Protocol map[gousb.Protocol]string
 }
 
 // String returns the name of the SubClass.
@@ -75,9 +75,9 @@ func (s SubClass) String() string {
 // should not be necessary, as a set of mappings is already embedded in the library.
 // If a new or specialized file is obtained, this can be used to retrieve the mappings,
 // which can be stored in the global Vendors and Classes map.
-func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
-	vendors := make(map[usb.ID]*Vendor, 2800)
-	classes := make(map[usb.Class]*Class) // TODO(kevlar): count
+func ParseIDs(r io.Reader) (map[gousb.ID]*Vendor, map[gousb.Class]*Class, error) {
+	vendors := make(map[gousb.ID]*Vendor, 2800)
+	classes := make(map[gousb.Class]*Class) // TODO(kevlar): count
 
 	split := func(s string) (kind string, level int, id uint64, name string, err error) {
 		pieces := strings.SplitN(s, "  ", 2)
@@ -116,7 +116,7 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 	var device *Product
 
 	parseVendor := func(level int, raw uint64, name string) error {
-		id := usb.ID(raw)
+		id := gousb.ID(raw)
 
 		switch level {
 		case 0:
@@ -134,7 +134,7 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 				Name: name,
 			}
 			if vendor.Product == nil {
-				vendor.Product = make(map[usb.ID]*Product)
+				vendor.Product = make(map[gousb.ID]*Product)
 			}
 			vendor.Product[id] = device
 
@@ -144,7 +144,7 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 			}
 
 			if device.Interface == nil {
-				device.Interface = make(map[usb.ID]string)
+				device.Interface = make(map[gousb.ID]string)
 			}
 			device.Interface[id] = name
 
@@ -165,7 +165,7 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 			class = &Class{
 				Name: name,
 			}
-			classes[usb.Class(id)] = class
+			classes[gousb.Class(id)] = class
 
 		case 1:
 			if class == nil {
@@ -176,9 +176,9 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 				Name: name,
 			}
 			if class.SubClass == nil {
-				class.SubClass = make(map[usb.Class]*SubClass)
+				class.SubClass = make(map[gousb.Class]*SubClass)
 			}
-			class.SubClass[usb.Class(id)] = subclass
+			class.SubClass[gousb.Class(id)] = subclass
 
 		case 2:
 			if subclass == nil {
@@ -186,9 +186,9 @@ func ParseIDs(r io.Reader) (map[usb.ID]*Vendor, map[usb.Class]*Class, error) {
 			}
 
 			if subclass.Protocol == nil {
-				subclass.Protocol = make(map[usb.Protocol]string)
+				subclass.Protocol = make(map[gousb.Protocol]string)
 			}
-			subclass.Protocol[usb.Protocol(id)] = name
+			subclass.Protocol[gousb.Protocol(id)] = name
 
 		default:
 			return fmt.Errorf("too many levels of nesting for class")

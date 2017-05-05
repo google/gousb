@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package usb
+package gousb
 
 func (e *endpoint) newStream(size, count int, submit bool) (*stream, error) {
 	var ts []transferIntf

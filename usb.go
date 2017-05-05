@@ -14,7 +14,7 @@
 // limitations under the License.
 
 // Package usb provides a wrapper around libusb-1.0.
-package usb
+package gousb
 
 // Context is the libusb context instance.
 type Context struct {

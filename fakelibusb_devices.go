@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package usb
+package gousb
 
 // fake devices connected through the fakeLibusb stack.
 var fakeDevices = []*Descriptor{

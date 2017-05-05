@@ -13,25 +13,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package usb
-
-// To enable internal debugging, set the GOUSB_DEBUG environment variable.
+package gousb
 
 import (
-	"io"
-	"io/ioutil"
-	"log" // TODO(kevlar): make a logger
-	"os"
+	"testing"
 )
 
-var debug *log.Logger
-
-const debugEnvVarName = "GOUSB_DEBUG"
-
-func init() {
-	var out io.Writer = ioutil.Discard
-	if os.Getenv(debugEnvVarName) != "" {
-		out = os.Stderr
+func TestBCD(t *testing.T) {
+	tests := []struct {
+		major, minor uint8
+		bcd          BCD
+		str          string
+	}{
+		{1, 1, 0x0101, "1.01"},
+		{12, 34, 0x1234, "12.34"},
 	}
-	debug = log.New(out, "gousb: ", log.LstdFlags|log.Lshortfile)
+
+	for _, test := range tests {
+		bcd := Version(test.major, test.minor)
+		if bcd != test.bcd {
+			t.Errorf("Version(%d, %d): got BCD %04x, want %04x", test.major, test.minor, uint16(bcd), uint16(test.bcd))
+			continue
+		}
+		if got, want := bcd.String(), test.str; got != want {
+			t.Errorf("String(%04x) = %q, want %q", uint16(test.bcd), got, want)
+		}
+	}
 }

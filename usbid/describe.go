@@ -27,17 +27,17 @@ package usbid
 import (
 	"fmt"
 
-	"github.com/google/gousb/usb"
+	"github.com/google/gousb"
 )
 
 // Describe returns a human readable string describing the vendor and product
 // of the given device.
 //
 // The given val must be one of the following:
-//   - *usb.Descriptor       "Product (Vendor)"
+//   - *gousb.Descriptor       "Product (Vendor)"
 func Describe(val interface{}) string {
 	switch val := val.(type) {
-	case *usb.Descriptor:
+	case *gousb.Descriptor:
 		if v, ok := Vendors[val.Vendor]; ok {
 			if d, ok := v.Product[val.Product]; ok {
 				return fmt.Sprintf("%s (%s)", d, v)
@@ -53,17 +53,17 @@ func Describe(val interface{}) string {
 // and protocol associated with a device or interface.
 //
 // The given val must be one of the following:
-//   - *usb.Descriptor       "Class (SubClass) Protocol"
-//   - usb.InterfaceSetup   "IfClass (IfSubClass) IfProtocol"
+//   - *gousb.Descriptor       "Class (SubClass) Protocol"
+//   - gousb.InterfaceSetup   "IfClass (IfSubClass) IfProtocol"
 func Classify(val interface{}) string {
 	var (
-		class, sub usb.Class
-		proto      usb.Protocol
+		class, sub gousb.Class
+		proto      gousb.Protocol
 	)
 	switch val := val.(type) {
-	case *usb.Descriptor:
+	case *gousb.Descriptor:
 		class, sub, proto = val.Class, val.SubClass, val.Protocol
-	case usb.InterfaceSetting:
+	case gousb.InterfaceSetting:
 		class, sub, proto = val.Class, val.SubClass, val.Protocol
 	default:
 		return fmt.Sprintf("Unknown (%T)", val)

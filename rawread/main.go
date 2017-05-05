@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/gousb/usb"
+	"github.com/google/gousb"
 )
 
 var (
@@ -41,7 +41,7 @@ var (
 	num       = flag.Int("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
 )
 
-func parseVIDPID(vidPid string) (usb.ID, usb.ID, error) {
+func parseVIDPID(vidPid string) (gousb.ID, gousb.ID, error) {
 	s := strings.Split(vidPid, ":")
 	if len(s) != 2 {
 		return 0, 0, fmt.Errorf("want VID:PID, two 32-bit hex numbers separated by colon, e.g. 1d6b:0002")
@@ -54,7 +54,7 @@ func parseVIDPID(vidPid string) (usb.ID, usb.ID, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("PID must be a hexadecimal 32-bit number, e.g. 1d6b")
 	}
-	return usb.ID(vid), usb.ID(pid), nil
+	return gousb.ID(vid), gousb.ID(pid), nil
 }
 
 func parseBusAddr(busAddr string) (int, int, error) {
@@ -77,13 +77,13 @@ func main() {
 	flag.Parse()
 
 	// Only one context should be needed for an application.  It should always be closed.
-	ctx := usb.NewContext()
+	ctx := gousb.NewContext()
 	defer ctx.Close()
 
 	ctx.Debug(*debug)
 
 	var devName string
-	var vid, pid usb.ID
+	var vid, pid gousb.ID
 	var bus, addr int
 	switch {
 	case *vidPID == "" && *busAddr == "":
@@ -108,7 +108,7 @@ func main() {
 
 	log.Printf("Scanning for device %q...", devName)
 	// ListDevices is used to find the devices to open.
-	devs, err := ctx.ListDevices(func(desc *usb.Descriptor) bool {
+	devs, err := ctx.ListDevices(func(desc *gousb.Descriptor) bool {
 		switch {
 		case vid == desc.Vendor && pid == desc.Product:
 			return true

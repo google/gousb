@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/google/gousb/usb"
+	"github.com/google/gousb"
 	"github.com/google/gousb/usbid"
 )
 
@@ -33,14 +33,14 @@ func main() {
 	flag.Parse()
 
 	// Only one context should be needed for an application.  It should always be closed.
-	ctx := usb.NewContext()
+	ctx := gousb.NewContext()
 	defer ctx.Close()
 
 	// Debugging can be turned on; this shows some of the inner workings of the libusb package.
 	ctx.Debug(*debug)
 
 	// ListDevices is used to find the devices to open.
-	devs, err := ctx.ListDevices(func(desc *usb.Descriptor) bool {
+	devs, err := ctx.ListDevices(func(desc *gousb.Descriptor) bool {
 		// The usbid package can be used to print out human readable information.
 		fmt.Printf("%03d.%03d %s:%s %s\n", desc.Bus, desc.Address, desc.Vendor, desc.Product, usbid.Describe(desc))
 		fmt.Printf("  Protocol: %s\n", usbid.Classify(desc))

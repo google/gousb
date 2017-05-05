@@ -21,20 +21,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/gousb/usb"
+	"github.com/google/gousb"
 )
 
 const (
 	// LinuxUsbDotOrg is one source of files in the format used by this package.
-	LinuxUsbDotOrg = "http://www.linux-usb.org/usb.ids"
+	LinuxUsbDotOrg = "http://www.linux-gousb.org/usb.ids"
 )
 
 var (
 	// Vendors stores the vendor and product ID mappings.
-	Vendors map[usb.ID]*Vendor
+	Vendors map[gousb.ID]*Vendor
 
 	// Classes stores the class, subclass and protocol mappings.
-	Classes map[usb.Class]*Class
+	Classes map[gousb.Class]*Class
 )
 
 // LoadFromURL replaces the built-in vendor and class mappings with ones loaded
