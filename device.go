@@ -88,9 +88,10 @@ func (d *Device) Reset() error {
 	return libusb.reset(d.handle)
 }
 
-// ActiveConfig returns the config id (not the index) of the active configuration.
-// This corresponds to the ConfigInfo.Config field.
-func (d *Device) ActiveConfig() (int, error) {
+// ActiveConfigNum returns the config id of the active configuration.
+// The value corresponds to the ConfigInfo.Config field of one of the
+// ConfigInfos of this Device.
+func (d *Device) ActiveConfigNum() (int, error) {
 	if d.handle == nil {
 		return 0, fmt.Errorf("ActiveConfig() called on %s after Close", d)
 	}
@@ -99,10 +100,11 @@ func (d *Device) ActiveConfig() (int, error) {
 }
 
 // Config returns a USB device set to use a particular config.
-// The cfg provided is the config id (not the index) of the configuration to set,
-// which corresponds to the ConfigInfo.Config field.
+// The cfgNum provided is the config id (not the index) of the configuration to
+// set, which corresponds to the ConfigInfo.Config field.
 // USB supports only one active config per device at a time. Config claims the
-// device before setting the desired config and keeps it locked until Close is called.
+// device before setting the desired config and keeps it locked until Close is
+// called.
 func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
@@ -123,6 +125,25 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	defer d.mu.Unlock()
 	d.claimed = cfg
 	return cfg, nil
+}
+
+// Default opens interface #0 with alternate setting #0 of the currently active
+// config. It's intended as a shortcut for devices that have the simplest
+// interface of a single config, interface and alternate setting.
+func (d *Device) Default() (*Interface, error) {
+	cfgNum, err := d.ActiveConfigNum()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active config number of device %s: %v", d, err)
+	}
+	cfg, err := d.Config(cfgNum)
+	if err != nil {
+		return nil, fmt.Errorf("failed to claim config %d of device %s: %v", cfgNum, d, err)
+	}
+	intf, err := cfg.Interface(0, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select interface #%d alternate setting %d of config %d of device %s: %v", 0, 0, cfgNum, d, err)
+	}
+	return intf, nil
 }
 
 // Close closes the device.

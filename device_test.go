@@ -47,10 +47,10 @@ func TestClaimAndRelease(t *testing.T) {
 		t.Fatalf("%s.Config(1): %v", dev, err)
 	}
 	defer cfg.Close()
-	if got, err := dev.ActiveConfig(); err != nil {
-		t.Errorf("%s.ActiveConfig(): got error %v, want nil", dev, err)
+	if got, err := dev.ActiveConfigNum(); err != nil {
+		t.Errorf("%s.ActiveConfigNum(): got error %v, want nil", dev, err)
 	} else if got != cfgNum {
-		t.Errorf("%s.ActiveConfig(): got %d, want %d", dev, got, cfgNum)
+		t.Errorf("%s.ActiveConfigNum(): got %d, want %d", dev, got, cfgNum)
 	}
 
 	intf, err := cfg.Interface(if1Num, alt1Num)
