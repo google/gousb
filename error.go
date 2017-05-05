@@ -22,7 +22,7 @@ import (
 // #include <libusb.h>
 import "C"
 
-// Error is an error code returned by libusb.
+// Error is an error code from a USB operation. See the list of Error constants below.
 type Error C.int
 
 // Error implements the error interface.
@@ -38,7 +38,7 @@ func fromErrNo(errno C.int) error {
 	return err
 }
 
-// Error codes defined by libusb.
+// Defined result codes.
 const (
 	Success           Error = C.LIBUSB_SUCCESS
 	ErrorIO           Error = C.LIBUSB_ERROR_IO
@@ -48,6 +48,8 @@ const (
 	ErrorNotFound     Error = C.LIBUSB_ERROR_NOT_FOUND
 	ErrorBusy         Error = C.LIBUSB_ERROR_BUSY
 	ErrorTimeout      Error = C.LIBUSB_ERROR_TIMEOUT
+	// ErrorOverflow indicates that the device tried to send more data than was
+	// requested and that could fit in the packet buffer.
 	ErrorOverflow     Error = C.LIBUSB_ERROR_OVERFLOW
 	ErrorPipe         Error = C.LIBUSB_ERROR_PIPE
 	ErrorInterrupted  Error = C.LIBUSB_ERROR_INTERRUPTED
@@ -76,7 +78,7 @@ var errorString = map[Error]string{
 // TransferStatus contains information about the result of a transfer.
 type TransferStatus uint8
 
-// Transfer status values provided by libusb.
+// Defined Transfer status values.
 const (
 	TransferCompleted TransferStatus = C.LIBUSB_TRANSFER_COMPLETED
 	TransferError     TransferStatus = C.LIBUSB_TRANSFER_ERROR
