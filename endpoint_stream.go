@@ -17,7 +17,7 @@ package gousb
 func (e *endpoint) newStream(size, count int, submit bool) (*stream, error) {
 	var ts []transferIntf
 	for i := 0; i < count; i++ {
-		t, err := newUSBTransfer(e.h, &e.Info, make([]byte, size), e.Timeout)
+		t, err := newUSBTransfer(e.h, &e.Desc, make([]byte, size), e.Timeout)
 		if err != nil {
 			for _, t := range ts {
 				t.free()

@@ -20,11 +20,11 @@ import (
 	"sync"
 )
 
-// ConfigInfo contains the information about a USB device configuration,
+// ConfigDesc contains the information about a USB device configuration,
 // extracted from the device descriptor.
 type ConfigDesc struct {
-	// Config is the configuration number.
-	Config int
+	// Number is the configuration number.
+	Number int
 	// SelfPowered is true if the device is powered externally, i.e. not
 	// drawing power from the USB bus.
 	SelfPowered bool
@@ -39,7 +39,7 @@ type ConfigDesc struct {
 
 // String returns the human-readable description of the configuration descriptor.
 func (c ConfigDesc) String() string {
-	return fmt.Sprintf("Configuration %d", c.Config)
+	return fmt.Sprintf("Configuration %d", c.Number)
 }
 
 // Config represents a USB device set to use a particular configuration.
@@ -47,7 +47,7 @@ func (c ConfigDesc) String() string {
 // To access device endpoints, claim an interface and it's alternate
 // setting number through a call to Interface().
 type Config struct {
-	Info ConfigDesc
+	Desc ConfigDesc
 
 	dev *Device
 
@@ -79,7 +79,7 @@ func (c *Config) Close() error {
 
 // String returns the human-readable description of the configuration.
 func (c *Config) String() string {
-	return fmt.Sprintf("%s,config=%d", c.dev.String(), c.Info.Config)
+	return fmt.Sprintf("%s,config=%d", c.dev.String(), c.Desc.Number)
 }
 
 // Interface claims and returns an interface on a USB device.
@@ -89,10 +89,10 @@ func (c *Config) Interface(intf, alt int) (*Interface, error) {
 	if c.dev == nil {
 		return nil, fmt.Errorf("Interface(%d, %d) called on %s after Close", intf, alt, c)
 	}
-	if intf < 0 || intf >= len(c.Info.Interfaces) {
-		return nil, fmt.Errorf("interface %d not found in %s, available interfaces 0..%d", intf, c, len(c.Info.Interfaces)-1)
+	if intf < 0 || intf >= len(c.Desc.Interfaces) {
+		return nil, fmt.Errorf("interface %d not found in %s, available interfaces 0..%d", intf, c, len(c.Desc.Interfaces)-1)
 	}
-	ifInfo := c.Info.Interfaces[intf]
+	ifInfo := c.Desc.Interfaces[intf]
 	if alt < 0 || alt >= len(ifInfo.AltSettings) {
 		return nil, fmt.Errorf("alternate setting %d not found for %s in %s, available alt settings 0..%d", alt, ifInfo, c, len(ifInfo.AltSettings)-1)
 	}

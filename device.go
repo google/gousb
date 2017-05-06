@@ -117,12 +117,12 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
 	}
-	info, ok := d.Desc.Configs[cfgNum]
+	desc, ok := d.Desc.Configs[cfgNum]
 	if !ok {
 		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, d.Desc.sortedConfigIds())
 	}
 	cfg := &Config{
-		Info:    info,
+		Desc:    desc,
 		dev:     d,
 		claimed: make(map[int]bool),
 	}
@@ -175,7 +175,7 @@ func (d *Device) Close() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.claimed != nil {
-		return fmt.Errorf("can't release the device %s, it has an open config %s", d, d.claimed.Info.Config)
+		return fmt.Errorf("can't release the device %s, it has an open config %s", d, d.claimed.Desc.Number)
 	}
 	libusb.close(d.handle)
 	d.handle = nil

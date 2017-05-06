@@ -20,7 +20,7 @@ import (
 	"sort"
 )
 
-// InterfaceInfo contains information about a USB interface, extracted from
+// InterfaceDesc contains information about a USB interface, extracted from
 // the descriptor.
 type InterfaceDesc struct {
 	// Number is the number of this interface, a zero-based index in the array
@@ -39,7 +39,7 @@ func (i InterfaceDesc) String() string {
 // InterfaceSetting contains information about a USB interface with a particular
 // alternate setting, extracted from the descriptor.
 type InterfaceSetting struct {
-	// Number is the number of this interface, the same as in InterfaceInfo.
+	// Number is the number of this interface, the same as in InterfaceDesc.
 	Number int
 	// Alternate is the number of this alternate setting.
 	Alternate int
@@ -102,7 +102,7 @@ func (i *Interface) openEndpoint(epNum int) (*endpoint, error) {
 	}
 	return &endpoint{
 		InterfaceSetting: i.Setting,
-		Info:             ep,
+		Desc:             ep,
 		h:                i.config.dev.handle,
 	}, nil
 }
@@ -116,7 +116,7 @@ func (i *Interface) InEndpoint(epNum int) (*InEndpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	if ep.Info.Direction != EndpointDirectionIn {
+	if ep.Desc.Direction != EndpointDirectionIn {
 		return nil, fmt.Errorf("%s is not an IN endpoint", ep)
 	}
 	return &InEndpoint{
@@ -133,7 +133,7 @@ func (i *Interface) OutEndpoint(epNum int) (*OutEndpoint, error) {
 	if err != nil {
 		return nil, err
 	}
-	if ep.Info.Direction != EndpointDirectionOut {
+	if ep.Desc.Direction != EndpointDirectionOut {
 		return nil, fmt.Errorf("%s is not an OUT endpoint", ep)
 	}
 	return &OutEndpoint{

@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-// EndpointInfo contains the information about an interface endpoint, extracted
+// EndpointDesc contains the information about an interface endpoint, extracted
 // from the descriptor.
 type EndpointDesc struct {
 	// Number represents the endpoint number. Note that the endpoint number is different from the
@@ -72,14 +72,14 @@ type endpoint struct {
 	h *libusbDevHandle
 
 	InterfaceSetting
-	Info EndpointDesc
+	Desc EndpointDesc
 
 	Timeout time.Duration
 }
 
 // String returns a human-readable description of the endpoint.
 func (e *endpoint) String() string {
-	return e.Info.String()
+	return e.Desc.String()
 }
 
 func (e *endpoint) transfer(buf []byte) (int, error) {
@@ -87,7 +87,7 @@ func (e *endpoint) transfer(buf []byte) (int, error) {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.h, &e.Info, buf, e.Timeout)
+	t, err := newUSBTransfer(e.h, &e.Desc, buf, e.Timeout)
 	if err != nil {
 		return 0, err
 	}

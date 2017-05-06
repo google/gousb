@@ -62,7 +62,7 @@ func TestClaimAndRelease(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%s.InEndpoint(%d): got error %v, want nil", intf, ep1Num, err)
 	}
-	if want := fakeDevices[devIdx].Configs[cfgNum].Interfaces[if1Num].AltSettings[alt1Num].Endpoints[ep1Num]; !reflect.DeepEqual(got.Info, want) {
+	if want := fakeDevices[devIdx].Configs[cfgNum].Interfaces[if1Num].AltSettings[alt1Num].Endpoints[ep1Num]; !reflect.DeepEqual(got.Desc, want) {
 		t.Errorf("%s.InEndpoint(%d): got %+v, want %+v", intf, ep1Num, got, want)
 	}
 

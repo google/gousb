@@ -214,7 +214,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			return nil, err
 		}
 		c := ConfigDesc{
-			Config:       int(cfg.bConfigurationValue),
+			Number:       int(cfg.bConfigurationValue),
 			SelfPowered:  (cfg.bmAttributes & selfPoweredMask) != 0,
 			RemoteWakeup: (cfg.bmAttributes & remoteWakeupMask) != 0,
 			// TODO(sebek): at GenX speeds MaxPower is expressed in units of 8mA, not 2mA.
@@ -249,10 +249,10 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 					Protocol:  Protocol(alt.bInterfaceProtocol),
 				}
 				if ifNum != i.Number {
-					return nil, fmt.Errorf("config %d interface at index %d has number %d, USB standard states they should be identical", c.Config, ifNum, i.Number)
+					return nil, fmt.Errorf("config %d interface at index %d has number %d, USB standard states they should be identical", c.Number, ifNum, i.Number)
 				}
 				if altNum != i.Alternate {
-					return nil, fmt.Errorf("config %d interface %d alternate settings at index %d has number %d, USB standard states they should be identical", c.Config, i.Number, altNum, i.Alternate)
+					return nil, fmt.Errorf("config %d interface %d alternate settings at index %d has number %d, USB standard states they should be identical", c.Number, i.Number, altNum, i.Alternate)
 				}
 				var ends []C.struct_libusb_endpoint_descriptor
 				*(*reflect.SliceHeader)(unsafe.Pointer(&ends)) = reflect.SliceHeader{
@@ -274,7 +274,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			})
 		}
 		C.libusb_free_config_descriptor(cfg)
-		cfgs[c.Config] = c
+		cfgs[c.Number] = c
 	}
 
 	return &DeviceDesc{

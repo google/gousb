@@ -194,7 +194,7 @@ func Example_complex() {
 	}
 
 	// Buffer large enough for 10 USB packets from endpoint 6.
-	buf := make([]byte, 10*epIn.Info.MaxPacketSize)
+	buf := make([]byte, 10*epIn.Desc.MaxPacketSize)
 	total := 0
 	// Repeat the read/write cycle 10 times.
 	for i := 0; i < 10; i++ {

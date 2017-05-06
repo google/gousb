@@ -89,7 +89,7 @@ func TestEndpoint(t *testing.T) {
 				wantErr:    true,
 			},
 		} {
-			ep := &endpoint{h: nil, InterfaceSetting: epData.intf, Info: epData.ei}
+			ep := &endpoint{h: nil, InterfaceSetting: epData.intf, Desc: epData.ei}
 			if tc.wantSubmit {
 				go func() {
 					fakeT := lib.waitForSubmitted()
