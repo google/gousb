@@ -40,7 +40,7 @@ func main() {
 	ctx.Debug(*debug)
 
 	// ListDevices is used to find the devices to open.
-	devs, err := ctx.ListDevices(func(desc *gousb.Descriptor) bool {
+	devs, err := ctx.ListDevices(func(desc *gousb.DeviceDesc) bool {
 		// The usbid package can be used to print out human readable information.
 		fmt.Printf("%03d.%03d %s:%s %s\n", desc.Bus, desc.Address, desc.Vendor, desc.Product, usbid.Describe(desc))
 		fmt.Printf("  Protocol: %s\n", usbid.Classify(desc))

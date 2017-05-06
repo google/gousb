@@ -23,7 +23,7 @@ import (
 )
 
 // Descriptor is a representation of a USB device descriptor.
-type Descriptor struct {
+type DeviceDesc struct {
 	// Bus information
 	Bus     int // The bus on which the device was detected
 	Address int // The address of the device on the bus
@@ -46,7 +46,7 @@ type Descriptor struct {
 }
 
 // String returns a human-readable version of the device descriptor.
-func (d *Descriptor) String() string {
+func (d *DeviceDesc) String() string {
 	return fmt.Sprintf("%d.%d: %s:%s (available configs: %v)", d.Bus, d.Address, d.Vendor, d.Product, d.sortedConfigIds())
 }
 
@@ -59,7 +59,7 @@ type Device struct {
 	handle *libusbDevHandle
 
 	// Embed the device information for easy access
-	*Descriptor
+	*DeviceDesc
 	// Timeout for control commands
 	ControlTimeout time.Duration
 
@@ -68,7 +68,7 @@ type Device struct {
 	claimed *Config
 }
 
-func (d *Descriptor) sortedConfigIds() []int {
+func (d *DeviceDesc) sortedConfigIds() []int {
 	var cfgs []int
 	for c := range d.Configs {
 		cfgs = append(cfgs, c)
@@ -117,9 +117,9 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
 	}
-	info, ok := d.Descriptor.Configs[cfgNum]
+	info, ok := d.DeviceDesc.Configs[cfgNum]
 	if !ok {
-		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, d.Descriptor.sortedConfigIds())
+		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, d.DeviceDesc.sortedConfigIds())
 	}
 	cfg := &Config{
 		Info:    info,

@@ -29,8 +29,8 @@ func TestListDevices(t *testing.T) {
 	defer c.Close()
 	c.Debug(0)
 
-	descs := []*Descriptor{}
-	devs, err := c.ListDevices(func(desc *Descriptor) bool {
+	descs := []*DeviceDesc{}
+	devs, err := c.ListDevices(func(desc *DeviceDesc) bool {
 		descs = append(descs, desc)
 		return true
 	})
@@ -51,7 +51,7 @@ func TestListDevices(t *testing.T) {
 	}
 
 	for i := range devs {
-		if got, want := devs[i].Descriptor, descs[i]; got != want {
+		if got, want := devs[i].DeviceDesc, descs[i]; got != want {
 			t.Errorf("dev[%d].Descriptor = %p, want %p", i, got, want)
 		}
 	}
@@ -81,8 +81,8 @@ func TestOpenDeviceWithVIDPID(t *testing.T) {
 			t.Errorf("OpenDeviceWithVIDPID(%s/%s): got error %v, want nil", ID(d.vid), ID(d.pid), err)
 		}
 		if dev != nil {
-			if dev.Descriptor.Vendor != ID(d.vid) || dev.Descriptor.Product != ID(d.pid) {
-				t.Errorf("OpenDeviceWithVIDPID(%s/%s): the device returned has VID/PID %s/%s, different from specified in the arguments", ID(d.vid), ID(d.pid), dev.Descriptor.Vendor, dev.Descriptor.Product)
+			if dev.DeviceDesc.Vendor != ID(d.vid) || dev.DeviceDesc.Product != ID(d.pid) {
+				t.Errorf("OpenDeviceWithVIDPID(%s/%s): the device returned has VID/PID %s/%s, different from specified in the arguments", ID(d.vid), ID(d.pid), dev.DeviceDesc.Vendor, dev.DeviceDesc.Product)
 			}
 			dev.Close()
 		}
@@ -148,7 +148,7 @@ func Example_complex() {
 
 	// Iterate through available Devices, finding all that match a known VID/PID.
 	vid, pid := ID(0x04f2), ID(0xb531)
-	devs, err := ctx.ListDevices(func(desc *Descriptor) bool {
+	devs, err := ctx.ListDevices(func(desc *DeviceDesc) bool {
 		// this function is called for every device present.
 		// Returning true means the device should be opened.
 		return desc.Vendor == vid && desc.Product == pid

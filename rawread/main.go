@@ -108,7 +108,7 @@ func main() {
 
 	log.Printf("Scanning for device %q...", devName)
 	// ListDevices is used to find the devices to open.
-	devs, err := ctx.ListDevices(func(desc *gousb.Descriptor) bool {
+	devs, err := ctx.ListDevices(func(desc *gousb.DeviceDesc) bool {
 		switch {
 		case vid == desc.Vendor && pid == desc.Product:
 			return true

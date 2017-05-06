@@ -22,7 +22,7 @@ import (
 )
 
 type fakeDevice struct {
-	desc *Descriptor
+	desc *DeviceDesc
 	alt  uint8
 }
 
@@ -73,7 +73,7 @@ func (f *fakeLibusb) exit(*libusbContext)          {}
 func (f *fakeLibusb) setDebug(*libusbContext, int) {}
 
 func (f *fakeLibusb) dereference(d *libusbDevice) {}
-func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
+func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	if dev, ok := f.fakeDevices[d]; ok {
 		return dev.desc, nil
 	}

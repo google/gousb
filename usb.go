@@ -149,7 +149,7 @@ func NewContext() *Context {
 // Every Device returned (whether an error is also returned or not) must be closed.
 // If there are any errors enumerating the devices,
 // the final one is returned along with any successfully opened devices.
-func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, error) {
+func (c *Context) ListDevices(each func(desc *DeviceDesc) bool) ([]*Device, error) {
 	list, err := libusb.getDevices(c.ctx)
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 				reterr = err
 				continue
 			}
-			ret = append(ret, &Device{handle: handle, Descriptor: desc})
+			ret = append(ret, &Device{handle: handle, DeviceDesc: desc})
 		} else {
 			libusb.dereference(dev)
 		}
@@ -187,7 +187,7 @@ func (c *Context) ListDevices(each func(desc *Descriptor) bool) ([]*Device, erro
 // be called to release the device if the returned device wasn't nil.
 func (c *Context) OpenDeviceWithVIDPID(vid, pid ID) (*Device, error) {
 	var found bool
-	devs, err := c.ListDevices(func(desc *Descriptor) bool {
+	devs, err := c.ListDevices(func(desc *DeviceDesc) bool {
 		if found {
 			return false
 		}

@@ -15,11 +15,11 @@
 package gousb
 
 // fake devices connected through the fakeLibusb stack.
-var fakeDevices = []*Descriptor{
+var fakeDevices = []*DeviceDesc{
 	// Bus 001 Device 001: ID 9999:0001
 	// One config, one interface, one setup,
 	// two endpoints: 0x01 OUT, 0x82 IN.
-	&Descriptor{
+	&DeviceDesc{
 		Bus:      1,
 		Address:  1,
 		Spec:     Version(2, 0),
@@ -58,7 +58,7 @@ var fakeDevices = []*Descriptor{
 	// One config, two interfaces. interface #0 with no endpoints,
 	// interface #1 with two alt setups with different packet sizes for
 	// endpoints. Two isochronous endpoints, 0x05 OUT and 0x86 OUT.
-	&Descriptor{
+	&DeviceDesc{
 		Bus:      1,
 		Address:  2,
 		Spec:     Version(2, 0),

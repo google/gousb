@@ -37,7 +37,7 @@ import (
 //   - *gousb.Descriptor       "Product (Vendor)"
 func Describe(val interface{}) string {
 	switch val := val.(type) {
-	case *gousb.Descriptor:
+	case *gousb.DeviceDesc:
 		if v, ok := Vendors[val.Vendor]; ok {
 			if d, ok := v.Product[val.Product]; ok {
 				return fmt.Sprintf("%s (%s)", d, v)
@@ -61,7 +61,7 @@ func Classify(val interface{}) string {
 		proto      gousb.Protocol
 	)
 	switch val := val.(type) {
-	case *gousb.Descriptor:
+	case *gousb.DeviceDesc:
 		class, sub, proto = val.Class, val.SubClass, val.Protocol
 	case gousb.InterfaceSetting:
 		class, sub, proto = val.Class, val.SubClass, val.Protocol

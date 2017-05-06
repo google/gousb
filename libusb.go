@@ -39,7 +39,7 @@ type libusbTransfer C.struct_libusb_transfer
 type libusbIso C.struct_libusb_iso_packet_descriptor
 type libusbEndpoint C.struct_libusb_endpoint_descriptor
 
-func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
+func (ep libusbEndpoint) endpointInfo(dev *DeviceDesc) EndpointInfo {
 	ei := EndpointInfo{
 		Number:        int(ep.bEndpointAddress & endpointNumMask),
 		Direction:     EndpointDirection((ep.bEndpointAddress & endpointDirectionMask) != 0),
@@ -111,7 +111,7 @@ func (ep libusbEndpoint) endpointInfo(dev *Descriptor) EndpointInfo {
 // since libusb interacts directly with the host USB stack.
 //
 // All functions here should operate on types defined on C.libusb* data types,
-// and occasionally on convenience data types (like TransferType or Descriptor).
+// and occasionally on convenience data types (like TransferType or DeviceDesc).
 type libusbIntf interface {
 	// context
 	init() (*libusbContext, error)
@@ -122,7 +122,7 @@ type libusbIntf interface {
 
 	// device
 	dereference(*libusbDevice)
-	getDeviceDesc(*libusbDevice) (*Descriptor, error)
+	getDeviceDesc(*libusbDevice) (*DeviceDesc, error)
 	open(*libusbDevice) (*libusbDevHandle, error)
 
 	close(*libusbDevHandle)
@@ -201,7 +201,7 @@ func (libusbImpl) setDebug(c *libusbContext, lvl int) {
 	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
-func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
+func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	var desc C.struct_libusb_device_descriptor
 	if err := fromErrNo(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
 		return nil, err
@@ -277,7 +277,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*Descriptor, error) {
 		cfgs[c.Config] = c
 	}
 
-	return &Descriptor{
+	return &DeviceDesc{
 		Bus:      int(C.libusb_get_bus_number((*C.libusb_device)(d))),
 		Address:  int(C.libusb_get_device_address((*C.libusb_device)(d))),
 		Spec:     BCD(desc.bcdUSB),
