@@ -34,7 +34,7 @@ import (
 // of the given device.
 //
 // The given val must be one of the following:
-//   - *gousb.Descriptor       "Product (Vendor)"
+//   - *gousb.DeviceDesc       "Product (Vendor)"
 func Describe(val interface{}) string {
 	switch val := val.(type) {
 	case *gousb.DeviceDesc:
@@ -53,7 +53,7 @@ func Describe(val interface{}) string {
 // and protocol associated with a device or interface.
 //
 // The given val must be one of the following:
-//   - *gousb.Descriptor       "Class (SubClass) Protocol"
+//   - *gousb.DeviceDesc       "Class (SubClass) Protocol"
 //   - gousb.InterfaceSetup   "IfClass (IfSubClass) IfProtocol"
 func Classify(val interface{}) string {
 	var (

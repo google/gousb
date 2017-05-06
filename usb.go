@@ -28,7 +28,7 @@ initialized by the host stack, it's possible to retrieve it's descriptor
 (the device descriptor). It contains elements such as product and vendor IDs,
 bus number and device number (address) on the bus.
 
-In gousb Device struct represents the USB device, and Device.Descriptor
+In gousb Device struct represents the USB device, and Device.Desc
 contains all the information known about the device.
 
 Among other information in the device descriptor is a list of configuration
@@ -171,7 +171,7 @@ func (c *Context) ListDevices(each func(desc *DeviceDesc) bool) ([]*Device, erro
 				reterr = err
 				continue
 			}
-			ret = append(ret, &Device{handle: handle, DeviceDesc: desc})
+			ret = append(ret, &Device{handle: handle, Desc: desc})
 		} else {
 			libusb.dereference(dev)
 		}

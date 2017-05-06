@@ -51,8 +51,8 @@ func TestListDevices(t *testing.T) {
 	}
 
 	for i := range devs {
-		if got, want := devs[i].DeviceDesc, descs[i]; got != want {
-			t.Errorf("dev[%d].Descriptor = %p, want %p", i, got, want)
+		if got, want := devs[i].Desc, descs[i]; got != want {
+			t.Errorf("dev[%d].Desc = %p, want %p", i, got, want)
 		}
 	}
 }
@@ -81,8 +81,8 @@ func TestOpenDeviceWithVIDPID(t *testing.T) {
 			t.Errorf("OpenDeviceWithVIDPID(%s/%s): got error %v, want nil", ID(d.vid), ID(d.pid), err)
 		}
 		if dev != nil {
-			if dev.DeviceDesc.Vendor != ID(d.vid) || dev.DeviceDesc.Product != ID(d.pid) {
-				t.Errorf("OpenDeviceWithVIDPID(%s/%s): the device returned has VID/PID %s/%s, different from specified in the arguments", ID(d.vid), ID(d.pid), dev.DeviceDesc.Vendor, dev.DeviceDesc.Product)
+			if dev.Desc.Vendor != ID(d.vid) || dev.Desc.Product != ID(d.pid) {
+				t.Errorf("OpenDeviceWithVIDPID(%s/%s): the device returned has VID/PID %s/%s, different from specified in the arguments", ID(d.vid), ID(d.pid), dev.Desc.Vendor, dev.Desc.Product)
 			}
 			dev.Close()
 		}
