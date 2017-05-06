@@ -29,7 +29,7 @@ var debug *log.Logger
 const debugEnvVarName = "GOUSB_DEBUG"
 
 func init() {
-	var out io.Writer = ioutil.Discard
+	out := io.Writer(ioutil.Discard)
 	if os.Getenv(debugEnvVarName) != "" {
 		out = os.Stderr
 	}

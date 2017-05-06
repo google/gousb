@@ -32,7 +32,7 @@ In gousb Device struct represents the USB device, and Device.Desc
 contains all the information known about the device.
 
 Among other information in the device descriptor is a list of configuration
-descriptors, accessible through Device.Descriptor.Configs.
+descriptors, accessible through Device.Desc.Configs.
 
 USB standard allows one physical USB device to switch between different
 sets of behaviors, or working modes, by selecting one of the offered configs
@@ -45,7 +45,7 @@ a unique identification number.
 
 In gousb a device config needs to be selected through Device.Config(num).
 It returns a Config struct that represents the device in this particular configuration.
-The configuration descriptor is accessible through Config.Info.
+The configuration descriptor is accessible through Config.Desc.
 
 A config descriptor determines the list of available USB interfaces on the device.
 Each interface is a virtual device within the physical USB device and it's active
@@ -70,7 +70,7 @@ except the data transfers are unidirectional.
 Endpoints are represented by the Endpoint struct, and all defined endpoints
 can be obtained through the Endpoints field of the Interface.Setting.
 
-Each endpoint descriptor (EndpointInfo) defined in the interface's endpoint
+Each endpoint descriptor (EndpointDesc) defined in the interface's endpoint
 map includes information about the type of the endpoint:
 
 - endpoint number

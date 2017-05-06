@@ -88,7 +88,7 @@ func (f *fakeStreamTransfer) free() error {
 func (f *fakeStreamTransfer) cancel() error { return nil }
 func (f *fakeStreamTransfer) data() []byte  { return fakeTransferBuf }
 
-var sentinelError = errors.New("sentinel error")
+var errSentinel = errors.New("sentinel error")
 
 type readRes struct {
 	n   int
@@ -150,7 +150,7 @@ func TestTransferReadStream(t *testing.T) {
 			transfers: [][]fakeStreamResult{
 				{{n: 500}},
 				{{n: 500}},
-				{{n: 123, waitErr: sentinelError}},
+				{{n: 123, waitErr: errSentinel}},
 				{{n: 500}},
 			},
 			want: []readRes{
@@ -158,18 +158,18 @@ func TestTransferReadStream(t *testing.T) {
 				{n: 100},
 				{n: 400},
 				{n: 100},
-				{n: 123, err: sentinelError},
+				{n: 123, err: errSentinel},
 				{err: io.ErrClosedPipe},
 			},
 		},
 		{
 			desc: "2 transfers, second submit fails initialization but error overshadowed by wait error",
 			transfers: [][]fakeStreamResult{
-				{{n: 123, waitErr: sentinelError}},
+				{{n: 123, waitErr: errSentinel}},
 				{{submitErr: errors.New("fake submit error")}},
 			},
 			want: []readRes{
-				{n: 123, err: sentinelError},
+				{n: 123, err: errSentinel},
 				{err: io.ErrClosedPipe},
 			},
 		},
@@ -177,36 +177,36 @@ func TestTransferReadStream(t *testing.T) {
 			desc: "2 transfers, second submit fails during initialization",
 			transfers: [][]fakeStreamResult{
 				{{n: 400}},
-				{{submitErr: sentinelError}},
+				{{submitErr: errSentinel}},
 			},
 			want: []readRes{
 				{n: 400},
-				{err: sentinelError},
+				{err: errSentinel},
 				{err: io.ErrClosedPipe},
 			},
 		},
 		{
 			desc: "2 transfers, 3rd submit fails during second round",
 			transfers: [][]fakeStreamResult{
-				{{n: 400}, {submitErr: sentinelError}},
+				{{n: 400}, {submitErr: errSentinel}},
 				{{n: 400}},
 			},
 			want: []readRes{
 				{n: 400},
 				{n: 400},
-				{err: sentinelError},
+				{err: errSentinel},
 				{err: io.ErrClosedPipe},
 			},
 		},
 		{
 			desc: "fail quickly",
 			transfers: [][]fakeStreamResult{
-				{{waitErr: sentinelError}},
+				{{waitErr: errSentinel}},
 				{{n: 500}},
 				{{n: 500}},
 			},
 			want: []readRes{
-				{err: sentinelError},
+				{err: errSentinel},
 				{err: io.ErrClosedPipe},
 			},
 		},
