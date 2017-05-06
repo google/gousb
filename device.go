@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 )
 
 // Descriptor is a representation of a USB device descriptor.
@@ -55,6 +56,8 @@ type Device struct {
 
 	// Embed the device information for easy access
 	*Descriptor
+	// Timeout for control commands
+	ControlTimeout time.Duration
 
 	// Claimed config
 	mu      sync.Mutex
@@ -127,10 +130,10 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	return cfg, nil
 }
 
-// Default opens interface #0 with alternate setting #0 of the currently active
+// DefaultInterface opens interface #0 with alternate setting #0 of the currently active
 // config. It's intended as a shortcut for devices that have the simplest
 // interface of a single config, interface and alternate setting.
-func (d *Device) Default() (*Interface, error) {
+func (d *Device) DefaultInterface() (*Interface, error) {
 	cfgNum, err := d.ActiveConfigNum()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active config number of device %s: %v", d, err)
@@ -144,6 +147,14 @@ func (d *Device) Default() (*Interface, error) {
 		return nil, fmt.Errorf("failed to select interface #%d alternate setting %d of config %d of device %s: %v", 0, 0, cfgNum, d, err)
 	}
 	return intf, nil
+}
+
+// Control sends a control request to the device.
+func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
+	if d.handle == nil {
+		return 0, fmt.Errorf("Control() called on %s after Close", d)
+	}
+	return libusb.control(d.handle, d.ControlTimeout, rType, request, val, idx, data)
 }
 
 // Close closes the device.

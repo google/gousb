@@ -18,7 +18,6 @@ package gousb
 import (
 	"fmt"
 	"sync"
-	"time"
 )
 
 // ConfigInfo contains the information about a USB device configuration.
@@ -45,8 +44,7 @@ func (c ConfigInfo) String() string {
 // Config represents a USB device set to use a particular configuration.
 // Only one Config of a particular device can be used at any one time.
 type Config struct {
-	Info           ConfigInfo
-	ControlTimeout time.Duration
+	Info ConfigInfo
 
 	dev *Device
 
@@ -79,14 +77,6 @@ func (c *Config) Close() error {
 // String returns the human-readable description of the configuration.
 func (c *Config) String() string {
 	return fmt.Sprintf("%s,config=%d", c.dev.String(), c.Info.Config)
-}
-
-// Control sends a control request to the device.
-func (c *Config) Control(rType, request uint8, val, idx uint16, data []byte) (int, error) {
-	if c.dev == nil {
-		return 0, fmt.Errorf("Control() called on %s after Close", c)
-	}
-	return libusb.control(c.dev.handle, c.ControlTimeout, rType, request, val, idx, data)
 }
 
 // Interface claims and returns an interface on a USB device.
