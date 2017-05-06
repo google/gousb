@@ -129,9 +129,11 @@ func (r ReadStream) Close() error {
 
 // WriteStream is a buffer that will send data asynchronously, reducing
 // the latency between subsequent Write()s.
+/*
 type WriteStream struct {
 	s *stream
 }
+*/
 
 // Write sends the data to the endpoint. Write returning a nil error doesn't
 // mean that data was written to the device, only that it was written to the
