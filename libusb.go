@@ -63,46 +63,62 @@ func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 			ei.UsageType = IsoUsageTypeImplicit
 		}
 	}
-	// TODO(sebek): PollInterval does not work yet. The meaning of bInterval
-	// in the descriptor varies depending on the device and USB version:
-	// - if the device conforms to USB1.x:
-	//     Interval for polling endpoint for data transfers. Expressed in
-	//     milliseconds.
-	//     This field is ignored for bulk and control endpoints. For
-	//     isochronous endpoints this field must be set to 1. For interrupt
-	//     endpoints, this field may range from 1 to 255.
-	// - if the device conforms to USB[23].x and the device is in low speed
-	//   of full speed mode:
-	//     Interval for polling endpoint for data transfers.  Expressed in
-	//     frames or microframes depending on the device operating speed
-	//     (i.e., either 1 millisecond or 125 µs units).
-	//     For full-/high-speed isochronous endpoints, this value must be in
-	//     the range from 1 to 16. The bInterval value is used as the exponent
-	//     for a 2bInterval-1 value; e.g., a bInterval of 4 means a period
-	//     of 8 (24-1).
-	//     For full-/low-speed interrupt endpoints, the value of this field may
-	//     be from 1 to 255.
-	//     For high-speed interrupt endpoints, the bInterval value is used as
-	//     the exponent for a 2bInterval-1 value; e.g., a bInterval of 4 means
-	//     a period of 8 (24-1). This value must be from 1 to 16.
-	//     For high-speed bulk/control OUT endpoints, the bInterval must
-	//     specify the maximum NAK rate of the endpoint. A value of 0 indicates
-	//     the endpoint never NAKs. Other values indicate at most 1 NAK each
-	//     bInterval number of microframes. This value must be in the range
-	//     from 0 to 255.
-	// - if the device conforms to USB3.x and the device is in SuperSpeed mode:
-	//     Interval for servicing the endpoint for data transfers. Expressed in
-	//     125-µs units.
-	//     For Enhanced SuperSpeed isochronous and interrupt endpoints, this
-	//     value shall be in the range from 1 to 16. However, the valid ranges
-	//     are 8 to 16 for Notification type Interrupt endpoints. The bInterval
-	//     value is used as the exponent for a 2(bInterval-1) value; e.g., a
-	//     bInterval of 4 means a period of 8 (2(4-1) → 23 → 8).
-	//     This field is reserved and shall not be used for Enhanced SuperSpeed
-	//     bulk or control endpoints.
-	//
+	switch {
+	// If the device conforms to USB1.x:
+	//   Interval for polling endpoint for data transfers. Expressed in
+	//   milliseconds.
+	//   This field is ignored for bulk and control endpoints. For
+	//   isochronous endpoints this field must be set to 1. For interrupt
+	//   endpoints, this field may range from 1 to 255.
 	// Note: in low-speed mode, isochronous transfers are not supported.
-	ei.PollInterval = 0
+	case dev.Spec < Version(2, 0):
+		ei.PollInterval = time.Duration(ep.bInterval) * time.Millisecond
+
+	// If the device conforms to USB[23].x and the device is in low or full
+	// speed mode:
+	//   Interval for polling endpoint for data transfers.  Expressed in
+	//   frames (1ms)
+	//   For full-speed isochronous endpoints, the value of this field should
+	//   be 1.
+	//   For full-/low-speed interrupt endpoints, the value of this field may
+	//   be from 1 to 255.
+	// Note: in low-speed mode, isochronous transfers are not supported.
+	case dev.Speed == SpeedUnknown || dev.Speed == SpeedLow || dev.Speed == SpeedFull:
+		ei.PollInterval = time.Duration(ep.bInterval) * time.Millisecond
+
+	// If the device conforms to USB[23].x and the device is in high speed
+	// mode:
+	//   Interval is expressed in microframe units (125 µs).
+	//   For high-speed bulk/control OUT endpoints, the bInterval must
+	//   specify the maximum NAK rate of the endpoint. A value of 0 indicates
+	//   the endpoint never NAKs. Other values indicate at most 1 NAK each
+	//   bInterval number of microframes. This value must be in the range
+	//   from 0 to 255.
+	case dev.Speed == SpeedHigh && ei.TransferType == TransferTypeBulk:
+		ei.PollInterval = time.Duration(ep.bInterval) * 125 * time.Microsecond
+
+	// If the device conforms to USB[23].x and the device is in high speed
+	// mode:
+	//   For high-speed isochronous endpoints, this value must be in
+	//   the range from 1 to 16. The bInterval value is used as the exponent
+	//   for a 2bInterval-1 value; e.g., a bInterval of 4 means a period
+	//   of 8 (2^(4-1)).
+	//   For high-speed interrupt endpoints, the bInterval value is used as
+	//   the exponent for a 2bInterval-1 value; e.g., a bInterval of 4 means
+	//   a period of 8 (2^(4-1)). This value must be from 1 to 16.
+	// If the device conforms to USB3.x and the device is in SuperSpeed mode:
+	//   Interval for servicing the endpoint for data transfers. Expressed in
+	//   125-µs units.
+	//   For Enhanced SuperSpeed isochronous and interrupt endpoints, this
+	//   value shall be in the range from 1 to 16. However, the valid ranges
+	//   are 8 to 16 for Notification type Interrupt endpoints. The bInterval
+	//   value is used as the exponent for a 2(^bInterval-1) value; e.g., a
+	//   bInterval of 4 means a period of 8 (2^(4-1) → 2^3 → 8).
+	//   This field is reserved and shall not be used for Enhanced SuperSpeed
+	//   bulk or control endpoints.
+	case dev.Speed == SpeedHigh || dev.Speed == SpeedSuper:
+		ei.PollInterval = 125 * time.Microsecond << (ep.bInterval - 1)
+	}
 	return ei
 }
 
@@ -206,6 +222,18 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	if err := fromErrNo(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
 		return nil, err
 	}
+	dev := &DeviceDesc{
+		Bus:      int(C.libusb_get_bus_number((*C.libusb_device)(d))),
+		Address:  int(C.libusb_get_device_address((*C.libusb_device)(d))),
+		Speed:    Speed(C.libusb_get_device_speed((*C.libusb_device)(d))),
+		Spec:     BCD(desc.bcdUSB),
+		Device:   BCD(desc.bcdDevice),
+		Vendor:   ID(desc.idVendor),
+		Product:  ID(desc.idProduct),
+		Class:    Class(desc.bDeviceClass),
+		SubClass: Class(desc.bDeviceSubClass),
+		Protocol: Protocol(desc.bDeviceProtocol),
+	}
 	// Enumerate configurations
 	cfgs := make(map[int]ConfigDesc)
 	for i := 0; i < int(desc.bNumConfigurations); i++ {
@@ -217,8 +245,11 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			Number:       int(cfg.bConfigurationValue),
 			SelfPowered:  (cfg.bmAttributes & selfPoweredMask) != 0,
 			RemoteWakeup: (cfg.bmAttributes & remoteWakeupMask) != 0,
-			// TODO(sebek): at GenX speeds MaxPower is expressed in units of 8mA, not 2mA.
-			MaxPower: 2 * Milliamperes(cfg.MaxPower),
+			MaxPower:     2 * Milliamperes(cfg.MaxPower),
+		}
+		// at GenX speeds MaxPower is expressed in units of 8mA, not 2mA.
+		if dev.Speed == SpeedSuper {
+			c.MaxPower *= 4
 		}
 
 		var ifaces []C.struct_libusb_interface
@@ -262,8 +293,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 				}
 				i.Endpoints = make(map[int]EndpointDesc, len(ends))
 				for _, end := range ends {
-					// TODO(sebek): pass the device descriptor too.
-					epi := libusbEndpoint(end).endpointDesc(nil)
+					epi := libusbEndpoint(end).endpointDesc(dev)
 					i.Endpoints[epi.Number] = epi
 				}
 				descs = append(descs, i)
@@ -277,18 +307,8 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 		cfgs[c.Number] = c
 	}
 
-	return &DeviceDesc{
-		Bus:      int(C.libusb_get_bus_number((*C.libusb_device)(d))),
-		Address:  int(C.libusb_get_device_address((*C.libusb_device)(d))),
-		Spec:     BCD(desc.bcdUSB),
-		Device:   BCD(desc.bcdDevice),
-		Vendor:   ID(desc.idVendor),
-		Product:  ID(desc.idProduct),
-		Class:    Class(desc.bDeviceClass),
-		SubClass: Class(desc.bDeviceSubClass),
-		Protocol: Protocol(desc.bDeviceProtocol),
-		Configs:  cfgs,
-	}, nil
+	dev.Configs = cfgs
+	return dev, nil
 }
 
 func (libusbImpl) dereference(d *libusbDevice) {
