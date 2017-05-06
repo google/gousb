@@ -24,13 +24,12 @@ We'll update this section as soon as the API is finalized.
 [docimg]:   https://godoc.org/github.com/google/gousb?status.svg
 [doc]:      https://godoc.org/github.com/google/gousb
 
-Contributing
-============
-Contributing to this project will require signing the [Google CLA][cla].
-This is the same agreement that is required for contributing to Go itself, so if you have
-already filled it out for that, you needn't fill it out again.
+Documentation
+=============
+The documentation can be viewed via local godoc or via the excellent [godoc.org](http://godoc.org/):
 
-[cla]: https://cla.developers.google.com/
+- [usb](http://godoc.org/github.com/google/gousb)
+- [usbid](http://godoc.org/pkg/github.com/google/gousb/usbid)
 
 Installation
 ============
@@ -74,9 +73,11 @@ correct include path for installed libusb.
 
 After that you can continue with instructions for lsusb/gousb above.
 
-Documentation
-=============
-The documentation can be viewed via local godoc or via the excellent [godoc.org](http://godoc.org/):
+Contributing
+============
+Contributing to this project will require signing the [Google CLA][cla].
+This is the same agreement that is required for contributing to Go itself, so if you have
+already filled it out for that, you needn't fill it out again.
 
-- [usb](http://godoc.org/github.com/google/gousb)
-- [usbid](http://godoc.org/pkg/github.com/google/gousb/usbid)
+[cla]: https://cla.developers.google.com/
+
