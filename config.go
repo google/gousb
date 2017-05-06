@@ -80,6 +80,8 @@ func (c *Config) String() string {
 }
 
 // Interface claims and returns an interface on a USB device.
+// inft specifies the number of an interface to claim, and alt specifies the
+// alternate setting number for that interface.
 func (c *Config) Interface(intf, alt int) (*Interface, error) {
 	if c.dev == nil {
 		return nil, fmt.Errorf("Interface(%d, %d) called on %s after Close", intf, alt, c)
