@@ -13,9 +13,109 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package gousb provides an low-level interface to attached USB devices.
-//
-// A Context represents a new
+/*
+Package gousb provides an low-level interface to attached USB devices.
+
+A Short Tutorial
+
+A Context manages all resources necessary for communicating with USB
+devices.
+Through the Context users can iterate over available USB devices,
+
+The USB standard defines a mechanism of discovering USB device functionality
+through a mechanism of descriptors. After the device is attached and
+initialized by the host stack, it's possible to retrieve it's descriptor
+(the device descriptor). It contains elements such as product and vendor IDs,
+bus number and device number (address) on the bus.
+
+In gousb Device struct represents the USB device, and Device.Descriptor
+contains all the information known about the device.
+
+Among other information in the device descriptor is a list of configuration
+descriptors, accessible through Device.Descriptor.Configs.
+
+USB standard allows one physical USB device to switch between different
+sets of behaviors, or working modes, by selecting one of the offered configs
+(each device has at least one).
+This allows the same device to sometimes present itself as e.g. a 3G modem,
+and sometimes a flash drive. Configs are mutually exclusive, each device
+can have only one active config at a time. Switching the active config performs
+a light-weight device reset. Each config in the device descriptor has
+a unique identification number.
+
+In gousb a device config needs to be selected through Device.Config(num).
+It returns a Config struct that represents the device in this particular configuration.
+The configuration descriptor is accessible through Config.Info.
+
+A config descriptor determines the list of available USB interfaces on the device.
+Each interface is a virtual device within the physical USB device and it's active
+config. There can be many interfaces active concurrently. Interfaces are
+enumerated sequentially starting from zero.
+
+Additionally, each interface comes with a number of alternate settings for
+the interface, which are somewhat similar to device configs, but on the
+interface level. Each interface can have only a single alternate setting
+active at any time. Alternate settings are enumerated sequentially starting from
+zero.
+
+In gousb an interface and it's alternate setting can be selected through
+Config.Interface(num, altNum). The Interface struct is the representation
+of the claimed interface with a particular alternate setting.
+The descriptor of the interface is available through Interface.Setting.
+
+An interface with a particular alternate setting defines up to 15
+endpoints. An endpoint can be considered similar to a UDP/IP port,
+except the data transfers are unidirectional.
+
+Endpoints are represented by the Endpoint struct, and all defined endpoints
+can be obtained through the Endpoints field of the Interface.Setting.
+
+Each endpoint descriptor (EndpointInfo) defined in the interface's endpoint
+map includes information about the type of the endpoint:
+
+- endpoint number
+
+- direction: IN (device-to-host) or OUT (host-to-device)
+
+- transfer type: USB standard defines a few distinct data transfer types:
+
+--- bulk - high throughput, but no guaranteed bandwidth and no latency guarantees,
+
+--- isochronous - medium throughput, guaranteed bandwidth, some latency guarantees,
+
+--- interrupt - low throughput, high latency guarantees.
+
+The endpoint descriptor determines the type of the transfer that will be used.
+
+- maximum packet size: maximum number of bytes that can be sent or received by the device in a single USB transaction.
+and a few other less frequently used pieces of endpoint information.
+
+An IN Endpoint can be opened for reading through Interface.InEndpoint(epNum),
+while an OUT Endpoint can be opened for writing through Interface.OutEndpoint(epNum).
+
+An InEndpoint implements the io.Reader interface, an OutEndpoint implements
+the io.Writer interface. Both Reads and Writes will accept larger slices
+of data than the endpoint's maximum packet size, the transfer will be split
+into smaller USB transactions as needed. But using Read/Write size equal
+to an integer multiple of maximum packet size helps with improving the transfer
+performance.
+
+Apart from 15 possible data endpoints, each USB device also has a control endpoint.
+The control endpoint is present regardless of the current device config, claimed
+interfaces and their alternate settings. It makes a lot of sense, as the control endpoint is actually used, among others,
+to issue commands to switch the active config or select an alternate setting for an interface.
+
+Control commands are also ofen use to control the behavior of the device. There is no single
+standard for control commands though, and many devices implement their custom control command schema.
+
+Control commands can be issued through Device.Control().
+
+See Also
+
+For more information about USB protocol and handling USB devices,
+see the excellent "USB in a nutshell" guide: http://www.beyondlogic.org/usbnutshell/
+
+*/
 package gousb
 
 // Context manages all resources related to USB device handling.
