@@ -69,6 +69,9 @@ func (a InterfaceSetting) String() string {
 	return fmt.Sprintf("Interface %d alternate setting %d (available endpoints: %v)", a.Number, a.Alternate, a.sortedEndpointIds())
 }
 
+// Interface is a representation of a claimed interface with a particular setting.
+// To access device endpoints use InEndpoint() and OutEndpoint() methods.
+// The interface should be Close()d after use.
 type Interface struct {
 	Setting InterfaceSetting
 

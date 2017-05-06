@@ -43,6 +43,8 @@ func (c ConfigInfo) String() string {
 
 // Config represents a USB device set to use a particular configuration.
 // Only one Config of a particular device can be used at any one time.
+// To access device endpoints, claim an interface and it's alternate
+// setting number through a call to Interface().
 type Config struct {
 	Info ConfigInfo
 

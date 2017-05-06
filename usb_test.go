@@ -110,11 +110,11 @@ func Example_simple() {
 	// Claim the default interface using a convenience function.
 	// The default interface is always #0 alt #0 in the currently active
 	// config.
-	intf, err := dev.DefaultInterface()
+	intf, done, err := dev.DefaultInterface()
 	if err != nil {
 		log.Fatalf("%s.DefaultInterface(): %v", dev, err)
 	}
-	defer intf.Close()
+	defer done()
 
 	// Open an OUT endpoint.
 	ep, err := intf.OutEndpoint(7)

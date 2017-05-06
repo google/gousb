@@ -51,6 +51,10 @@ func (d *Descriptor) String() string {
 }
 
 // Device represents an opened USB device.
+// Device allows sending USB control commands through the Command() method.
+// For data transfers select a device configuration through a call to
+// Config().
+// A Device must be Close()d after use.
 type Device struct {
 	handle *libusbDevHandle
 
@@ -108,6 +112,7 @@ func (d *Device) ActiveConfigNum() (int, error) {
 // USB supports only one active config per device at a time. Config claims the
 // device before setting the desired config and keeps it locked until Close is
 // called.
+// A claimed config needs to be Close()d after use.
 func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
@@ -133,20 +138,25 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 // DefaultInterface opens interface #0 with alternate setting #0 of the currently active
 // config. It's intended as a shortcut for devices that have the simplest
 // interface of a single config, interface and alternate setting.
-func (d *Device) DefaultInterface() (*Interface, error) {
+// The done func should be called to release the claimed interface and config.
+func (d *Device) DefaultInterface() (intf *Interface, done func(), err error) {
 	cfgNum, err := d.ActiveConfigNum()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get active config number of device %s: %v", d, err)
+		return nil, nil, fmt.Errorf("failed to get active config number of device %s: %v", d, err)
 	}
 	cfg, err := d.Config(cfgNum)
 	if err != nil {
-		return nil, fmt.Errorf("failed to claim config %d of device %s: %v", cfgNum, d, err)
+		return nil, nil, fmt.Errorf("failed to claim config %d of device %s: %v", cfgNum, d, err)
 	}
-	intf, err := cfg.Interface(0, 0)
+	i, err := cfg.Interface(0, 0)
 	if err != nil {
-		return nil, fmt.Errorf("failed to select interface #%d alternate setting %d of config %d of device %s: %v", 0, 0, cfgNum, d, err)
+		cfg.Close()
+		return nil, nil, fmt.Errorf("failed to select interface #%d alternate setting %d of config %d of device %s: %v", 0, 0, cfgNum, d, err)
 	}
-	return intf, nil
+	return i, func() {
+		intf.Close()
+		cfg.Close()
+	}, nil
 }
 
 // Control sends a control request to the device.

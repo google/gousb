@@ -105,6 +105,9 @@ func (e *endpoint) transfer(buf []byte) (int, error) {
 }
 
 // InEndpoint represents an IN endpoint open for transfer.
+// InEndpoint implements the io.Reader interface.
+// For high-throughput transfers, consider creating a bufffered read stream
+// through InEndpoint.ReadStream.
 type InEndpoint struct {
 	*endpoint
 }
