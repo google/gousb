@@ -25,8 +25,9 @@ import (
 // DeviceDesc is a representation of a USB device descriptor.
 type DeviceDesc struct {
 	// Bus information
-	Bus     int // The bus on which the device was detected
-	Address int // The address of the device on the bus
+	Bus     int   // The bus on which the device was detected
+	Address int   // The address of the device on the bus
+	Speed   Speed // The negotiated operating speed for the device
 
 	// Version information
 	Spec   BCD // USB Specification Release Number
@@ -37,9 +38,10 @@ type DeviceDesc struct {
 	Product ID // The Product identifier
 
 	// Protocol information
-	Class    Class    // The class of this device
-	SubClass Class    // The sub-class (within the class) of this device
-	Protocol Protocol // The protocol (within the sub-class) of this device
+	Class                Class    // The class of this device
+	SubClass             Class    // The sub-class (within the class) of this device
+	Protocol             Protocol // The protocol (within the sub-class) of this device
+	MaxControlPacketSize int      // Maximum size of the control transfer
 
 	// Configuration information
 	Configs map[int]ConfigDesc
