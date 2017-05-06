@@ -20,8 +20,9 @@ import (
 	"sync"
 )
 
-// ConfigInfo contains the information about a USB device configuration.
-type ConfigInfo struct {
+// ConfigInfo contains the information about a USB device configuration,
+// extracted from the device descriptor.
+type ConfigDesc struct {
 	// Config is the configuration number.
 	Config int
 	// SelfPowered is true if the device is powered externally, i.e. not
@@ -37,7 +38,7 @@ type ConfigInfo struct {
 }
 
 // String returns the human-readable description of the configuration descriptor.
-func (c ConfigInfo) String() string {
+func (c ConfigDesc) String() string {
 	return fmt.Sprintf("Configuration %d", c.Config)
 }
 
@@ -46,7 +47,7 @@ func (c ConfigInfo) String() string {
 // To access device endpoints, claim an interface and it's alternate
 // setting number through a call to Interface().
 type Config struct {
-	Info ConfigInfo
+	Info ConfigDesc
 
 	dev *Device
 

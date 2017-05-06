@@ -207,13 +207,13 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 		return nil, err
 	}
 	// Enumerate configurations
-	cfgs := make(map[int]ConfigInfo)
+	cfgs := make(map[int]ConfigDesc)
 	for i := 0; i < int(desc.bNumConfigurations); i++ {
 		var cfg *C.struct_libusb_config_descriptor
 		if err := fromErrNo(C.libusb_get_config_descriptor((*C.libusb_device)(d), C.uint8_t(i), &cfg)); err != nil {
 			return nil, err
 		}
-		c := ConfigInfo{
+		c := ConfigDesc{
 			Config:       int(cfg.bConfigurationValue),
 			SelfPowered:  (cfg.bmAttributes & selfPoweredMask) != 0,
 			RemoteWakeup: (cfg.bmAttributes & remoteWakeupMask) != 0,

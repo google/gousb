@@ -27,7 +27,7 @@ var fakeDevices = []*DeviceDesc{
 		Vendor:   ID(0x9999),
 		Product:  ID(0x0001),
 		Protocol: 255,
-		Configs: map[int]ConfigInfo{1: {
+		Configs: map[int]ConfigDesc{1: {
 			Config:   1,
 			MaxPower: Milliamperes(100),
 			Interfaces: []InterfaceInfo{{
@@ -66,7 +66,7 @@ var fakeDevices = []*DeviceDesc{
 		Vendor:   ID(0x8888),
 		Product:  ID(0x0002),
 		Protocol: 255,
-		Configs: map[int]ConfigInfo{1: {
+		Configs: map[int]ConfigDesc{1: {
 			Config:   1,
 			MaxPower: Milliamperes(100),
 			Interfaces: []InterfaceInfo{{

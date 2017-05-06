@@ -42,7 +42,7 @@ type DeviceDesc struct {
 	Protocol Protocol // The protocol (within the sub-class) of this device
 
 	// Configuration information
-	Configs map[int]ConfigInfo
+	Configs map[int]ConfigDesc
 }
 
 // String returns a human-readable version of the device descriptor.
