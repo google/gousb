@@ -23,7 +23,7 @@ import (
 
 // EndpointInfo contains the information about an interface endpoint, extracted
 // from the descriptor.
-type EndpointInfo struct {
+type EndpointDesc struct {
 	// Number represents the endpoint number. Note that the endpoint number is different from the
 	// address field in the descriptor - address 0x82 means endpoint number 2,
 	// with endpoint direction IN.
@@ -55,7 +55,7 @@ func endpointAddr(n int, d EndpointDirection) int {
 }
 
 // String returns the human-readable description of the endpoint.
-func (e EndpointInfo) String() string {
+func (e EndpointDesc) String() string {
 	ret := make([]string, 0, 3)
 	ret = append(ret, fmt.Sprintf("ep #%d %s (address 0x%02x) %s", e.Number, e.Direction, endpointAddr(e.Number, e.Direction), e.TransferType))
 	switch e.TransferType {
@@ -72,7 +72,7 @@ type endpoint struct {
 	h *libusbDevHandle
 
 	InterfaceSetting
-	Info EndpointInfo
+	Info EndpointDesc
 
 	Timeout time.Duration
 }

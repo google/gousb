@@ -39,8 +39,8 @@ type libusbTransfer C.struct_libusb_transfer
 type libusbIso C.struct_libusb_iso_packet_descriptor
 type libusbEndpoint C.struct_libusb_endpoint_descriptor
 
-func (ep libusbEndpoint) endpointInfo(dev *DeviceDesc) EndpointInfo {
-	ei := EndpointInfo{
+func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
+	ei := EndpointDesc{
 		Number:        int(ep.bEndpointAddress & endpointNumMask),
 		Direction:     EndpointDirection((ep.bEndpointAddress & endpointDirectionMask) != 0),
 		TransferType:  TransferType(ep.bmAttributes & transferTypeMask),
@@ -139,7 +139,7 @@ type libusbIntf interface {
 	setAlt(*libusbDevHandle, uint8, uint8) error
 
 	// transfer
-	alloc(*libusbDevHandle, *EndpointInfo, time.Duration, int, []byte, chan struct{}) (*libusbTransfer, error)
+	alloc(*libusbDevHandle, *EndpointDesc, time.Duration, int, []byte, chan struct{}) (*libusbTransfer, error)
 	cancel(*libusbTransfer) error
 	submit(*libusbTransfer) error
 	data(*libusbTransfer) (int, TransferStatus)
@@ -227,7 +227,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			Len:  int(cfg.bNumInterfaces),
 			Cap:  int(cfg.bNumInterfaces),
 		}
-		c.Interfaces = make([]InterfaceInfo, 0, len(ifaces))
+		c.Interfaces = make([]InterfaceDesc, 0, len(ifaces))
 		for ifNum, iface := range ifaces {
 			if iface.num_altsetting == 0 {
 				continue
@@ -260,15 +260,15 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 					Len:  int(alt.bNumEndpoints),
 					Cap:  int(alt.bNumEndpoints),
 				}
-				i.Endpoints = make(map[int]EndpointInfo, len(ends))
+				i.Endpoints = make(map[int]EndpointDesc, len(ends))
 				for _, end := range ends {
 					// TODO(sebek): pass the device descriptor too.
-					epi := libusbEndpoint(end).endpointInfo(nil)
+					epi := libusbEndpoint(end).endpointDesc(nil)
 					i.Endpoints[epi.Number] = epi
 				}
 				descs = append(descs, i)
 			}
-			c.Interfaces = append(c.Interfaces, InterfaceInfo{
+			c.Interfaces = append(c.Interfaces, InterfaceDesc{
 				Number:      descs[0].Number,
 				AltSettings: descs,
 			})
@@ -379,7 +379,7 @@ func (libusbImpl) setAlt(d *libusbDevHandle, iface, setup uint8) error {
 	return fromErrNo(C.libusb_set_interface_alt_setting((*C.libusb_device_handle)(d), C.int(iface), C.int(setup)))
 }
 
-func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointInfo, timeout time.Duration, isoPackets int, buf []byte, done chan struct{}) (*libusbTransfer, error) {
+func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointDesc, timeout time.Duration, isoPackets int, buf []byte, done chan struct{}) (*libusbTransfer, error) {
 	xfer := C.libusb_alloc_transfer(C.int(isoPackets))
 	if xfer == nil {
 		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)

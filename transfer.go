@@ -111,7 +111,7 @@ func (t *usbTransfer) data() []byte {
 
 // newUSBTransfer allocates a new transfer structure for communication with a
 // given device/endpoint, with buf as the underlying transfer buffer.
-func newUSBTransfer(dev *libusbDevHandle, ei *EndpointInfo, buf []byte, timeout time.Duration) (*usbTransfer, error) {
+func newUSBTransfer(dev *libusbDevHandle, ei *EndpointDesc, buf []byte, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets, isoPktSize int
 	if ei.TransferType == TransferTypeIsochronous {
 		isoPktSize = ei.MaxPacketSize

@@ -30,13 +30,13 @@ var fakeDevices = []*DeviceDesc{
 		Configs: map[int]ConfigDesc{1: {
 			Config:   1,
 			MaxPower: Milliamperes(100),
-			Interfaces: []InterfaceInfo{{
+			Interfaces: []InterfaceDesc{{
 				Number: 0,
 				AltSettings: []InterfaceSetting{{
 					Number:    0,
 					Alternate: 0,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointInfo{
+					Endpoints: map[int]EndpointDesc{
 						1: {
 							Number:        1,
 							Direction:     EndpointDirectionOut,
@@ -69,7 +69,7 @@ var fakeDevices = []*DeviceDesc{
 		Configs: map[int]ConfigDesc{1: {
 			Config:   1,
 			MaxPower: Milliamperes(100),
-			Interfaces: []InterfaceInfo{{
+			Interfaces: []InterfaceDesc{{
 				Number: 0,
 				AltSettings: []InterfaceSetting{{
 					Number:    0,
@@ -82,7 +82,7 @@ var fakeDevices = []*DeviceDesc{
 					Number:    1,
 					Alternate: 0,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointInfo{
+					Endpoints: map[int]EndpointDesc{
 						5: {
 							Number:        5,
 							Direction:     EndpointDirectionOut,
@@ -102,7 +102,7 @@ var fakeDevices = []*DeviceDesc{
 					Number:    1,
 					Alternate: 1,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointInfo{
+					Endpoints: map[int]EndpointDesc{
 						5: {
 							Number:        5,
 							Direction:     EndpointDirectionOut,
@@ -120,7 +120,7 @@ var fakeDevices = []*DeviceDesc{
 					Number:    1,
 					Alternate: 2,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointInfo{
+					Endpoints: map[int]EndpointDesc{
 						5: {
 							Number:        5,
 							Direction:     EndpointDirectionIn,

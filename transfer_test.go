@@ -52,7 +52,7 @@ func TestNewTransfer(t *testing.T) {
 			wantLength: 10000,
 		},
 	} {
-		xfer, err := newUSBTransfer(nil, &EndpointInfo{
+		xfer, err := newUSBTransfer(nil, &EndpointDesc{
 			Number:        2,
 			Direction:     tc.dir,
 			TransferType:  tc.tt,
@@ -76,7 +76,7 @@ func TestTransferProtocol(t *testing.T) {
 	xfers := make([]*usbTransfer, 2)
 	var err error
 	for i := 0; i < 2; i++ {
-		xfers[i], err = newUSBTransfer(nil, &EndpointInfo{
+		xfers[i], err = newUSBTransfer(nil, &EndpointDesc{
 			Number:        6,
 			Direction:     EndpointDirectionIn,
 			TransferType:  TransferTypeBulk,

@@ -24,11 +24,11 @@ func TestEndpoint(t *testing.T) {
 	defer done()
 
 	for _, epData := range []struct {
-		ei   EndpointInfo
+		ei   EndpointDesc
 		intf InterfaceSetting
 	}{
 		{
-			ei: EndpointInfo{
+			ei: EndpointDesc{
 				Number:        2,
 				Direction:     EndpointDirectionIn,
 				MaxPacketSize: 512,
@@ -41,7 +41,7 @@ func TestEndpoint(t *testing.T) {
 			},
 		},
 		{
-			ei: EndpointInfo{
+			ei: EndpointDesc{
 				Number:        6,
 				MaxPacketSize: 3 * 1024,
 				TransferType:  TransferTypeIsochronous,
@@ -55,7 +55,7 @@ func TestEndpoint(t *testing.T) {
 			},
 		},
 	} {
-		epData.intf.Endpoints = map[int]EndpointInfo{epData.ei.Number: epData.ei}
+		epData.intf.Endpoints = map[int]EndpointDesc{epData.ei.Number: epData.ei}
 		for _, tc := range []struct {
 			desc       string
 			buf        []byte
@@ -115,11 +115,11 @@ func TestEndpoint(t *testing.T) {
 
 func TestEndpointInfo(t *testing.T) {
 	for _, tc := range []struct {
-		ep   EndpointInfo
+		ep   EndpointDesc
 		want string
 	}{
 		{
-			ep: EndpointInfo{
+			ep: EndpointDesc{
 				Number:        6,
 				Direction:     EndpointDirectionIn,
 				TransferType:  TransferTypeBulk,
@@ -128,7 +128,7 @@ func TestEndpointInfo(t *testing.T) {
 			want: "ep #6 IN (address 0x86) bulk [512 bytes]",
 		},
 		{
-			ep: EndpointInfo{
+			ep: EndpointDesc{
 				Number:        2,
 				Direction:     EndpointDirectionOut,
 				TransferType:  TransferTypeIsochronous,
@@ -139,7 +139,7 @@ func TestEndpointInfo(t *testing.T) {
 			want: "ep #2 OUT (address 0x02) isochronous - asynchronous data [512 bytes]",
 		},
 		{
-			ep: EndpointInfo{
+			ep: EndpointDesc{
 				Number:        3,
 				Direction:     EndpointDirectionIn,
 				TransferType:  TransferTypeInterrupt,

@@ -22,7 +22,7 @@ import (
 
 // InterfaceInfo contains information about a USB interface, extracted from
 // the descriptor.
-type InterfaceInfo struct {
+type InterfaceDesc struct {
 	// Number is the number of this interface, a zero-based index in the array
 	// of interfaces supported by the device configuration.
 	Number int
@@ -32,7 +32,7 @@ type InterfaceInfo struct {
 
 // String returns a human-readable descripton of the interface descriptor and
 // it's alternate settings.
-func (i InterfaceInfo) String() string {
+func (i InterfaceDesc) String() string {
 	return fmt.Sprintf("Interface %d (%d alternate settings)", i.Number, len(i.AltSettings))
 }
 
@@ -51,7 +51,7 @@ type InterfaceSetting struct {
 	Protocol Protocol
 	// Endpoints enumerates the endpoints available on this interface with
 	// this alternate setting.
-	Endpoints map[int]EndpointInfo
+	Endpoints map[int]EndpointDesc
 }
 
 func (a InterfaceSetting) sortedEndpointIds() []string {
@@ -95,7 +95,7 @@ func (i *Interface) Close() {
 }
 
 func (i *Interface) openEndpoint(epNum int) (*endpoint, error) {
-	var ep EndpointInfo
+	var ep EndpointDesc
 	ep, ok := i.Setting.Endpoints[epNum]
 	if !ok {
 		return nil, fmt.Errorf("%s does not have endpoint number %d. Available endpoints: %v", i, epNum, i.Setting.sortedEndpointIds())

@@ -34,7 +34,7 @@ type ConfigDesc struct {
 	// in this configuration.
 	MaxPower Milliamperes
 	// Interfaces has a list of USB interfaces available in this configuration.
-	Interfaces []InterfaceInfo
+	Interfaces []InterfaceDesc
 }
 
 // String returns the human-readable description of the configuration descriptor.
