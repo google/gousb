@@ -223,16 +223,17 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 		return nil, err
 	}
 	dev := &DeviceDesc{
-		Bus:      int(C.libusb_get_bus_number((*C.libusb_device)(d))),
-		Address:  int(C.libusb_get_device_address((*C.libusb_device)(d))),
-		Speed:    Speed(C.libusb_get_device_speed((*C.libusb_device)(d))),
-		Spec:     BCD(desc.bcdUSB),
-		Device:   BCD(desc.bcdDevice),
-		Vendor:   ID(desc.idVendor),
-		Product:  ID(desc.idProduct),
-		Class:    Class(desc.bDeviceClass),
-		SubClass: Class(desc.bDeviceSubClass),
-		Protocol: Protocol(desc.bDeviceProtocol),
+		Bus:                  int(C.libusb_get_bus_number((*C.libusb_device)(d))),
+		Address:              int(C.libusb_get_device_address((*C.libusb_device)(d))),
+		Speed:                Speed(C.libusb_get_device_speed((*C.libusb_device)(d))),
+		Spec:                 BCD(desc.bcdUSB),
+		Device:               BCD(desc.bcdDevice),
+		Vendor:               ID(desc.idVendor),
+		Product:              ID(desc.idProduct),
+		Class:                Class(desc.bDeviceClass),
+		SubClass:             Class(desc.bDeviceSubClass),
+		Protocol:             Protocol(desc.bDeviceProtocol),
+		MaxControlPacketSize: int(desc.bMaxPacketSize0),
 	}
 	// Enumerate configurations
 	cfgs := make(map[int]ConfigDesc)
