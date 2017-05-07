@@ -36,7 +36,6 @@ type libusbContext C.libusb_context
 type libusbDevice C.libusb_device
 type libusbDevHandle C.libusb_device_handle
 type libusbTransfer C.struct_libusb_transfer
-type libusbIso C.struct_libusb_iso_packet_descriptor
 type libusbEndpoint C.struct_libusb_endpoint_descriptor
 
 func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
@@ -449,11 +448,6 @@ func (libusbImpl) setIsoPacketLengths(t *libusbTransfer, length uint32) {
 
 // libusb is an injection point for tests
 var libusb libusbIntf = libusbImpl{}
-
-var (
-	libusbIsoSize   = C.sizeof_struct_libusb_iso_packet_descriptor
-	libusbIsoOffset = unsafe.Offsetof(C.struct_libusb_transfer{}.iso_packet_desc)
-)
 
 // xferDoneMap keeps a map of done callback channels for all allocated transfers.
 var xferDoneMap = struct {
