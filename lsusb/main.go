@@ -39,8 +39,8 @@ func main() {
 	// Debugging can be turned on; this shows some of the inner workings of the libusb package.
 	ctx.Debug(*debug)
 
-	// ListDevices is used to find the devices to open.
-	devs, err := ctx.ListDevices(func(desc *gousb.DeviceDesc) bool {
+	// OpenDevices is used to find the devices to open.
+	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		// The usbid package can be used to print out human readable information.
 		fmt.Printf("%03d.%03d %s:%s %s\n", desc.Bus, desc.Address, desc.Vendor, desc.Product, usbid.Describe(desc))
 		fmt.Printf("  Protocol: %s\n", usbid.Classify(desc))
@@ -71,20 +71,20 @@ func main() {
 		return false
 	})
 
-	// All Devices returned from ListDevices must be closed.
+	// All Devices returned from OpenDevices must be closed.
 	defer func() {
 		for _, d := range devs {
 			d.Close()
 		}
 	}()
 
-	// ListDevices can occaionally fail, so be sure to check its return value.
+	// OpenDevices can occaionally fail, so be sure to check its return value.
 	if err != nil {
 		log.Fatalf("list: %s", err)
 	}
 
 	for _, dev := range devs {
-		// Once the device has been selected from ListDevices, it is opened
+		// Once the device has been selected from OpenDevices, it is opened
 		// and can be interacted with.
 		_ = dev
 	}

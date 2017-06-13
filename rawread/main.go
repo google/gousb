@@ -107,8 +107,8 @@ func main() {
 	}
 
 	log.Printf("Scanning for device %q...", devName)
-	// ListDevices is used to find the devices to open.
-	devs, err := ctx.ListDevices(func(desc *gousb.DeviceDesc) bool {
+	// OpenDevices is used to find the devices to open.
+	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		switch {
 		case vid == desc.Vendor && pid == desc.Product:
 			return true
@@ -117,16 +117,16 @@ func main() {
 		}
 		return false
 	})
-	// All Devices returned from ListDevices must be closed.
+	// All Devices returned from OpenDevices must be closed.
 	defer func() {
 		for _, d := range devs {
 			d.Close()
 		}
 	}()
 
-	// ListDevices can occasionally fail, so be sure to check its return value.
+	// OpenDevices can occasionally fail, so be sure to check its return value.
 	if err != nil {
-		log.Printf("Warning: ListDevices: %s.", err)
+		log.Printf("Warning: OpenDevices: %s.", err)
 	}
 	switch {
 	case len(devs) == 0:
