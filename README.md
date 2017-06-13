@@ -13,9 +13,8 @@ Supported platforms include:
 - darwin
 - windows
 
-This is the release 2.0 of the package [github.com/kylelemons/gousb], with a backwards-incompatible API.
-As of 2017-05-04 the API is not consider stable yet, you should not use this package without vendoring at this point.
-We'll update this section as soon as the API is finalized.
+This is the release 2.0 of the package [github.com/kylelemons/gousb]. Its API is not backwards-compatible with version 1.0.
+As of 2017-07-13 the 2.0 API is considered stable and 1.0 is deprecated.
 
 [coverimg]: https://coveralls.io/repos/github/google/gousb/badge.svg
 [cover]:    https://coveralls.io/github/google/gousb
