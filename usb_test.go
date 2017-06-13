@@ -17,7 +17,7 @@ package gousb
 
 import "testing"
 
-func TestListDevices(t *testing.T) {
+func TestOPenDevices(t *testing.T) {
 	_, done := newFakeLibusb()
 	defer done()
 
@@ -26,7 +26,7 @@ func TestListDevices(t *testing.T) {
 	c.Debug(0)
 
 	descs := []*DeviceDesc{}
-	devs, err := c.ListDevices(func(desc *DeviceDesc) bool {
+	devs, err := c.OpenDevices(func(desc *DeviceDesc) bool {
 		descs = append(descs, desc)
 		return true
 	})
@@ -36,7 +36,7 @@ func TestListDevices(t *testing.T) {
 		}
 	}()
 	if err != nil {
-		t.Fatalf("ListDevices(): %s", err)
+		t.Fatalf("OpenDevices(): %s", err)
 	}
 
 	if got, want := len(devs), len(fakeDevices); got != want {

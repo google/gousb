@@ -80,7 +80,7 @@ func Example_complex() {
 
 	// Iterate through available Devices, finding all that match a known VID/PID.
 	vid, pid := gousb.ID(0x04f2), gousb.ID(0xb531)
-	devs, err := ctx.ListDevices(func(desc *gousb.DeviceDesc) bool {
+	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		// this function is called for every device present.
 		// Returning true means the device should be opened.
 		return desc.Vendor == vid && desc.Product == pid
@@ -90,7 +90,7 @@ func Example_complex() {
 		defer d.Close()
 	}
 	if err != nil {
-		log.Fatalf("ListDevices(): %v", err)
+		log.Fatalf("OpenDevices(): %v", err)
 	}
 	if len(devs) == 0 {
 		log.Fatalf("no devices found matching VID %s and PID %s", vid, pid)

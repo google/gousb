@@ -145,12 +145,12 @@ func NewContext() *Context {
 	return ctx
 }
 
-// ListDevices calls each with each enumerated device.
-// If the function returns true, the device is opened and a Device is returned if the operation succeeds.
+// OpenDevices calls opener with each enumerated device.
+// If the opener returns true, the device is opened and a Device is returned if the operation succeeds.
 // Every Device returned (whether an error is also returned or not) must be closed.
 // If there are any errors enumerating the devices,
 // the final one is returned along with any successfully opened devices.
-func (c *Context) ListDevices(each func(desc *DeviceDesc) bool) ([]*Device, error) {
+func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, error) {
 	list, err := libusb.getDevices(c.ctx)
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (c *Context) ListDevices(each func(desc *DeviceDesc) bool) ([]*Device, erro
 			continue
 		}
 
-		if each(desc) {
+		if opener(desc) {
 			handle, err := libusb.open(dev)
 			if err != nil {
 				reterr = err
@@ -188,7 +188,7 @@ func (c *Context) ListDevices(each func(desc *DeviceDesc) bool) ([]*Device, erro
 // be called to release the device if the returned device wasn't nil.
 func (c *Context) OpenDeviceWithVIDPID(vid, pid ID) (*Device, error) {
 	var found bool
-	devs, err := c.ListDevices(func(desc *DeviceDesc) bool {
+	devs, err := c.OpenDevices(func(desc *DeviceDesc) bool {
 		if found {
 			return false
 		}

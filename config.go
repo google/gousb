@@ -28,7 +28,12 @@ type ConfigDesc struct {
 	// SelfPowered is true if the device is powered externally, i.e. not
 	// drawing power from the USB bus.
 	SelfPowered bool
-	// RemoteWakeup is true if the device supports remote wakeup.
+	// RemoteWakeup is true if the device supports remote wakeup, i.e.
+	// an external signal that will wake up a suspended USB device. An example
+	// might be a keyboard that can wake up through a keypress after
+	// the host put it in suspend mode. Note that gousb does not support
+	// device power management, RemoteWakeup only refers to the reported device
+	// capability.
 	RemoteWakeup bool
 	// MaxPower is the maximum current the device draws from the USB bus
 	// in this configuration.
@@ -89,7 +94,7 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 	if c.dev == nil {
 		return nil, fmt.Errorf("Interface(%d, %d) called on %s after Close", num, alt, c)
 	}
-	if num < 0 || intNum >= len(c.Desc.Interfaces) {
+	if num < 0 || num >= len(c.Desc.Interfaces) {
 		return nil, fmt.Errorf("interface %d not found in %s, available interfaces 0..%d", num, c, len(c.Desc.Interfaces)-1)
 	}
 	ifInfo := c.Desc.Interfaces[num]
