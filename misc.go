@@ -19,8 +19,8 @@ import (
 	"fmt"
 )
 
-// BCD is a binary-coded decimal version number, with first 8 bits representing
-// the major version number, an latter 8 bits the minor version number.
+// BCD is a binary-coded decimal version number. Its first 8 bits represent
+// the major version number, its last 8 bits represent the minor version number.
 // Major and minor are composed of 4+4 bits, where each 4 bits represents
 // a decimal digit.
 // Example: BCD(0x1234) means major 12 (decimal) and minor 34 (decimal).

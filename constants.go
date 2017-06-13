@@ -19,7 +19,7 @@ package gousb
 import "C"
 import "strconv"
 
-// Class represents a USB-IF class or subclass code.
+// Class represents a USB-IF (Implementers Forum) class or subclass code.
 type Class uint8
 
 // Standard classes defined by USB spec.

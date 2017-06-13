@@ -31,7 +31,7 @@ type InterfaceDesc struct {
 }
 
 // String returns a human-readable descripton of the interface descriptor and
-// it's alternate settings.
+// its alternate settings.
 func (i InterfaceDesc) String() string {
 	return fmt.Sprintf("Interface %d (%d alternate settings)", i.Number, len(i.AltSettings))
 }
@@ -43,9 +43,9 @@ type InterfaceSetting struct {
 	Number int
 	// Alternate is the number of this alternate setting.
 	Alternate int
-	// Class is the USB-IF class code, as defined by the USB spec.
+	// Class is the USB-IF (Implementers Forum) class code, as defined by the USB spec.
 	Class Class
-	// SubClass is the USB-IF subclass code, as defined by the USB spec.
+	// SubClass is the USB-IF (Implementers Forum) subclass code, as defined by the USB spec.
 	SubClass Class
 	// Protocol is USB protocol code, as defined by the USB spe.c
 	Protocol Protocol
