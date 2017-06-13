@@ -29,6 +29,7 @@ func TestEndpoint(t *testing.T) {
 	}{
 		{
 			ei: EndpointDesc{
+				Address:       0x82,
 				Number:        2,
 				Direction:     EndpointDirectionIn,
 				MaxPacketSize: 512,
@@ -42,6 +43,7 @@ func TestEndpoint(t *testing.T) {
 		},
 		{
 			ei: EndpointDesc{
+				Address:       0x06,
 				Number:        6,
 				MaxPacketSize: 3 * 1024,
 				TransferType:  TransferTypeIsochronous,
@@ -55,7 +57,7 @@ func TestEndpoint(t *testing.T) {
 			},
 		},
 	} {
-		epData.intf.Endpoints = map[int]EndpointDesc{epData.ei.Number: epData.ei}
+		epData.intf.Endpoints = map[EndpointAddress]EndpointDesc{epData.ei.Address: epData.ei}
 		for _, tc := range []struct {
 			desc       string
 			buf        []byte
@@ -120,6 +122,7 @@ func TestEndpointInfo(t *testing.T) {
 	}{
 		{
 			ep: EndpointDesc{
+				Address:       0x86,
 				Number:        6,
 				Direction:     EndpointDirectionIn,
 				TransferType:  TransferTypeBulk,
@@ -129,6 +132,7 @@ func TestEndpointInfo(t *testing.T) {
 		},
 		{
 			ep: EndpointDesc{
+				Address:       0x02,
 				Number:        2,
 				Direction:     EndpointDirectionOut,
 				TransferType:  TransferTypeIsochronous,
@@ -140,6 +144,7 @@ func TestEndpointInfo(t *testing.T) {
 		},
 		{
 			ep: EndpointDesc{
+				Address:       0x83,
 				Number:        3,
 				Direction:     EndpointDirectionIn,
 				TransferType:  TransferTypeInterrupt,
@@ -233,5 +238,45 @@ func TestEndpointInOut(t *testing.T) {
 	_, err = intf.OutEndpoint(2)
 	if err == nil {
 		t.Errorf("%s.OutEndpoint(2): got nil, want error", intf)
+	}
+}
+
+func TestSameEndpointNumberInOut(t *testing.T) {
+	defer func(i libusbIntf) { libusb = i }(libusb)
+
+	_, done := newFakeLibusb()
+	defer done()
+
+	ctx := NewContext()
+	defer ctx.Close()
+	d, err := ctx.OpenDeviceWithVIDPID(0x1111, 0x1111)
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVIDPID(0x1111, 0x1111): got error %v, want nil", err)
+	}
+	defer func() {
+		if err := d.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", d, err)
+		}
+	}()
+	cfg, err := d.Config(1)
+	if err != nil {
+		t.Fatalf("%s.Config(1): %v", d, err)
+	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", cfg, err)
+		}
+	}()
+	intf, err := cfg.Interface(0, 0)
+	if err != nil {
+		t.Fatalf("%s.Interface(0, 0): %v", cfg, err)
+	}
+	defer intf.Close()
+
+	if _, err := intf.InEndpoint(1); err != nil {
+		t.Errorf("%s.InEndpoint(1): got error %v, want nil", intf, err)
+	}
+	if _, err := intf.OutEndpoint(1); err != nil {
+		t.Errorf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
 	}
 }

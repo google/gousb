@@ -36,14 +36,16 @@ var fakeDevices = []*DeviceDesc{
 					Number:    0,
 					Alternate: 0,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointDesc{
-						1: {
+					Endpoints: map[EndpointAddress]EndpointDesc{
+						0x01: {
+							Address:       0x01,
 							Number:        1,
 							Direction:     EndpointDirectionOut,
 							MaxPacketSize: 512,
 							TransferType:  TransferTypeBulk,
 						},
-						2: {
+						0x82: {
+							Address:       0x82,
 							Number:        2,
 							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 512,
@@ -82,15 +84,17 @@ var fakeDevices = []*DeviceDesc{
 					Number:    1,
 					Alternate: 0,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointDesc{
-						5: {
+					Endpoints: map[EndpointAddress]EndpointDesc{
+						0x05: {
+							Address:       0x05,
 							Number:        5,
 							Direction:     EndpointDirectionOut,
 							MaxPacketSize: 3 * 1024,
 							TransferType:  TransferTypeIsochronous,
 							UsageType:     IsoUsageTypeData,
 						},
-						6: {
+						0x86: {
+							Address:       0x86,
 							Number:        6,
 							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 3 * 1024,
@@ -102,14 +106,16 @@ var fakeDevices = []*DeviceDesc{
 					Number:    1,
 					Alternate: 1,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointDesc{
-						5: {
+					Endpoints: map[EndpointAddress]EndpointDesc{
+						0x05: {
+							Address:       0x05,
 							Number:        5,
 							Direction:     EndpointDirectionOut,
 							MaxPacketSize: 2 * 1024,
 							TransferType:  TransferTypeIsochronous,
 						},
-						6: {
+						0x86: {
+							Address:       0x86,
 							Number:        6,
 							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 2 * 1024,
@@ -120,18 +126,60 @@ var fakeDevices = []*DeviceDesc{
 					Number:    1,
 					Alternate: 2,
 					Class:     ClassVendorSpec,
-					Endpoints: map[int]EndpointDesc{
-						5: {
+					Endpoints: map[EndpointAddress]EndpointDesc{
+						0x05: {
+							Address:       0x05,
 							Number:        5,
 							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 1024,
 							TransferType:  TransferTypeIsochronous,
 						},
-						6: {
+						0x86: {
+							Address:       0x86,
 							Number:        6,
 							Direction:     EndpointDirectionIn,
 							MaxPacketSize: 1024,
 							TransferType:  TransferTypeIsochronous,
+						},
+					},
+				}},
+			}},
+		}},
+	},
+	// Bus 001 Device 003: ID 9999:0002
+	// One config, one interface, one setup,
+	// two endpoints: 0x01 OUT, 0x81 IN.
+	&DeviceDesc{
+		Bus:      1,
+		Address:  3,
+		Spec:     Version(2, 0),
+		Device:   Version(1, 0),
+		Vendor:   ID(0x1111),
+		Product:  ID(0x1111),
+		Protocol: 255,
+		Configs: map[int]ConfigDesc{1: {
+			Number:   1,
+			MaxPower: Milliamperes(100),
+			Interfaces: []InterfaceDesc{{
+				Number: 0,
+				AltSettings: []InterfaceSetting{{
+					Number:    0,
+					Alternate: 0,
+					Class:     ClassVendorSpec,
+					Endpoints: map[EndpointAddress]EndpointDesc{
+						0x01: {
+							Address:       0x01,
+							Number:        1,
+							Direction:     EndpointDirectionOut,
+							MaxPacketSize: 512,
+							TransferType:  TransferTypeBulk,
+						},
+						0x81: {
+							Address:       0x81,
+							Number:        1,
+							Direction:     EndpointDirectionIn,
+							MaxPacketSize: 512,
+							TransferType:  TransferTypeBulk,
 						},
 					},
 				}},

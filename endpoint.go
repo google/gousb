@@ -21,9 +21,19 @@ import (
 	"time"
 )
 
+// EndpointAddress is a unique identifier for the endpoint, combining the endpoint number and direction.
+type EndpointAddress uint8
+
+// String implements the Stringer interface.
+func (a EndpointAddress) String() string {
+	return fmt.Sprintf("0x%02x", uint8(a))
+}
+
 // EndpointDesc contains the information about an interface endpoint, extracted
 // from the descriptor.
 type EndpointDesc struct {
+	// Address is the unique identifier of the endpoint within the interface.
+	Address EndpointAddress
 	// Number represents the endpoint number. Note that the endpoint number is different from the
 	// address field in the descriptor - address 0x82 means endpoint number 2,
 	// with endpoint direction IN.
@@ -46,18 +56,10 @@ type EndpointDesc struct {
 	UsageType UsageType
 }
 
-func endpointAddr(n int, d EndpointDirection) int {
-	addr := n
-	if d == EndpointDirectionIn {
-		addr |= 0x80
-	}
-	return addr
-}
-
 // String returns the human-readable description of the endpoint.
 func (e EndpointDesc) String() string {
 	ret := make([]string, 0, 3)
-	ret = append(ret, fmt.Sprintf("ep #%d %s (address 0x%02x) %s", e.Number, e.Direction, endpointAddr(e.Number, e.Direction), e.TransferType))
+	ret = append(ret, fmt.Sprintf("ep #%d %s (address %s) %s", e.Number, e.Direction, e.Address, e.TransferType))
 	switch e.TransferType {
 	case TransferTypeIsochronous:
 		ret = append(ret, fmt.Sprintf("- %s %s", e.IsoSyncType, e.UsageType))
