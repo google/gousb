@@ -1,3 +1,4 @@
+# Add 32bit support soon
 platform: x64
 
 clone_folder: C:\msys64\go\src\github.com\google\gousb
