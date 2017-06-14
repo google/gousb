@@ -9,5 +9,5 @@ install:
 build: off
 
 artifacts:
-  - path: out/gousb-win64.exe
+  - path: gousb-win64.exe
     name: binary
