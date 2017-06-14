@@ -4,6 +4,6 @@ platform: x64
 clone_folder: C:\msys64\go\src\github.com\google\gousb
 
 install:
-  - C:\msys64\usr\bin\bash.exe C:\msys64\go\src\github.com\google\gousb\.appveyor\install.sh"
+  - C:\msys64\usr\bin\bash.exe -lc "cd /go/src/github.com/google/gousb/.appveyor && ./install.sh"
 
 build: off
