@@ -7,3 +7,7 @@ install:
   - C:\msys64\usr\bin\bash.exe -lc "cd /go/src/github.com/google/gousb/.appveyor && ./install.sh"
 
 build: off
+
+artifacts:
+  - path: C:\msys64\home\appveyor\gousb-win64.exe
+    name: binary
