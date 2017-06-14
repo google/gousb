@@ -28,7 +28,7 @@ func TestClaimAndRelease(t *testing.T) {
 		cfgNum  = 1
 		if1Num  = 1
 		alt1Num = 1
-		ep1Num  = 6
+		ep1Addr = 0x86
 		alt2Num = 0
 		if2Num  = 0
 	)
@@ -58,12 +58,12 @@ func TestClaimAndRelease(t *testing.T) {
 		t.Fatalf("%s.Interface(%d, %d): %v", cfg, if1Num, alt1Num, err)
 	}
 	defer intf.Close()
-	got, err := intf.InEndpoint(ep1Num)
+	got, err := intf.InEndpoint(ep1Addr)
 	if err != nil {
-		t.Fatalf("%s.InEndpoint(%d): got error %v, want nil", intf, ep1Num, err)
+		t.Fatalf("%s.InEndpoint(%d): got error %v, want nil", intf, ep1Addr, err)
 	}
-	if want := fakeDevices[devIdx].Configs[cfgNum].Interfaces[if1Num].AltSettings[alt1Num].Endpoints[ep1Num]; !reflect.DeepEqual(got.Desc, want) {
-		t.Errorf("%s.InEndpoint(%d): got %+v, want %+v", intf, ep1Num, got, want)
+	if want := fakeDevices[devIdx].Configs[cfgNum].Interfaces[if1Num].AltSettings[alt1Num].Endpoints[ep1Addr]; !reflect.DeepEqual(got.Desc, want) {
+		t.Errorf("%s.InEndpoint(%d): got %+v, want %+v", intf, ep1Addr, got, want)
 	}
 
 	if _, err := cfg.Interface(1, 0); err == nil {

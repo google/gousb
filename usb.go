@@ -64,8 +64,12 @@ Config.Interface(num, altNum). The Interface struct is the representation
 of the claimed interface with a particular alternate setting.
 The descriptor of the interface is available through Interface.Setting.
 
-An interface with a particular alternate setting defines up to 15
-endpoints. An endpoint can be considered similar to a UDP/IP port,
+An interface with a particular alternate setting defines up to 30 data
+endpoints, each identified by a unique address. The endpoint address is a combination
+of endpoint number (1..15) and endpoint directionality (IN/OUT).
+IN endpoints have addresses 0x81..0x8f, while OUT endpoints 0x01..0x0f.
+
+An endpoint can be considered similar to a UDP/IP port,
 except the data transfers are unidirectional.
 
 Endpoints are represented by the Endpoint struct, and all defined endpoints
@@ -73,6 +77,8 @@ can be obtained through the Endpoints field of the Interface.Setting.
 
 Each endpoint descriptor (EndpointDesc) defined in the interface's endpoint
 map includes information about the type of the endpoint:
+
+- endpoint address
 
 - endpoint number
 

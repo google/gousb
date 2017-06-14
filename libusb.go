@@ -40,6 +40,7 @@ type libusbEndpoint C.struct_libusb_endpoint_descriptor
 
 func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 	ei := EndpointDesc{
+		Address:       EndpointAddress(ep.bEndpointAddress),
 		Number:        int(ep.bEndpointAddress & endpointNumMask),
 		Direction:     EndpointDirection((ep.bEndpointAddress & endpointDirectionMask) != 0),
 		TransferType:  TransferType(ep.bmAttributes & transferTypeMask),
@@ -291,10 +292,10 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 					Len:  int(alt.bNumEndpoints),
 					Cap:  int(alt.bNumEndpoints),
 				}
-				i.Endpoints = make(map[int]EndpointDesc, len(ends))
+				i.Endpoints = make(map[EndpointAddress]EndpointDesc, len(ends))
 				for _, end := range ends {
 					epi := libusbEndpoint(end).endpointDesc(dev)
-					i.Endpoints[epi.Number] = epi
+					i.Endpoints[epi.Address] = epi
 				}
 				descs = append(descs, i)
 			}
@@ -405,7 +406,7 @@ func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointDesc, timeout time.Durat
 		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
 	}
 	xfer.dev_handle = (*C.libusb_device_handle)(d)
-	xfer.endpoint = C.uchar(endpointAddr(ep.Number, ep.Direction))
+	xfer.endpoint = C.uchar(ep.Address)
 	xfer.timeout = C.uint(timeout / time.Millisecond)
 	xfer._type = C.uchar(ep.TransferType)
 	xfer.num_iso_packets = C.int(isoPackets)

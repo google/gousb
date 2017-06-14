@@ -51,13 +51,13 @@ type InterfaceSetting struct {
 	Protocol Protocol
 	// Endpoints enumerates the endpoints available on this interface with
 	// this alternate setting.
-	Endpoints map[int]EndpointDesc
+	Endpoints map[EndpointAddress]EndpointDesc
 }
 
 func (a InterfaceSetting) sortedEndpointIds() []string {
 	var eps []string
 	for _, ei := range a.Endpoints {
-		eps = append(eps, fmt.Sprintf("%d(%s)", ei.Number, ei.Direction))
+		eps = append(eps, fmt.Sprintf("%s(%d,%s)", ei.Address, ei.Number, ei.Direction))
 	}
 	sort.Strings(eps)
 	return eps
@@ -94,11 +94,11 @@ func (i *Interface) Close() {
 	i.config = nil
 }
 
-func (i *Interface) openEndpoint(epNum int) (*endpoint, error) {
+func (i *Interface) openEndpoint(epAddr EndpointAddress) (*endpoint, error) {
 	var ep EndpointDesc
-	ep, ok := i.Setting.Endpoints[epNum]
+	ep, ok := i.Setting.Endpoints[epAddr]
 	if !ok {
-		return nil, fmt.Errorf("%s does not have endpoint number %d. Available endpoints: %v", i, epNum, i.Setting.sortedEndpointIds())
+		return nil, fmt.Errorf("%s does not have endpoint with address %s. Available endpoints: %v", i, epAddr, i.Setting.sortedEndpointIds())
 	}
 	return &endpoint{
 		InterfaceSetting: i.Setting,
@@ -112,12 +112,9 @@ func (i *Interface) InEndpoint(epNum int) (*InEndpoint, error) {
 	if i.config == nil {
 		return nil, fmt.Errorf("InEndpoint(%d) called on %s after Close", epNum, i)
 	}
-	ep, err := i.openEndpoint(epNum)
+	ep, err := i.openEndpoint(EndpointAddress(0x80 | epNum))
 	if err != nil {
 		return nil, err
-	}
-	if ep.Desc.Direction != EndpointDirectionIn {
-		return nil, fmt.Errorf("%s is not an IN endpoint", ep)
 	}
 	return &InEndpoint{
 		endpoint: ep,
@@ -129,12 +126,9 @@ func (i *Interface) OutEndpoint(epNum int) (*OutEndpoint, error) {
 	if i.config == nil {
 		return nil, fmt.Errorf("OutEndpoint(%d) called on %s after Close", epNum, i)
 	}
-	ep, err := i.openEndpoint(epNum)
+	ep, err := i.openEndpoint(EndpointAddress(epNum))
 	if err != nil {
 		return nil, err
-	}
-	if ep.Desc.Direction != EndpointDirectionOut {
-		return nil, fmt.Errorf("%s is not an OUT endpoint", ep)
 	}
 	return &OutEndpoint{
 		endpoint: ep,
