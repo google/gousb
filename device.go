@@ -68,6 +68,10 @@ type Device struct {
 	// Claimed config
 	mu      sync.Mutex
 	claimed *Config
+
+	//Handle AutoDetach in this library
+	autodetach bool
+	detached map[int]bool
 }
 
 func (d *DeviceDesc) sortedConfigIds() []int {
@@ -118,6 +122,9 @@ func (d *Device) ActiveConfigNum() (int, error) {
 func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
+	}
+	if d.autodetach {
+		d.detachKernelDriver()
 	}
 	desc, ok := d.Desc.Configs[cfgNum]
 	if !ok {
@@ -179,6 +186,12 @@ func (d *Device) Close() error {
 	if d.claimed != nil {
 		return fmt.Errorf("can't release the device %s, it has an open config %s", d, d.claimed.Desc.Number)
 	}
+	if d.detached != nil {
+		//No kernel drivers where detached.
+		//Tested d.detached to avoid problems when disabling autodetach
+		//and any interface was already detached.
+		d.attachKernelDriver()
+	}
 	libusb.close(d.handle)
 	d.handle = nil
 	return nil
@@ -203,12 +216,9 @@ func (d *Device) SetAutoDetach(autodetach bool) error {
 	if d.handle == nil {
 		return fmt.Errorf("SetAutoDetach(%v) called on %s after Close", autodetach, d)
 	}
-	var autodetachInt int
-	switch autodetach {
-	case true:
-		autodetachInt = 1
-	case false:
-		autodetachInt = 0
+	d.autodetach = autodetach
+	if autodetach && d.detached == nil{
+		d.detached = make(map[int]bool)
 	}
-	return libusb.setAutoDetach(d.handle, autodetachInt)
+	return nil
 }
