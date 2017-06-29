@@ -128,8 +128,13 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 		dev:     d,
 		claimed: make(map[int]bool),
 	}
-	if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
-		return nil, fmt.Errorf("failed to set active config %d for the device %s: %v", cfgNum, d, err)
+
+	if activeCfgNum, err := d.ActiveConfigNum(); err != nil {
+		return nil, fmt.Errorf("failed to query active config of the device %s: %v", d, err)
+	} else if cfgNum != activeCfgNum {
+		if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
+			return nil, fmt.Errorf("failed to set active config %d for the device %s: %v", cfgNum, d, err)
+		}
 	}
 	d.mu.Lock()
 	defer d.mu.Unlock()
