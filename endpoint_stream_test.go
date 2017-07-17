@@ -76,6 +76,6 @@ func TestEndpointReadStream(t *testing.T) {
 		got += num
 	}
 	if got != want {
-		t.Errorf("%s.Read(): read %d bytes, want %d")
+		t.Errorf("stream.Read(): read %d bytes, want %d", got, want)
 	}
 }

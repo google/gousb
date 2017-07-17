@@ -148,6 +148,7 @@ type libusbIntf interface {
 	setConfig(*libusbDevHandle, uint8) error
 	getStringDesc(*libusbDevHandle, int) (string, error)
 	setAutoDetach(*libusbDevHandle, int) error
+	detachKernelDriver(*libusbDevHandle, uint8) error
 
 	// interface
 	claim(*libusbDevHandle, uint8) error
@@ -383,6 +384,16 @@ func (libusbImpl) getStringDesc(d *libusbDevHandle, index int) (string, error) {
 func (libusbImpl) setAutoDetach(d *libusbDevHandle, val int) error {
 	err := fromErrNo(C.libusb_set_auto_detach_kernel_driver((*C.libusb_device_handle)(d), C.int(val)))
 	if err != nil && err != ErrorNotSupported {
+		return err
+	}
+	return nil
+}
+
+func (libusbImpl) detachKernelDriver(d *libusbDevHandle, iface uint8) error {
+	err := fromErrNo(C.libusb_detach_kernel_driver((*C.libusb_device_handle)(d), C.int(iface)))
+	if err != nil && err != ErrorNotSupported && err != ErrorNotFound {
+		// ErrorNotFound is returned if libusb's driver is already attached to the device
+		// ErrorNotSupported is returned in non linux systems
 		return err
 	}
 	return nil

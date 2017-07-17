@@ -114,6 +114,8 @@ func (f *fakeLibusb) getStringDesc(*libusbDevHandle, int) (string, error) {
 }
 func (f *fakeLibusb) setAutoDetach(*libusbDevHandle, int) error { return nil }
 
+func (f *fakeLibusb) detachKernelDriver(*libusbDevHandle, uint8) error { return nil }
+
 func (f *fakeLibusb) claim(d *libusbDevHandle, intf uint8) error {
 	debug.Printf("claim(%p, %d)\n", d, intf)
 	f.mu.Lock()

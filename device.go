@@ -71,7 +71,6 @@ type Device struct {
 
 	//Handle AutoDetach in this library
 	autodetach bool
-	detached map[int]bool
 }
 
 func (d *DeviceDesc) sortedConfigIds() []int {
@@ -123,9 +122,6 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
 	}
-	if d.autodetach {
-		d.detachKernelDriver()
-	}
 	desc, ok := d.Desc.Configs[cfgNum]
 	if !ok {
 		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, d.Desc.sortedConfigIds())
@@ -134,6 +130,10 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 		Desc:    desc,
 		dev:     d,
 		claimed: make(map[int]bool),
+	}
+
+	if err := d.detachKernelDriver(cfg); err != nil {
+		return nil, err
 	}
 
 	if activeCfgNum, err := d.ActiveConfigNum(); err != nil {
@@ -147,6 +147,20 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	defer d.mu.Unlock()
 	d.claimed = cfg
 	return cfg, nil
+}
+
+func (d *Device) detachKernelDriver(cfg *Config) (err error) {
+	if !d.autodetach {
+		return nil
+	}
+
+	for _, iface := range cfg.Desc.Interfaces {
+		err = libusb.detachKernelDriver(d.handle, uint8(iface.Number))
+		if err != nil {
+			return fmt.Errorf("Can't detach kernel driver of the device %s: %v", d, err)
+		}
+	}
+	return nil
 }
 
 // DefaultInterface opens interface #0 with alternate setting #0 of the currently active
@@ -189,13 +203,7 @@ func (d *Device) Close() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.claimed != nil {
-		return fmt.Errorf("can't release the device %s, it has an open config %s", d, d.claimed.Desc.Number)
-	}
-	if d.detached != nil {
-		//No kernel drivers where detached.
-		//Tested d.detached to avoid problems when disabling autodetach
-		//and any interface was already detached.
-		d.attachKernelDriver()
+		return fmt.Errorf("can't release the device %s, it has an open config %d", d, d.claimed.Desc.Number)
 	}
 	libusb.close(d.handle)
 	d.handle = nil
@@ -222,8 +230,9 @@ func (d *Device) SetAutoDetach(autodetach bool) error {
 		return fmt.Errorf("SetAutoDetach(%v) called on %s after Close", autodetach, d)
 	}
 	d.autodetach = autodetach
-	if autodetach && d.detached == nil{
-		d.detached = make(map[int]bool)
+	var autodetachInt int
+	if autodetach {
+		autodetachInt = 1
 	}
-	return nil
+	return libusb.setAutoDetach(d.handle, autodetachInt)
 }
