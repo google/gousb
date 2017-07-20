@@ -175,6 +175,7 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 		if opener(desc) {
 			handle, err := libusb.open(dev)
 			if err != nil {
+				libusb.dereference(dev)
 				reterr = err
 				continue
 			}
