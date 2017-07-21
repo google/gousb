@@ -69,7 +69,7 @@ type Device struct {
 	mu      sync.Mutex
 	claimed *Config
 
-	//Handle AutoDetach in this library
+	// Handle AutoDetach in this library
 	autodetach bool
 }
 
@@ -132,8 +132,12 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 		claimed: make(map[int]bool),
 	}
 
-	if err := d.detachKernelDriver(cfg); err != nil {
-		return nil, err
+	if d.autodetach {
+		for _, iface := range cfg.Desc.Interfaces {
+			if err := libusb.detachKernelDriver(d.handle, uint8(iface.Number)); err != nil {
+				return nil, fmt.Errorf("Can't detach kernel driver of the device %s and interface %d: %v", d, iface.Number, err)
+			}
+		}
 	}
 
 	if activeCfgNum, err := d.ActiveConfigNum(); err != nil {
@@ -147,20 +151,6 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	defer d.mu.Unlock()
 	d.claimed = cfg
 	return cfg, nil
-}
-
-func (d *Device) detachKernelDriver(cfg *Config) (err error) {
-	if !d.autodetach {
-		return nil
-	}
-
-	for _, iface := range cfg.Desc.Interfaces {
-		err = libusb.detachKernelDriver(d.handle, uint8(iface.Number))
-		if err != nil {
-			return fmt.Errorf("Can't detach kernel driver of the device %s: %v", d, err)
-		}
-	}
-	return nil
 }
 
 // DefaultInterface opens interface #0 with alternate setting #0 of the currently active

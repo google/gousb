@@ -392,8 +392,8 @@ func (libusbImpl) setAutoDetach(d *libusbDevHandle, val int) error {
 func (libusbImpl) detachKernelDriver(d *libusbDevHandle, iface uint8) error {
 	err := fromErrNo(C.libusb_detach_kernel_driver((*C.libusb_device_handle)(d), C.int(iface)))
 	if err != nil && err != ErrorNotSupported && err != ErrorNotFound {
-		// ErrorNotFound is returned if libusb's driver is already attached to the device
 		// ErrorNotSupported is returned in non linux systems
+		// ErrorNotFound is returned if libusb's driver is already attached to the device
 		return err
 	}
 	return nil
