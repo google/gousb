@@ -158,7 +158,6 @@ func TestAutoDetachFailure(t *testing.T) {
 	}
 	dev.SetAutoDetach(true)
 	_, err = dev.Config(1)
-	dev.Close()
 	if err == nil {
 		t.Fatalf("%s.Config(1) got nil, but want no nil because interface fails to detach", dev)
 	}
