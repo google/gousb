@@ -15,6 +15,7 @@
 package gousb
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -41,6 +42,10 @@ func TestClaimAndRelease(t *testing.T) {
 	defer dev.Close()
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
+	}
+
+	if err = dev.SetAutoDetach(true); err != nil {
+		t.Fatalf("%s.SetAutoDetach(true): %v", dev, err)
 	}
 	cfg, err := dev.Config(cfgNum)
 	if err != nil {
@@ -110,5 +115,50 @@ func TestClaimAndRelease(t *testing.T) {
 
 	if err := dev.Close(); err != nil {
 		t.Fatalf("%s.Close(): got error %v, want nil", dev, err)
+	}
+
+	if _, err := dev.Config(cfgNum); err == nil {
+		t.Fatalf("%s.Config(1): got error nil, want no nil because it is closed", dev)
+	}
+
+	if err := dev.Reset(); err == nil {
+		t.Fatalf("%s.Reset(): got error nil, want no nil because it is closed", dev)
+	}
+
+	if err := dev.SetAutoDetach(false); err == nil {
+		t.Fatalf("%s.SetAutoDetach(false): got error nil, want no nil because it is closed", dev)
+	}
+}
+
+type failDetachLib struct {
+	*fakeLibusb
+}
+
+func (*failDetachLib) detachKernelDriver(h *libusbDevHandle, i uint8) error {
+	if i == 1 {
+		return errors.New("test detach fail")
+	}
+	return nil
+}
+
+func TestAutoDetachFailure(t *testing.T) {
+	fake, done := newFakeLibusb()
+	defer done()
+	libusb = &failDetachLib{fake}
+
+	c := NewContext()
+	defer c.Close()
+	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
+	if dev == nil {
+		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
+	}
+	defer dev.Close()
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
+	}
+	dev.SetAutoDetach(true)
+	_, err = dev.Config(1)
+	if err == nil {
+		t.Fatalf("%s.Config(1) got nil, but want no nil because interface fails to detach", dev)
 	}
 }
