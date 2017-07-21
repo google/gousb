@@ -186,43 +186,4 @@ var fakeDevices = []*DeviceDesc{
 			}},
 		}},
 	},
-	// Bus 001 Device 004: ID 0333:0002
-	// One config, three interfaces, zero setups,
-	// zero endpoints.
-	// This was made to test detachKernelDriver
-	&DeviceDesc{
-		Bus:      1,
-		Address:  4,
-		Spec:     Version(2, 0),
-		Device:   Version(1, 0),
-		Vendor:   ID(0x0333),
-		Product:  ID(0x0002),
-		Protocol: 255,
-		Configs: map[int]ConfigDesc{1: {
-			Number:   1,
-			MaxPower: Milliamperes(100),
-			Interfaces: []InterfaceDesc{{
-				Number: 0,
-				AltSettings: []InterfaceSetting{{
-					Number:    0,
-					Alternate: 0,
-					Class:     ClassVendorSpec,
-				}},
-			}, {
-				Number: 1,
-				AltSettings: []InterfaceSetting{{
-					Number:    1,
-					Alternate: 0,
-					Class:     ClassVendorSpec,
-				}},
-			}, {
-				Number: 2,
-				AltSettings: []InterfaceSetting{{
-					Number:    2,
-					Alternate: 0,
-					Class:     ClassVendorSpec,
-				}},
-			}},
-		}},
-	},
 }

@@ -20,22 +20,9 @@ import (
 	"testing"
 )
 
-type failDetachLib struct {
-	*fakeLibusb
-}
-
-func (*failDetachLib) detachKernelDriver(h *libusbDevHandle, i uint8) error {
-	if i == 2 {
-		return errors.New("test detach fail")
-	}
-	return nil
-}
-
 func TestClaimAndRelease(t *testing.T) {
-	fake, done := newFakeLibusb()
+	_, done := newFakeLibusb()
 	defer done()
-
-	libusb = &failDetachLib{fake}
 
 	const (
 		devIdx  = 1
@@ -56,7 +43,10 @@ func TestClaimAndRelease(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
 	}
-	dev.SetAutoDetach(true)
+
+	if err = dev.SetAutoDetach(true); err != nil {
+		t.Fatalf("%s.SetAutoDetach(true): %v", dev, err)
+	}
 	cfg, err := dev.Config(cfgNum)
 	if err != nil {
 		t.Fatalf("%s.Config(1): %v", dev, err)
@@ -138,17 +128,38 @@ func TestClaimAndRelease(t *testing.T) {
 	if err := dev.SetAutoDetach(false); err == nil {
 		t.Fatalf("%s.SetAutoDetach(false): got error nil, want no nil because it is closed", dev)
 	}
+}
 
-	dev, err = c.OpenDeviceWithVIDPID(0x0333, 0x0002)
+type failDetachLib struct {
+	*fakeLibusb
+}
+
+func (*failDetachLib) detachKernelDriver(h *libusbDevHandle, i uint8) error {
+	if i == 1 {
+		return errors.New("test detach fail")
+	}
+	return nil
+}
+
+func TestAutoDetachFailure(t *testing.T) {
+	fake, done := newFakeLibusb()
+	defer done()
+	libusb = &failDetachLib{fake}
+
+	c := NewContext()
+	defer c.Close()
+	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
 	if dev == nil {
-		t.Fatal("OpenDeviceWithVIDPID(0x0333, 0x0002): got nil device, need non-nil")
+		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
 	}
 	defer dev.Close()
-
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
+	}
 	dev.SetAutoDetach(true)
-	cfg, err = dev.Config(cfgNum)
+	_, err = dev.Config(1)
+	dev.Close()
 	if err == nil {
-		t.Fatalf("%s.Config(1) got nil, but want nil because interface 2 fails to detach", dev)
-		defer cfg.Close()
+		t.Fatalf("%s.Config(1) got nil, but want no nil because interface fails to detach", dev)
 	}
 }
