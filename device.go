@@ -45,6 +45,10 @@ type DeviceDesc struct {
 
 	// Configuration information
 	Configs map[int]ConfigDesc
+
+	IdxSerial       int   // The index into the getStringDescriptor() to get the Serial Number
+	IdxProduct      int   // The index into the getStringDescriptor() to get the Product name
+	IdxManufacturer int   // The index into the getStringDescriptor() to get the Manufacturer name
 }
 
 // String returns a human-readable version of the device descriptor.
