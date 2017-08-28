@@ -45,6 +45,10 @@ type DeviceDesc struct {
 
 	// Configuration information
 	Configs map[int]ConfigDesc
+
+	iSerialNumber       int   // The index into the GetStringDescriptor() to get the Serial Number
+	iProduct            int   // The index into the GetStringDescriptor() to get the Product name
+	iManufacturer       int   // The index into the GetStringDescriptor() to get the Manufacturer name
 }
 
 // String returns a human-readable version of the device descriptor.
@@ -209,6 +213,27 @@ func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
 		return "", fmt.Errorf("GetStringDescriptor(%d) called on %s after Close", descIndex, d)
 	}
 	return libusb.getStringDesc(d.handle, descIndex)
+}
+
+func (d *Device) GetSerialNumber() (string, error) {
+	if d.handle == nil {
+		return "", fmt.Errorf("GetSerialNumber() called on %s after Close", d)
+	}
+	return libusb.getStringDesc(d.handle, d.Desc.iSerialNumber)
+}
+
+func (d *Device) GetProduct() (string, error) {
+	if d.handle == nil {
+		return "", fmt.Errorf("GetProduct() called on %s after Close", d)
+	}
+	return libusb.getStringDesc(d.handle, d.Desc.iProduct)
+}
+
+func (d *Device) GetManufacturer() (string, error) {
+	if d.handle == nil {
+		return "", fmt.Errorf("GetManufacturer() called on %s after Close", d)
+	}
+	return libusb.getStringDesc(d.handle, d.Desc.iManufacturer)
 }
 
 // SetAutoDetach enables/disables automatic kernel driver detachment.
