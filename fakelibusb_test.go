@@ -149,11 +149,11 @@ func (f *fakeLibusb) setAlt(d *libusbDevHandle, intf, alt uint8) error {
 	return nil
 }
 
-func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointDesc, _ time.Duration, _ int, buf []byte, done chan struct{}) (*libusbTransfer, error) {
+func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointDesc, _ time.Duration, _ int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	t := newFakeTransferPointer()
-	f.ts[t] = &fakeTransfer{buf: buf, done: done}
+	f.ts[t] = &fakeTransfer{buf: make([]byte, bufLen), done: done}
 	return t, nil
 }
 func (f *fakeLibusb) cancel(t *libusbTransfer) error { return errors.New("not implemented") }
@@ -164,6 +164,7 @@ func (f *fakeLibusb) submit(t *libusbTransfer) error {
 	f.submitted <- ft
 	return nil
 }
+func (f *fakeLibusb) buffer(t *libusbTransfer) []byte { return f.ts[t].buf }
 func (f *fakeLibusb) data(t *libusbTransfer) (int, TransferStatus) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
