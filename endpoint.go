@@ -89,17 +89,23 @@ func (e *endpoint) transfer(buf []byte) (int, error) {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.h, &e.Desc, buf, e.Timeout)
+	t, err := newUSBTransfer(e.h, &e.Desc, len(buf), e.Timeout)
 	if err != nil {
 		return 0, err
 	}
 	defer t.free()
+	if e.Desc.Direction == EndpointDirectionOut {
+		copy(t.data(), buf)
+	}
 
 	if err := t.submit(); err != nil {
 		return 0, err
 	}
 
 	n, err := t.wait()
+	if e.Desc.Direction == EndpointDirectionIn {
+		copy(buf, t.data())
+	}
 	if err != nil {
 		return n, err
 	}
