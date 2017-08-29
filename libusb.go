@@ -27,7 +27,9 @@ import (
 #cgo pkg-config: libusb-1.0
 #include <libusb.h>
 
-int compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
+int gousb_compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
+struct libusb_transfer *gousb_alloc_transfer_and_buffer(int bufLen, int numIsoPackets);
+void gousb_free_transfer_and_buffer(struct libusb_transfer *xfer);
 int submit(struct libusb_transfer *xfer);
 */
 import "C"
@@ -156,9 +158,10 @@ type libusbIntf interface {
 	setAlt(*libusbDevHandle, uint8, uint8) error
 
 	// transfer
-	alloc(*libusbDevHandle, *EndpointDesc, time.Duration, int, []byte, chan struct{}) (*libusbTransfer, error)
+	alloc(*libusbDevHandle, *EndpointDesc, time.Duration, int, int, chan struct{}) (*libusbTransfer, error)
 	cancel(*libusbTransfer) error
 	submit(*libusbTransfer) error
+	buffer(*libusbTransfer) []byte
 	data(*libusbTransfer) (int, TransferStatus)
 	free(*libusbTransfer)
 	setIsoPacketLengths(*libusbTransfer, uint32)
@@ -411,18 +414,19 @@ func (libusbImpl) setAlt(d *libusbDevHandle, iface, setup uint8) error {
 	return fromErrNo(C.libusb_set_interface_alt_setting((*C.libusb_device_handle)(d), C.int(iface), C.int(setup)))
 }
 
-func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointDesc, timeout time.Duration, isoPackets int, buf []byte, done chan struct{}) (*libusbTransfer, error) {
-	xfer := C.libusb_alloc_transfer(C.int(isoPackets))
+func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointDesc, timeout time.Duration, isoPackets int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
+	xfer := C.gousb_alloc_transfer_and_buffer(C.int(bufLen), C.int(isoPackets))
 	if xfer == nil {
-		return nil, fmt.Errorf("libusb_alloc_transfer(%d) failed", isoPackets)
+		return nil, fmt.Errorf("gousb_alloc_transfer_and_buffer(%d, %d) failed", bufLen, isoPackets)
+	}
+	if int(xfer.length) != bufLen {
+		return nil, fmt.Errorf("gousb_alloc_transfer_and_buffer(%d, %d): length = %d, want %d", bufLen, isoPackets, xfer.length, bufLen)
 	}
 	xfer.dev_handle = (*C.libusb_device_handle)(d)
 	xfer.endpoint = C.uchar(ep.Address)
 	xfer.timeout = C.uint(timeout / time.Millisecond)
 	xfer._type = C.uchar(ep.TransferType)
 	xfer.num_iso_packets = C.int(isoPackets)
-	xfer.buffer = (*C.uchar)(unsafe.Pointer(&buf[0]))
-	xfer.length = C.int(len(buf))
 	ret := (*libusbTransfer)(xfer)
 	xferDoneMap.Lock()
 	xferDoneMap.m[ret] = done
@@ -438,17 +442,29 @@ func (libusbImpl) submit(t *libusbTransfer) error {
 	return fromErrNo(C.submit((*C.struct_libusb_transfer)(t)))
 }
 
+func (libusbImpl) buffer(t *libusbTransfer) []byte {
+	// TODO(go1.10?): replace with more user-friendly construct once
+	// one exists. https://github.com/golang/go/issues/13656
+	var ret []byte
+	*(*reflect.SliceHeader)(unsafe.Pointer(&ret)) = reflect.SliceHeader{
+		Data: uintptr(unsafe.Pointer(t.buffer)),
+		Len:  int(t.length),
+		Cap:  int(t.length),
+	}
+	return ret
+}
+
 func (libusbImpl) data(t *libusbTransfer) (int, TransferStatus) {
 	if TransferType(t._type) == TransferTypeIsochronous {
 		var status TransferStatus
-		n := int(C.compact_iso_data((*C.struct_libusb_transfer)(t), (*C.uchar)(unsafe.Pointer(&status))))
+		n := int(C.gousb_compact_iso_data((*C.struct_libusb_transfer)(t), (*C.uchar)(unsafe.Pointer(&status))))
 		return n, status
 	}
 	return int(t.actual_length), TransferStatus(t.status)
 }
 
 func (libusbImpl) free(t *libusbTransfer) {
-	C.libusb_free_transfer((*C.struct_libusb_transfer)(t))
+	C.gousb_free_transfer_and_buffer((*C.struct_libusb_transfer)(t))
 	xferDoneMap.Lock()
 	delete(xferDoneMap.m, t)
 	xferDoneMap.Unlock()

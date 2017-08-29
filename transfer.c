@@ -15,6 +15,7 @@
 
 #include <libusb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void print_xfer(struct libusb_transfer *xfer);
@@ -53,7 +54,7 @@ void print_xfer(struct libusb_transfer *xfer) {
 // compact the data in an isochronous transfer. The contents of individual
 // iso packets are shifted left, so that no gaps are left between them.
 // Status is set to the first non-zero status of an iso packet.
-int compact_iso_data(struct libusb_transfer *xfer, unsigned char *status) {
+int gousb_compact_iso_data(struct libusb_transfer *xfer, unsigned char *status) {
 	int i;
 	int sum = 0;
 	unsigned char *in = xfer->buffer;
@@ -73,4 +74,27 @@ int compact_iso_data(struct libusb_transfer *xfer, unsigned char *status) {
 		out += len;
 	}
 	return sum;
+}
+
+// allocates a libusb transfer and a buffer for packet data.
+struct libusb_transfer *gousb_alloc_transfer_and_buffer(int bufLen, int isoPackets) {
+        struct libusb_transfer *xfer = libusb_alloc_transfer(isoPackets);
+        if (xfer == NULL) {
+                return NULL;
+        }
+        xfer->buffer = (unsigned char*)malloc(bufLen);
+        if (xfer->buffer == NULL) {
+                libusb_free_transfer(xfer);
+                return NULL;
+        }
+        xfer->length = bufLen;
+        return xfer;
+}
+
+// frees a libusb transfer and its buffer. The buffer of the given
+// libusb_transfer must have been allocated with alloc_transfer_and_buffer.
+void gousb_free_transfer_and_buffer(struct libusb_transfer *xfer) {
+        free(xfer->buffer);
+        xfer->length = 0;
+        libusb_free_transfer(xfer);
 }
