@@ -26,8 +26,9 @@ type usbTransfer struct {
 	mu sync.Mutex
 	// xfer is the allocated libusb_transfer.
 	xfer *libusbTransfer
-	// buf is the buffer allocated for the transfer. Both buf and xfer.buffer
-	// point to the same piece of memory.
+	// buf is the buffer allocated for the transfer. The underlying memory
+	// is allocated by the C code, both buf and xfer.buffer point to the same
+	// memory.
 	buf []byte
 	// done is blocking until the transfer is complete and data and transfer
 	// status are available.
@@ -97,6 +98,9 @@ func (t *usbTransfer) free() error {
 	if t.submitted {
 		return errors.New("free() cannot be called on a submitted transfer until wait() returns")
 	}
+	if t.xfer == nil {
+		return nil
+	}
 	libusb.free(t.xfer)
 	t.xfer = nil
 	t.buf = nil
@@ -109,21 +113,21 @@ func (t *usbTransfer) data() []byte {
 	return t.buf
 }
 
-// newUSBTransfer allocates a new transfer structure for communication with a
-// given device/endpoint, with buf as the underlying transfer buffer.
-func newUSBTransfer(dev *libusbDevHandle, ei *EndpointDesc, buf []byte, timeout time.Duration) (*usbTransfer, error) {
+// newUSBTransfer allocates a new transfer structure and a new buffer for
+// communication with a given device/endpoint.
+func newUSBTransfer(dev *libusbDevHandle, ei *EndpointDesc, bufLen int, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets, isoPktSize int
 	if ei.TransferType == TransferTypeIsochronous {
 		isoPktSize = ei.MaxPacketSize
-		if len(buf) < isoPktSize {
-			isoPktSize = len(buf)
+		if bufLen < isoPktSize {
+			isoPktSize = bufLen
 		}
-		isoPackets = len(buf) / isoPktSize
-		debug.Printf("New isochronous transfer - buffer length %d, using %d packets of %d bytes each", len(buf), isoPackets, isoPktSize)
+		isoPackets = bufLen / isoPktSize
+		debug.Printf("New isochronous transfer - buffer length %d, using %d packets of %d bytes each", bufLen, isoPackets, isoPktSize)
 	}
 
 	done := make(chan struct{}, 1)
-	xfer, err := libusb.alloc(dev, ei, timeout, isoPackets, buf, done)
+	xfer, err := libusb.alloc(dev, ei, timeout, isoPackets, bufLen, done)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +138,7 @@ func newUSBTransfer(dev *libusbDevHandle, ei *EndpointDesc, buf []byte, timeout 
 
 	t := &usbTransfer{
 		xfer: xfer,
-		buf:  buf,
+		buf:  libusb.buffer(xfer),
 		done: done,
 	}
 	runtime.SetFinalizer(t, func(t *usbTransfer) {

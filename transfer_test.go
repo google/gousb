@@ -57,13 +57,13 @@ func TestNewTransfer(t *testing.T) {
 			Direction:     tc.dir,
 			TransferType:  tc.tt,
 			MaxPacketSize: tc.maxPkt,
-		}, make([]byte, tc.buf), tc.timeout)
+		}, tc.buf, tc.timeout)
 
 		if err != nil {
 			t.Fatalf("newUSBTransfer(): %v", err)
 		}
 		defer xfer.free()
-		if got, want := len(xfer.buf), tc.wantLength; got != want {
+		if got, want := len(xfer.data()), tc.wantLength; got != want {
 			t.Errorf("xfer.buf: got %d bytes, want %d", got, want)
 		}
 	}
@@ -81,7 +81,7 @@ func TestTransferProtocol(t *testing.T) {
 			Direction:     EndpointDirectionIn,
 			TransferType:  TransferTypeBulk,
 			MaxPacketSize: 512,
-		}, make([]byte, 10240), time.Second)
+		}, 10240, time.Second)
 		if err != nil {
 			t.Fatalf("newUSBTransfer: %v", err)
 		}
