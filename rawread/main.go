@@ -140,6 +140,9 @@ func main() {
 	}
 	dev := devs[0]
 
+	log.Print("Enabling autodetach")
+	dev.SetAutoDetach(true)
+
 	log.Printf("Setting configuration %d...", *config)
 	cfg, err := dev.Config(*config)
 	if err != nil {
