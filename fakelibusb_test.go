@@ -22,8 +22,9 @@ import (
 )
 
 type fakeDevice struct {
-	desc *DeviceDesc
-	alt  uint8
+	devDesc *DeviceDesc
+	strDesc map[int]string
+	alt     uint8
 }
 
 type fakeTransfer struct {
@@ -75,7 +76,7 @@ func (f *fakeLibusb) setDebug(*libusbContext, int) {}
 func (f *fakeLibusb) dereference(d *libusbDevice) {}
 func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	if dev, ok := f.fakeDevices[d]; ok {
-		return dev.desc, nil
+		return dev.devDesc, nil
 	}
 	return nil, fmt.Errorf("invalid USB device %p", d)
 }
@@ -109,8 +110,15 @@ func (f *fakeLibusb) setConfig(d *libusbDevHandle, cfg uint8) error {
 	}
 	return nil
 }
-func (f *fakeLibusb) getStringDesc(*libusbDevHandle, int) (string, error) {
-	return "", errors.New("not implemented")
+func (f *fakeLibusb) getStringDesc(d *libusbDevHandle, index int) (string, error) {
+	if dev, ok := f.fakeDevices[f.handles[d]]; ok {
+		if str, ok := dev.strDesc[index]; ok {
+			return str, nil
+		} else {
+			return "", fmt.Errorf("invalid string descriptor index %d", index)
+		}
+	}
+	return "", fmt.Errorf("invalid USB device %p", d)
 }
 func (f *fakeLibusb) setAutoDetach(*libusbDevHandle, int) error { return nil }
 
@@ -203,8 +211,9 @@ func newFakeLibusb() (*fakeLibusb, func() error) {
 		// libusbDevice only as an identifier, use an arbitrary unique pointer.
 		// The contents of these pointers is never accessed.
 		fl.fakeDevices[newDevicePointer()] = &fakeDevice{
-			desc: d,
-			alt:  0,
+			devDesc: d.devDesc,
+			strDesc: d.strDesc,
+			alt:     0,
 		}
 	}
 	libusb = fl

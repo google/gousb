@@ -44,6 +44,28 @@ func TestClaimAndRelease(t *testing.T) {
 		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
 	}
 
+	mfg, err := dev.Manufacturer()
+	if err != nil {
+		t.Errorf("%s.Manufacturer(): %v", dev, err)
+	}
+	if mfg != "ACME Industries" {
+		t.Errorf("%s.Manufacturer(): %q", dev, mfg)
+	}
+	prod, err := dev.Product()
+	if err != nil {
+		t.Errorf("%s.Product(): %v", dev, err)
+	}
+	if prod != "Fidgety Gadget" {
+		t.Errorf("%s.Product(): %q", dev, prod)
+	}
+	sn, err := dev.SerialNumber()
+	if err != nil {
+		t.Errorf("%s.SerialNumber(): %v", dev, err)
+	}
+	if sn != "01234567" {
+		t.Errorf("%s.SerialNumber(): %q", dev, sn)
+	}
+
 	if err = dev.SetAutoDetach(true); err != nil {
 		t.Fatalf("%s.SetAutoDetach(true): %v", dev, err)
 	}
@@ -67,7 +89,7 @@ func TestClaimAndRelease(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%s.InEndpoint(%d): got error %v, want nil", intf, ep1Addr, err)
 	}
-	if want := fakeDevices[devIdx].Configs[cfgNum].Interfaces[if1Num].AltSettings[alt1Num].Endpoints[ep1Addr]; !reflect.DeepEqual(got.Desc, want) {
+	if want := fakeDevices[devIdx].devDesc.Configs[cfgNum].Interfaces[if1Num].AltSettings[alt1Num].Endpoints[ep1Addr]; !reflect.DeepEqual(got.Desc, want) {
 		t.Errorf("%s.InEndpoint(%d): got %+v, want %+v", intf, ep1Addr, got, want)
 	}
 
