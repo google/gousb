@@ -464,10 +464,10 @@ func (libusbImpl) data(t *libusbTransfer) (int, TransferStatus) {
 }
 
 func (libusbImpl) free(t *libusbTransfer) {
-	C.gousb_free_transfer_and_buffer((*C.struct_libusb_transfer)(t))
 	xferDoneMap.Lock()
 	delete(xferDoneMap.m, t)
 	xferDoneMap.Unlock()
+	C.gousb_free_transfer_and_buffer((*C.struct_libusb_transfer)(t))
 }
 
 func (libusbImpl) setIsoPacketLengths(t *libusbTransfer, length uint32) {
