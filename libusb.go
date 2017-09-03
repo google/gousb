@@ -238,6 +238,9 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 		SubClass:             Class(desc.bDeviceSubClass),
 		Protocol:             Protocol(desc.bDeviceProtocol),
 		MaxControlPacketSize: int(desc.bMaxPacketSize0),
+		iManufacturer:        int(desc.iManufacturer),
+		iProduct:             int(desc.iProduct),
+		iSerialNumber:        int(desc.iSerialNumber),
 	}
 	// Enumerate configurations
 	cfgs := make(map[int]ConfigDesc)
