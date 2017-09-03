@@ -39,7 +39,18 @@ func TestClaimAndRelease(t *testing.T) {
 	if dev == nil {
 		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
 	}
-	defer dev.Close()
+	defer func() {
+		dev.Close()
+		if _, err := dev.Manufacturer(); err == nil {
+			t.Errorf("%s.Manufacturer(): expected an error after device is closed", dev)
+		}
+		if _, err := dev.Product(); err == nil {
+			t.Errorf("%s.Product(): expected an error after device is closed", dev)
+		}
+		if _, err := dev.SerialNumber(); err == nil {
+			t.Errorf("%s.SerialNumber(): expected an error after device is closed", dev)
+		}
+	}()
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
 	}

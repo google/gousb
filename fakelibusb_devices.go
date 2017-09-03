@@ -15,12 +15,13 @@
 package gousb
 
 // fake devices connected through the fakeLibusb stack.
-type fakeDeviceDef struct {
+type fakeDevice struct {
 	devDesc *DeviceDesc
 	strDesc map[int]string
+	alt     uint8
 }
 
-var fakeDevices = []fakeDeviceDef{
+var fakeDevices = []fakeDevice{
 	// Bus 001 Device 001: ID 9999:0001
 	// One config, one interface, one setup,
 	// two endpoints: 0x01 OUT, 0x82 IN.

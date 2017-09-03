@@ -215,19 +215,19 @@ func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
 	return libusb.getStringDesc(d.handle, descIndex)
 }
 
-// Manufacturer returns the device's manufacturer name as string.
+// Manufacturer returns the device's manufacturer name.
 // GetStringDescriptor's string conversion rules apply.
 func (d *Device) Manufacturer() (string, error) {
 	return d.GetStringDescriptor(d.Desc.iManufacturer)
 }
 
-// Product returns the device's product name as string.
+// Product returns the device's product name.
 // GetStringDescriptor's string conversion rules apply.
 func (d *Device) Product() (string, error) {
 	return d.GetStringDescriptor(d.Desc.iProduct)
 }
 
-// SerialNumber returns the device's serial number as string.
+// SerialNumber returns the device's serial number.
 // GetStringDescriptor's string conversion rules apply.
 func (d *Device) SerialNumber() (string, error) {
 	return d.GetStringDescriptor(d.Desc.iSerialNumber)

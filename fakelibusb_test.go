@@ -21,12 +21,6 @@ import (
 	"time"
 )
 
-type fakeDevice struct {
-	devDesc *DeviceDesc
-	strDesc map[int]string
-	alt     uint8
-}
-
 type fakeTransfer struct {
 	// done is the channel that needs to be closed when the transfer has finished.
 	done chan struct{}
@@ -111,14 +105,15 @@ func (f *fakeLibusb) setConfig(d *libusbDevHandle, cfg uint8) error {
 	return nil
 }
 func (f *fakeLibusb) getStringDesc(d *libusbDevHandle, index int) (string, error) {
-	if dev, ok := f.fakeDevices[f.handles[d]]; ok {
-		if str, ok := dev.strDesc[index]; ok {
-			return str, nil
-		} else {
-			return "", fmt.Errorf("invalid string descriptor index %d", index)
-		}
+	dev, ok := f.fakeDevices[f.handles[d]]
+	if !ok {
+		return "", fmt.Errorf("invalid USB device %p", d)
 	}
-	return "", fmt.Errorf("invalid USB device %p", d)
+	str, ok := dev.strDesc[index]
+	if !ok {
+		return "", fmt.Errorf("invalid string descriptor index %d", index)
+	}
+	return str, nil
 }
 func (f *fakeLibusb) setAutoDetach(*libusbDevHandle, int) error { return nil }
 
@@ -210,11 +205,9 @@ func newFakeLibusb() (*fakeLibusb, func() error) {
 		// without using the full USB stack. Since the fake library uses the
 		// libusbDevice only as an identifier, use an arbitrary unique pointer.
 		// The contents of these pointers is never accessed.
-		fl.fakeDevices[newDevicePointer()] = &fakeDevice{
-			devDesc: d.devDesc,
-			strDesc: d.strDesc,
-			alt:     0,
-		}
+		fd := new(fakeDevice)
+		*fd = d
+		fl.fakeDevices[newDevicePointer()] = fd
 	}
 	libusb = fl
 	return fl, func() error {
