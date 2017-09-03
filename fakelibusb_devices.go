@@ -78,14 +78,16 @@ var fakeDevices = []fakeDevice{
 			Product:  ID(0x0002),
 			Protocol: 255,
 			Configs: map[int]ConfigDesc{1: {
-				Number:   1,
-				MaxPower: Milliamperes(100),
+				Number:         1,
+				MaxPower:       Milliamperes(100),
+				iConfiguration: 5,
 				Interfaces: []InterfaceDesc{{
 					Number: 0,
 					AltSettings: []InterfaceSetting{{
-						Number:    0,
-						Alternate: 0,
-						Class:     ClassVendorSpec,
+						Number:     0,
+						Alternate:  0,
+						Class:      ClassVendorSpec,
+						iInterface: 6,
 					}},
 				}, {
 					Number: 1,
@@ -111,6 +113,7 @@ var fakeDevices = []fakeDevice{
 								UsageType:     IsoUsageTypeData,
 							},
 						},
+						iInterface: 7,
 					}, {
 						Number:    1,
 						Alternate: 1,
@@ -131,6 +134,7 @@ var fakeDevices = []fakeDevice{
 								TransferType:  TransferTypeIsochronous,
 							},
 						},
+						iInterface: 8,
 					}, {
 						Number:    1,
 						Alternate: 2,
@@ -162,6 +166,10 @@ var fakeDevices = []fakeDevice{
 			1: "ACME Industries",
 			2: "Fidgety Gadget",
 			3: "01234567",
+			5: "Weird configuration",
+			6: "Boring setting",
+			7: "Fast streaming",
+			8: "Slower streaming",
 		},
 	},
 	// Bus 001 Device 003: ID 9999:0002
