@@ -142,12 +142,6 @@ func TestClaimAndRelease(t *testing.T) {
 	if _, err := dev.Manufacturer(); err == nil {
 		t.Errorf("%s.Manufacturer(): expected an error after device is closed", dev)
 	}
-	if _, err := dev.Product(); err == nil {
-		t.Errorf("%s.Product(): expected an error after device is closed", dev)
-	}
-	if _, err := dev.SerialNumber(); err == nil {
-		t.Errorf("%s.SerialNumber(): expected an error after device is closed", dev)
-	}
 
 	if _, err := dev.Config(cfgNum); err == nil {
 		t.Fatalf("%s.Config(1): got error nil, want no nil because it is closed", dev)
