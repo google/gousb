@@ -212,6 +212,7 @@ func TestTransferReadStream(t *testing.T) {
 			},
 		},
 	} {
+		tcNum, tc := tcNum, tc // make a local copy
 		t.Run(strconv.Itoa(tcNum), func(t *testing.T) {
 			t.Parallel()
 			t.Logf("Case %d: %s", tcNum, tc.desc)
