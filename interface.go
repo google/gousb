@@ -52,6 +52,8 @@ type InterfaceSetting struct {
 	// Endpoints enumerates the endpoints available on this interface with
 	// this alternate setting.
 	Endpoints map[EndpointAddress]EndpointDesc
+
+	iInterface int // index of a string descriptor describing this interface.
 }
 
 func (a InterfaceSetting) sortedEndpointIds() []string {

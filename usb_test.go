@@ -18,6 +18,7 @@ package gousb
 import "testing"
 
 func TestOPenDevices(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	_, done := newFakeLibusb()
 	defer done()
 
@@ -54,6 +55,7 @@ func TestOPenDevices(t *testing.T) {
 }
 
 func TestOpenDeviceWithVIDPID(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	_, done := newFakeLibusb()
 	defer done()
 

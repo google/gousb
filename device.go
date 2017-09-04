@@ -56,6 +56,23 @@ func (d *DeviceDesc) String() string {
 	return fmt.Sprintf("%d.%d: %s:%s (available configs: %v)", d.Bus, d.Address, d.Vendor, d.Product, d.sortedConfigIds())
 }
 
+func (d *DeviceDesc) sortedConfigIds() []int {
+	var cfgs []int
+	for c := range d.Configs {
+		cfgs = append(cfgs, c)
+	}
+	sort.Ints(cfgs)
+	return cfgs
+}
+
+func (d *DeviceDesc) cfgDesc(cfgNum int) (*ConfigDesc, error) {
+	desc, ok := d.Configs[cfgNum]
+	if !ok {
+		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device. Available config ids: %v", cfgNum, d.sortedConfigIds())
+	}
+	return &desc, nil
+}
+
 // Device represents an opened USB device.
 // Device allows sending USB control commands through the Command() method.
 // For data transfers select a device configuration through a call to
@@ -75,15 +92,6 @@ type Device struct {
 
 	// Handle AutoDetach in this library
 	autodetach bool
-}
-
-func (d *DeviceDesc) sortedConfigIds() []int {
-	var cfgs []int
-	for c := range d.Configs {
-		cfgs = append(cfgs, c)
-	}
-	sort.Ints(cfgs)
-	return cfgs
 }
 
 // String represents a human readable representation of the device.
@@ -126,12 +134,12 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	if d.handle == nil {
 		return nil, fmt.Errorf("Config(%d) called on %s after Close", cfgNum, d)
 	}
-	desc, ok := d.Desc.Configs[cfgNum]
-	if !ok {
-		return nil, fmt.Errorf("configuration id %d not found in the descriptor of the device %s. Available config ids: %v", cfgNum, d, d.Desc.sortedConfigIds())
+	desc, err := d.Desc.cfgDesc(cfgNum)
+	if err != nil {
+		return nil, fmt.Errorf("device %s: %v", d, err)
 	}
 	cfg := &Config{
-		Desc:    desc,
+		Desc:    *desc,
 		dev:     d,
 		claimed: make(map[int]bool),
 	}
@@ -212,6 +220,10 @@ func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
 	if d.handle == nil {
 		return "", fmt.Errorf("GetStringDescriptor(%d) called on %s after Close", descIndex, d)
 	}
+	// string descriptor index value of 0 indicates no string descriptor.
+	if descIndex == 0 {
+		return "", nil
+	}
 	return libusb.getStringDesc(d.handle, descIndex)
 }
 
@@ -231,6 +243,31 @@ func (d *Device) Product() (string, error) {
 // GetStringDescriptor's string conversion rules apply.
 func (d *Device) SerialNumber() (string, error) {
 	return d.GetStringDescriptor(d.Desc.iSerialNumber)
+}
+
+// ConfigDescription returns the description of the selected device
+// configuration. GetStringDescriptor's string conversion rules apply.
+func (d *Device) ConfigDescription(cfg int) (string, error) {
+	c, err := d.Desc.cfgDesc(cfg)
+	if err != nil {
+		return "", fmt.Errorf("%s: %v", d, err)
+	}
+	return d.GetStringDescriptor(c.iConfiguration)
+}
+
+// InterfaceDescription returns the description of the selected interface and
+// its alternate setting in a selected configuration. GetStringDescriptor's
+// string conversion rules apply.
+func (d *Device) InterfaceDescription(cfgNum, intfNum, altNum int) (string, error) {
+	cfg, err := d.Desc.cfgDesc(cfgNum)
+	if err != nil {
+		return "", fmt.Errorf("%s: %v", d, err)
+	}
+	alt, err := cfg.intfDesc(intfNum, altNum)
+	if err != nil {
+		return "", fmt.Errorf("%s, configuration %d: %v", d, cfgNum, err)
+	}
+	return d.GetStringDescriptor(alt.iInterface)
 }
 
 // SetAutoDetach enables/disables automatic kernel driver detachment.

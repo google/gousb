@@ -21,6 +21,7 @@ import (
 )
 
 func TestClaimAndRelease(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	_, done := newFakeLibusb()
 	defer done()
 
@@ -44,26 +45,45 @@ func TestClaimAndRelease(t *testing.T) {
 		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
 	}
 
-	mfg, err := dev.Manufacturer()
-	if err != nil {
-		t.Errorf("%s.Manufacturer(): %v", dev, err)
+	if mfg, err := dev.Manufacturer(); err != nil {
+		t.Errorf("%s.Manufacturer(): error %v", dev, err)
+	} else if want := "ACME Industries"; mfg != want {
+		t.Errorf("%s.Manufacturer(): %q, want %q", dev, mfg, want)
 	}
-	if mfg != "ACME Industries" {
-		t.Errorf("%s.Manufacturer(): %q", dev, mfg)
+	if prod, err := dev.Product(); err != nil {
+		t.Errorf("%s.Product(): error %v", dev, err)
+	} else if want := "Fidgety Gadget"; prod != want {
+		t.Errorf("%s.Product(): %q, want %q", dev, prod, want)
 	}
-	prod, err := dev.Product()
-	if err != nil {
-		t.Errorf("%s.Product(): %v", dev, err)
+	if sn, err := dev.SerialNumber(); err != nil {
+		t.Errorf("%s.SerialNumber(): error %v", dev, err)
+	} else if want := "01234567"; sn != want {
+		t.Errorf("%s.SerialNumber(): %q, want %q", dev, sn, want)
 	}
-	if prod != "Fidgety Gadget" {
-		t.Errorf("%s.Product(): %q", dev, prod)
+
+	if got, err := dev.ConfigDescription(1); err != nil {
+		t.Errorf("%s.ConfigDescription(1): %v", dev, err)
+	} else if want := "Weird configuration"; got != want {
+		t.Errorf("%s.ConfigDescription(1): %q, want %q", dev, got, want)
 	}
-	sn, err := dev.SerialNumber()
-	if err != nil {
-		t.Errorf("%s.SerialNumber(): %v", dev, err)
+	if got, err := dev.ConfigDescription(2); err == nil {
+		t.Errorf("%s.ConfigDescription(2): %q, want error", dev, got)
 	}
-	if sn != "01234567" {
-		t.Errorf("%s.SerialNumber(): %q", dev, sn)
+
+	for _, tc := range []struct {
+		intf, alt int
+		want      string
+	}{
+		{0, 0, "Boring setting"},
+		{1, 0, "Fast streaming"},
+		{1, 1, "Slower streaming"},
+		{1, 2, ""},
+	} {
+		if got, err := dev.InterfaceDescription(1, tc.intf, tc.alt); err != nil {
+			t.Errorf("%s.InterfaceDescription(1, %d, %d): %v", dev, tc.intf, tc.alt, err)
+		} else if got != tc.want {
+			t.Errorf("%s.InterfaceDescription(1, %d, %d): %q, want %q", dev, tc.intf, tc.alt, got, tc.want)
+		}
 	}
 
 	if err = dev.SetAutoDetach(true); err != nil {
@@ -156,6 +176,38 @@ func TestClaimAndRelease(t *testing.T) {
 	}
 }
 
+func TestInterfaceDescriptionError(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
+	_, done := newFakeLibusb()
+	defer done()
+
+	for _, tc := range []struct {
+		name           string
+		cfg, intf, alt int
+	}{
+		{"no config", 2, 1, 1},
+		{"no interface", 1, 3, 1},
+		{"no alt setting", 1, 1, 5},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// Can't be parallelized, depends on the shared global state set before the loop.
+			c := NewContext()
+			defer c.Close()
+			dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
+			if dev == nil {
+				t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
+			}
+			defer dev.Close()
+			if err != nil {
+				t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
+			}
+			if desc, err := dev.InterfaceDescription(tc.cfg, tc.intf, tc.alt); err == nil {
+				t.Errorf("%s.InterfaceDescriptor(%d, %d, %d): %q, want error", dev, tc.cfg, tc.intf, tc.alt, desc)
+			}
+		})
+	}
+}
+
 type failDetachLib struct {
 	*fakeLibusb
 }
@@ -168,6 +220,7 @@ func (*failDetachLib) detachKernelDriver(h *libusbDevHandle, i uint8) error {
 }
 
 func TestAutoDetachFailure(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	fake, done := newFakeLibusb()
 	defer done()
 	libusb = &failDetachLib{fake}

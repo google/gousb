@@ -250,10 +250,11 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			return nil, err
 		}
 		c := ConfigDesc{
-			Number:       int(cfg.bConfigurationValue),
-			SelfPowered:  (cfg.bmAttributes & selfPoweredMask) != 0,
-			RemoteWakeup: (cfg.bmAttributes & remoteWakeupMask) != 0,
-			MaxPower:     2 * Milliamperes(cfg.MaxPower),
+			Number:         int(cfg.bConfigurationValue),
+			SelfPowered:    (cfg.bmAttributes & selfPoweredMask) != 0,
+			RemoteWakeup:   (cfg.bmAttributes & remoteWakeupMask) != 0,
+			MaxPower:       2 * Milliamperes(cfg.MaxPower),
+			iConfiguration: int(cfg.iConfiguration),
 		}
 		// at GenX speeds MaxPower is expressed in units of 8mA, not 2mA.
 		if dev.Speed == SpeedSuper {
@@ -281,11 +282,12 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			descs := make([]InterfaceSetting, 0, len(alts))
 			for altNum, alt := range alts {
 				i := InterfaceSetting{
-					Number:    int(alt.bInterfaceNumber),
-					Alternate: int(alt.bAlternateSetting),
-					Class:     Class(alt.bInterfaceClass),
-					SubClass:  Class(alt.bInterfaceSubClass),
-					Protocol:  Protocol(alt.bInterfaceProtocol),
+					Number:     int(alt.bInterfaceNumber),
+					Alternate:  int(alt.bAlternateSetting),
+					Class:      Class(alt.bInterfaceClass),
+					SubClass:   Class(alt.bInterfaceSubClass),
+					Protocol:   Protocol(alt.bInterfaceProtocol),
+					iInterface: int(alt.iInterface),
 				}
 				if ifNum != i.Number {
 					return nil, fmt.Errorf("config %d interface at index %d has number %d, USB standard states they should be identical", c.Number, ifNum, i.Number)

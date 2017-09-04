@@ -20,6 +20,7 @@ import (
 )
 
 func TestBCD(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		major, minor uint8
 		bcd          BCD

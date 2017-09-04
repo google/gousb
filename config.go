@@ -40,11 +40,24 @@ type ConfigDesc struct {
 	MaxPower Milliamperes
 	// Interfaces has a list of USB interfaces available in this configuration.
 	Interfaces []InterfaceDesc
+
+	iConfiguration int // index of a string descriptor describing this configuration
 }
 
 // String returns the human-readable description of the configuration descriptor.
 func (c ConfigDesc) String() string {
 	return fmt.Sprintf("Configuration %d", c.Number)
+}
+
+func (c ConfigDesc) intfDesc(num, alt int) (*InterfaceSetting, error) {
+	if num < 0 || num >= len(c.Interfaces) {
+		return nil, fmt.Errorf("interface %d not found, available interfaces 0..%d", num, len(c.Interfaces)-1)
+	}
+	ifInfo := c.Interfaces[num]
+	if alt < 0 || alt >= len(ifInfo.AltSettings) {
+		return nil, fmt.Errorf("alternate setting %d not found for %s, available alt settings 0..%d", alt, ifInfo, len(ifInfo.AltSettings)-1)
+	}
+	return &ifInfo.AltSettings[alt], nil
 }
 
 // Config represents a USB device set to use a particular configuration.
@@ -94,12 +107,10 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 	if c.dev == nil {
 		return nil, fmt.Errorf("Interface(%d, %d) called on %s after Close", num, alt, c)
 	}
-	if num < 0 || num >= len(c.Desc.Interfaces) {
-		return nil, fmt.Errorf("interface %d not found in %s, available interfaces 0..%d", num, c, len(c.Desc.Interfaces)-1)
-	}
-	ifInfo := c.Desc.Interfaces[num]
-	if alt < 0 || alt >= len(ifInfo.AltSettings) {
-		return nil, fmt.Errorf("alternate setting %d not found for %s in %s, available alt settings 0..%d", alt, ifInfo, c, len(ifInfo.AltSettings)-1)
+
+	altInfo, err := c.Desc.intfDesc(num, alt)
+	if err != nil {
+		return nil, fmt.Errorf("in %s: %v", err)
 	}
 
 	c.mu.Lock()
@@ -120,7 +131,7 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 
 	c.claimed[num] = true
 	return &Interface{
-		Setting: ifInfo.AltSettings[alt],
+		Setting: *altInfo,
 		config:  c,
 	}, nil
 }

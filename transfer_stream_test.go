@@ -106,6 +106,7 @@ func (r readRes) String() string {
 }
 
 func TestTransferReadStream(t *testing.T) {
+	t.Parallel()
 	for tcNum, tc := range []struct {
 		desc        string
 		closeBefore int
@@ -211,7 +212,9 @@ func TestTransferReadStream(t *testing.T) {
 			},
 		},
 	} {
+		tcNum, tc := tcNum, tc // t.Parallel will delay the execution of the test, save the iteration values.
 		t.Run(strconv.Itoa(tcNum), func(t *testing.T) {
+			t.Parallel()
 			t.Logf("Case %d: %s", tcNum, tc.desc)
 			ftt := make([]*fakeStreamTransfer, len(tc.transfers))
 			tt := make([]transferIntf, len(tc.transfers))

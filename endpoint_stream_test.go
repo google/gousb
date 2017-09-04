@@ -17,6 +17,7 @@ package gousb
 import "testing"
 
 func TestEndpointReadStream(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	lib, done := newFakeLibusb()
 	defer done()
 
