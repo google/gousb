@@ -77,6 +77,8 @@ type endpoint struct {
 	Desc EndpointDesc
 
 	Timeout time.Duration
+
+	ctx *Context
 }
 
 // String returns a human-readable description of the endpoint.
@@ -89,7 +91,7 @@ func (e *endpoint) transfer(buf []byte) (int, error) {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.h, &e.Desc, len(buf), e.Timeout)
+	t, err := newUSBTransfer(e.ctx, e.h, &e.Desc, len(buf), e.Timeout)
 	if err != nil {
 		return 0, err
 	}

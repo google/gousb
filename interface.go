@@ -89,7 +89,7 @@ func (i *Interface) Close() {
 	if i.config == nil {
 		return
 	}
-	libusb.release(i.config.dev.handle, uint8(i.Setting.Number))
+	i.config.dev.ctx.libusb.release(i.config.dev.handle, uint8(i.Setting.Number))
 	i.config.mu.Lock()
 	defer i.config.mu.Unlock()
 	delete(i.config.claimed, i.Setting.Number)
@@ -106,6 +106,7 @@ func (i *Interface) openEndpoint(epAddr EndpointAddress) (*endpoint, error) {
 		InterfaceSetting: i.Setting,
 		Desc:             ep,
 		h:                i.config.dev.handle,
+		ctx:              i.config.dev.ctx,
 	}, nil
 }
 

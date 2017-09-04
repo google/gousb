@@ -20,9 +20,14 @@ import (
 )
 
 func TestEndpoint(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	lib, done := newFakeLibusb()
-	defer done()
+	t.Parallel()
+	lib := newFakeLibusb()
+	ctx := newContextWithImpl(lib)
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
 
 	for _, epData := range []struct {
 		ei   EndpointDesc
@@ -92,7 +97,7 @@ func TestEndpoint(t *testing.T) {
 				wantErr:    true,
 			},
 		} {
-			ep := &endpoint{h: nil, InterfaceSetting: epData.intf, Desc: epData.ei}
+			ep := &endpoint{h: nil, ctx: ctx, InterfaceSetting: epData.intf, Desc: epData.ei}
 			if tc.wantSubmit {
 				go func() {
 					fakeT := lib.waitForSubmitted()
@@ -163,12 +168,15 @@ func TestEndpointInfo(t *testing.T) {
 }
 
 func TestEndpointInOut(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	lib, done := newFakeLibusb()
-	defer done()
+	t.Parallel()
+	lib := newFakeLibusb()
+	ctx := newContextWithImpl(lib)
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
 
-	ctx := NewContext()
-	defer ctx.Close()
 	d, err := ctx.OpenDeviceWithVIDPID(0x9999, 0x0001)
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVIDPID(0x9999, 0x0001): got error %v, want nil", err)
@@ -243,12 +251,14 @@ func TestEndpointInOut(t *testing.T) {
 }
 
 func TestSameEndpointNumberInOut(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	_, done := newFakeLibusb()
-	defer done()
+	t.Parallel()
+	ctx := newContextWithImpl(newFakeLibusb())
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
 
-	ctx := NewContext()
-	defer ctx.Close()
 	d, err := ctx.OpenDeviceWithVIDPID(0x1111, 0x1111)
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVIDPID(0x1111, 0x1111): got error %v, want nil", err)

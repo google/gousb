@@ -20,9 +20,13 @@ import (
 )
 
 func TestNewTransfer(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	_, done := newFakeLibusb()
-	defer done()
+	t.Parallel()
+	ctx := newContextWithImpl(newFakeLibusb())
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
 
 	for _, tc := range []struct {
 		desc        string
@@ -53,7 +57,7 @@ func TestNewTransfer(t *testing.T) {
 			wantLength: 10000,
 		},
 	} {
-		xfer, err := newUSBTransfer(nil, &EndpointDesc{
+		xfer, err := newUSBTransfer(ctx, nil, &EndpointDesc{
 			Number:        2,
 			Direction:     tc.dir,
 			TransferType:  tc.tt,
@@ -71,14 +75,19 @@ func TestNewTransfer(t *testing.T) {
 }
 
 func TestTransferProtocol(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	f, done := newFakeLibusb()
-	defer done()
+	t.Parallel()
+	f := newFakeLibusb()
+	ctx := newContextWithImpl(f)
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
 
 	xfers := make([]*usbTransfer, 2)
 	var err error
 	for i := 0; i < 2; i++ {
-		xfers[i], err = newUSBTransfer(nil, &EndpointDesc{
+		xfers[i], err = newUSBTransfer(ctx, nil, &EndpointDesc{
 			Number:        6,
 			Direction:     EndpointDirectionIn,
 			TransferType:  TransferTypeBulk,

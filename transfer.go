@@ -35,6 +35,8 @@ type usbTransfer struct {
 	done chan struct{}
 	// submitted is true if submit() was called on this transfer.
 	submitted bool
+	// ctx is the Context that created this transfer.
+	ctx *Context
 }
 
 // submits the transfer. After submit() the transfer is in flight and is owned by libusb.
@@ -46,7 +48,7 @@ func (t *usbTransfer) submit() error {
 	if t.submitted {
 		return errors.New("transfer was already submitted and is not finished yet")
 	}
-	if err := libusb.submit(t.xfer); err != nil {
+	if err := t.ctx.libusb.submit(t.xfer); err != nil {
 		return err
 	}
 	t.submitted = true
@@ -66,7 +68,7 @@ func (t *usbTransfer) wait() (n int, err error) {
 	}
 	<-t.done
 	t.submitted = false
-	n, status := libusb.data(t.xfer)
+	n, status := t.ctx.libusb.data(t.xfer)
 	if status != TransferCompleted {
 		return n, status
 	}
@@ -81,7 +83,7 @@ func (t *usbTransfer) cancel() error {
 	if !t.submitted {
 		return nil
 	}
-	err := libusb.cancel(t.xfer)
+	err := t.ctx.libusb.cancel(t.xfer)
 	if err == ErrorNotFound {
 		// transfer already completed
 		return nil
@@ -101,7 +103,7 @@ func (t *usbTransfer) free() error {
 	if t.xfer == nil {
 		return nil
 	}
-	libusb.free(t.xfer)
+	t.ctx.libusb.free(t.xfer)
 	t.xfer = nil
 	t.buf = nil
 	t.done = nil
@@ -115,7 +117,7 @@ func (t *usbTransfer) data() []byte {
 
 // newUSBTransfer allocates a new transfer structure and a new buffer for
 // communication with a given device/endpoint.
-func newUSBTransfer(dev *libusbDevHandle, ei *EndpointDesc, bufLen int, timeout time.Duration) (*usbTransfer, error) {
+func newUSBTransfer(ctx *Context, dev *libusbDevHandle, ei *EndpointDesc, bufLen int, timeout time.Duration) (*usbTransfer, error) {
 	var isoPackets, isoPktSize int
 	if ei.TransferType == TransferTypeIsochronous {
 		isoPktSize = ei.MaxPacketSize
@@ -127,19 +129,20 @@ func newUSBTransfer(dev *libusbDevHandle, ei *EndpointDesc, bufLen int, timeout 
 	}
 
 	done := make(chan struct{}, 1)
-	xfer, err := libusb.alloc(dev, ei, timeout, isoPackets, bufLen, done)
+	xfer, err := ctx.libusb.alloc(dev, ei, timeout, isoPackets, bufLen, done)
 	if err != nil {
 		return nil, err
 	}
 
 	if ei.TransferType == TransferTypeIsochronous {
-		libusb.setIsoPacketLengths(xfer, uint32(isoPktSize))
+		ctx.libusb.setIsoPacketLengths(xfer, uint32(isoPktSize))
 	}
 
 	t := &usbTransfer{
 		xfer: xfer,
-		buf:  libusb.buffer(xfer),
+		buf:  ctx.libusb.buffer(xfer),
 		done: done,
+		ctx:  ctx,
 	}
 	runtime.SetFinalizer(t, func(t *usbTransfer) {
 		t.cancel()

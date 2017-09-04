@@ -21,10 +21,7 @@ import (
 )
 
 func TestClaimAndRelease(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	_, done := newFakeLibusb()
-	defer done()
-
+	t.Parallel()
 	const (
 		devIdx  = 1
 		cfgNum  = 1
@@ -34,8 +31,14 @@ func TestClaimAndRelease(t *testing.T) {
 		alt2Num = 0
 		if2Num  = 0
 	)
-	c := NewContext()
-	defer c.Close()
+
+	c := newContextWithImpl(newFakeLibusb())
+	defer func() {
+		if err := c.Close(); err != nil {
+			t.Errorf("Context.Close: %v", err)
+		}
+	}()
+
 	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
 	if dev == nil {
 		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
@@ -177,10 +180,7 @@ func TestClaimAndRelease(t *testing.T) {
 }
 
 func TestInterfaceDescriptionError(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	_, done := newFakeLibusb()
-	defer done()
-
+	t.Parallel()
 	for _, tc := range []struct {
 		name           string
 		cfg, intf, alt int
@@ -189,10 +189,15 @@ func TestInterfaceDescriptionError(t *testing.T) {
 		{"no interface", 1, 3, 1},
 		{"no alt setting", 1, 1, 5},
 	} {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			// Can't be parallelized, depends on the shared global state set before the loop.
-			c := NewContext()
-			defer c.Close()
+			t.Parallel()
+			c := newContextWithImpl(newFakeLibusb())
+			defer func() {
+				if err := c.Close(); err != nil {
+					t.Errorf("Context.Close(): %v", err)
+				}
+			}()
 			dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
 			if dev == nil {
 				t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
@@ -220,12 +225,9 @@ func (*failDetachLib) detachKernelDriver(h *libusbDevHandle, i uint8) error {
 }
 
 func TestAutoDetachFailure(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	fake, done := newFakeLibusb()
-	defer done()
-	libusb = &failDetachLib{fake}
-
-	c := NewContext()
+	t.Parallel()
+	fake := newFakeLibusb()
+	c := newContextWithImpl(&failDetachLib{fake})
 	defer c.Close()
 	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
 	if dev == nil {
