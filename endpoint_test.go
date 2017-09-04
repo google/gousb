@@ -20,6 +20,7 @@ import (
 )
 
 func TestEndpoint(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	lib, done := newFakeLibusb()
 	defer done()
 
@@ -116,6 +117,7 @@ func TestEndpoint(t *testing.T) {
 }
 
 func TestEndpointInfo(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		ep   EndpointDesc
 		want string
@@ -161,8 +163,7 @@ func TestEndpointInfo(t *testing.T) {
 }
 
 func TestEndpointInOut(t *testing.T) {
-	defer func(i libusbIntf) { libusb = i }(libusb)
-
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	lib, done := newFakeLibusb()
 	defer done()
 
@@ -242,8 +243,7 @@ func TestEndpointInOut(t *testing.T) {
 }
 
 func TestSameEndpointNumberInOut(t *testing.T) {
-	defer func(i libusbIntf) { libusb = i }(libusb)
-
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	_, done := newFakeLibusb()
 	defer done()
 

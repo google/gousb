@@ -20,6 +20,7 @@ import (
 )
 
 func TestNewTransfer(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	_, done := newFakeLibusb()
 	defer done()
 
@@ -70,6 +71,7 @@ func TestNewTransfer(t *testing.T) {
 }
 
 func TestTransferProtocol(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	f, done := newFakeLibusb()
 	defer done()
 

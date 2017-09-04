@@ -21,6 +21,7 @@ import (
 )
 
 func TestClaimAndRelease(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	_, done := newFakeLibusb()
 	defer done()
 
@@ -176,6 +177,7 @@ func TestClaimAndRelease(t *testing.T) {
 }
 
 func TestInterfaceDescriptionError(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	_, done := newFakeLibusb()
 	defer done()
 
@@ -188,6 +190,7 @@ func TestInterfaceDescriptionError(t *testing.T) {
 		{"no alt setting", 1, 1, 5},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			// Can't be parallelized, depends on the shared global state set before the loop.
 			c := NewContext()
 			defer c.Close()
 			dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
@@ -217,6 +220,7 @@ func (*failDetachLib) detachKernelDriver(h *libusbDevHandle, i uint8) error {
 }
 
 func TestAutoDetachFailure(t *testing.T) {
+	// Can't be parallelized, newFakeLibusb modifies a shared global state.
 	fake, done := newFakeLibusb()
 	defer done()
 	libusb = &failDetachLib{fake}
