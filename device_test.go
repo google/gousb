@@ -191,7 +191,7 @@ func TestInterfaceDescriptionError(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			// Can't be parallelized, depends on the shared global state set before the loop.
+			t.Parallel()
 			c := newContextWithImpl(newFakeLibusb())
 			defer func() {
 				if err := c.Close(); err != nil {
