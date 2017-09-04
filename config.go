@@ -120,12 +120,12 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 	}
 
 	// Claim the interface
-	if err := libusb.claim(c.dev.handle, uint8(num)); err != nil {
+	if err := c.dev.ctx.libusb.claim(c.dev.handle, uint8(num)); err != nil {
 		return nil, fmt.Errorf("failed to claim interface %d on %s: %v", num, c, err)
 	}
 
-	if err := libusb.setAlt(c.dev.handle, uint8(num), uint8(alt)); err != nil {
-		libusb.release(c.dev.handle, uint8(num))
+	if err := c.dev.ctx.libusb.setAlt(c.dev.handle, uint8(num), uint8(alt)); err != nil {
+		c.dev.ctx.libusb.release(c.dev.handle, uint8(num))
 		return nil, fmt.Errorf("failed to set alternate config %d on interface %d of %s: %v", alt, num, c, err)
 	}
 

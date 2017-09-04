@@ -64,10 +64,20 @@ func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 	}
 	return ret, nil
 }
-func (f *fakeLibusb) exit(*libusbContext)          {}
-func (f *fakeLibusb) setDebug(*libusbContext, int) {}
 
-func (f *fakeLibusb) dereference(d *libusbDevice) {}
+func (f *fakeLibusb) exit(*libusbContext) error {
+	close(f.submitted)
+	if got := len(f.ts); got > 0 {
+		for t := range f.ts {
+			f.free(t)
+		}
+		return fmt.Errorf("fakeLibusb has %d remaining transfers that should have been freed", got)
+	}
+	return nil
+}
+
+func (f *fakeLibusb) setDebug(*libusbContext, int) {}
+func (f *fakeLibusb) dereference(d *libusbDevice)  {}
 func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	if dev, ok := f.fakeDevices[d]; ok {
 		return dev.devDesc, nil
@@ -191,8 +201,7 @@ func (f *fakeLibusb) empty() bool {
 	return len(f.submitted) == 0
 }
 
-func newFakeLibusb() (*fakeLibusb, func() error) {
-	origLibusb := libusb
+func newFakeLibusb() *fakeLibusb {
 	fl := &fakeLibusb{
 		fakeDevices: make(map[*libusbDevice]*fakeDevice),
 		ts:          make(map[*libusbTransfer]*fakeTransfer),
@@ -209,16 +218,5 @@ func newFakeLibusb() (*fakeLibusb, func() error) {
 		*fd = d
 		fl.fakeDevices[newDevicePointer()] = fd
 	}
-	libusb = fl
-	return fl, func() error {
-		defer func() { libusb = origLibusb }()
-		close(fl.submitted)
-		if got := len(fl.ts); got > 0 {
-			for t := range fl.ts {
-				fl.free(t)
-			}
-			return fmt.Errorf("fakeLibusb has %d remaining transfers that should have been freed", got)
-		}
-		return nil
-	}
+	return fl
 }

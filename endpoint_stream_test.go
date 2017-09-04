@@ -17,9 +17,14 @@ package gousb
 import "testing"
 
 func TestEndpointReadStream(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	lib, done := newFakeLibusb()
-	defer done()
+	t.Parallel()
+	lib := newFakeLibusb()
+	ctx := newContextWithImpl(lib)
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close: %v", err)
+		}
+	}()
 
 	goodTransfers := 7
 	go func() {
@@ -41,7 +46,6 @@ func TestEndpointReadStream(t *testing.T) {
 		}
 	}()
 
-	ctx := NewContext()
 	dev, err := ctx.OpenDeviceWithVIDPID(0x9999, 0x0001)
 	if err != nil {
 		t.Fatalf("OpenDeviceWithVIDPID(9999, 0001): %v", err)

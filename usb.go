@@ -127,28 +127,34 @@ package gousb
 
 // Context manages all resources related to USB device handling.
 type Context struct {
-	ctx  *libusbContext
-	done chan struct{}
+	ctx    *libusbContext
+	done   chan struct{}
+	libusb libusbIntf
 }
 
 // Debug changes the debug level. Level 0 means no debug, higher levels
 // will print out more debugging information.
 func (c *Context) Debug(level int) {
-	libusb.setDebug(c.ctx, level)
+	c.libusb.setDebug(c.ctx, level)
 }
 
-// NewContext returns a new Context instance.
-func NewContext() *Context {
-	c, err := libusb.init()
+func newContextWithImpl(impl libusbIntf) *Context {
+	c, err := impl.init()
 	if err != nil {
 		panic(err)
 	}
 	ctx := &Context{
-		ctx:  c,
-		done: make(chan struct{}),
+		ctx:    c,
+		done:   make(chan struct{}),
+		libusb: impl,
 	}
-	go libusb.handleEvents(ctx.ctx, ctx.done)
+	go impl.handleEvents(ctx.ctx, ctx.done)
 	return ctx
+}
+
+// NewContext returns a new Context instance.
+func NewContext() *Context {
+	return newContextWithImpl(libusbImpl{})
 }
 
 // OpenDevices calls opener with each enumerated device.
@@ -157,7 +163,7 @@ func NewContext() *Context {
 // If there are any errors enumerating the devices,
 // the final one is returned along with any successfully opened devices.
 func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, error) {
-	list, err := libusb.getDevices(c.ctx)
+	list, err := c.libusb.getDevices(c.ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -165,23 +171,23 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 	var reterr error
 	var ret []*Device
 	for _, dev := range list {
-		desc, err := libusb.getDeviceDesc(dev)
+		desc, err := c.libusb.getDeviceDesc(dev)
 		if err != nil {
-			libusb.dereference(dev)
+			c.libusb.dereference(dev)
 			reterr = err
 			continue
 		}
 
 		if opener(desc) {
-			handle, err := libusb.open(dev)
+			handle, err := c.libusb.open(dev)
 			if err != nil {
-				libusb.dereference(dev)
+				c.libusb.dereference(dev)
 				reterr = err
 				continue
 			}
-			ret = append(ret, &Device{handle: handle, Desc: desc})
+			ret = append(ret, &Device{handle: handle, ctx: c, Desc: desc})
 		} else {
-			libusb.dereference(dev)
+			c.libusb.dereference(dev)
 		}
 	}
 	return ret, reterr
@@ -213,10 +219,11 @@ func (c *Context) OpenDeviceWithVIDPID(vid, pid ID) (*Device, error) {
 
 // Close releases the Context and all associated resources.
 func (c *Context) Close() error {
+	var ret error
 	c.done <- struct{}{}
 	if c.ctx != nil {
-		libusb.exit(c.ctx)
+		ret = c.libusb.exit(c.ctx)
 	}
 	c.ctx = nil
-	return nil
+	return ret
 }

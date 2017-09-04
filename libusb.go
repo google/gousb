@@ -135,7 +135,7 @@ type libusbIntf interface {
 	init() (*libusbContext, error)
 	handleEvents(*libusbContext, <-chan struct{})
 	getDevices(*libusbContext) ([]*libusbDevice, error)
-	exit(*libusbContext)
+	exit(*libusbContext) error
 	setDebug(*libusbContext, int)
 
 	// device
@@ -213,8 +213,9 @@ func (libusbImpl) getDevices(ctx *libusbContext) ([]*libusbDevice, error) {
 	return ret, nil
 }
 
-func (libusbImpl) exit(c *libusbContext) {
+func (libusbImpl) exit(c *libusbContext) error {
 	C.libusb_exit((*C.libusb_context)(c))
+	return nil
 }
 
 func (libusbImpl) setDebug(c *libusbContext, lvl int) {
@@ -478,9 +479,6 @@ func (libusbImpl) free(t *libusbTransfer) {
 func (libusbImpl) setIsoPacketLengths(t *libusbTransfer, length uint32) {
 	C.libusb_set_iso_packet_lengths((*C.struct_libusb_transfer)(t), C.uint(length))
 }
-
-// libusb is an injection point for tests
-var libusb libusbIntf = libusbImpl{}
 
 // xferDoneMap keeps a map of done callback channels for all allocated transfers.
 var xferDoneMap = struct {

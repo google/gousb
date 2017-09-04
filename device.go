@@ -80,6 +80,7 @@ func (d *DeviceDesc) cfgDesc(cfgNum int) (*ConfigDesc, error) {
 // A Device must be Close()d after use.
 type Device struct {
 	handle *libusbDevHandle
+	ctx    *Context
 
 	// Embed the device information for easy access
 	Desc *DeviceDesc
@@ -109,7 +110,7 @@ func (d *Device) Reset() error {
 	if d.claimed != nil {
 		return fmt.Errorf("can't reset device %s while it has an active configuration %s", d, d.claimed)
 	}
-	return libusb.reset(d.handle)
+	return d.ctx.libusb.reset(d.handle)
 }
 
 // ActiveConfigNum returns the config id of the active configuration.
@@ -119,7 +120,7 @@ func (d *Device) ActiveConfigNum() (int, error) {
 	if d.handle == nil {
 		return 0, fmt.Errorf("ActiveConfig() called on %s after Close", d)
 	}
-	ret, err := libusb.getConfig(d.handle)
+	ret, err := d.ctx.libusb.getConfig(d.handle)
 	return int(ret), err
 }
 
@@ -146,7 +147,7 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 
 	if d.autodetach {
 		for _, iface := range cfg.Desc.Interfaces {
-			if err := libusb.detachKernelDriver(d.handle, uint8(iface.Number)); err != nil {
+			if err := d.ctx.libusb.detachKernelDriver(d.handle, uint8(iface.Number)); err != nil {
 				return nil, fmt.Errorf("Can't detach kernel driver of the device %s and interface %d: %v", d, iface.Number, err)
 			}
 		}
@@ -155,7 +156,7 @@ func (d *Device) Config(cfgNum int) (*Config, error) {
 	if activeCfgNum, err := d.ActiveConfigNum(); err != nil {
 		return nil, fmt.Errorf("failed to query active config of the device %s: %v", d, err)
 	} else if cfgNum != activeCfgNum {
-		if err := libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
+		if err := d.ctx.libusb.setConfig(d.handle, uint8(cfgNum)); err != nil {
 			return nil, fmt.Errorf("failed to set active config %d for the device %s: %v", cfgNum, d, err)
 		}
 	}
@@ -194,7 +195,7 @@ func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (in
 	if d.handle == nil {
 		return 0, fmt.Errorf("Control() called on %s after Close", d)
 	}
-	return libusb.control(d.handle, d.ControlTimeout, rType, request, val, idx, data)
+	return d.ctx.libusb.control(d.handle, d.ControlTimeout, rType, request, val, idx, data)
 }
 
 // Close closes the device.
@@ -207,7 +208,7 @@ func (d *Device) Close() error {
 	if d.claimed != nil {
 		return fmt.Errorf("can't release the device %s, it has an open config %d", d, d.claimed.Desc.Number)
 	}
-	libusb.close(d.handle)
+	d.ctx.libusb.close(d.handle)
 	d.handle = nil
 	return nil
 }
@@ -224,7 +225,7 @@ func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
 	if descIndex == 0 {
 		return "", nil
 	}
-	return libusb.getStringDesc(d.handle, descIndex)
+	return d.ctx.libusb.getStringDesc(d.handle, descIndex)
 }
 
 // Manufacturer returns the device's manufacturer name.
@@ -283,5 +284,5 @@ func (d *Device) SetAutoDetach(autodetach bool) error {
 	if autodetach {
 		autodetachInt = 1
 	}
-	return libusb.setAutoDetach(d.handle, autodetachInt)
+	return d.ctx.libusb.setAutoDetach(d.handle, autodetachInt)
 }

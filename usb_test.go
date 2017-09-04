@@ -18,12 +18,13 @@ package gousb
 import "testing"
 
 func TestOPenDevices(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	_, done := newFakeLibusb()
-	defer done()
-
-	c := NewContext()
-	defer c.Close()
+	t.Parallel()
+	c := newContextWithImpl(newFakeLibusb())
+	defer func() {
+		if err := c.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
 	c.Debug(0)
 
 	descs := []*DeviceDesc{}
@@ -55,9 +56,13 @@ func TestOPenDevices(t *testing.T) {
 }
 
 func TestOpenDeviceWithVIDPID(t *testing.T) {
-	// Can't be parallelized, newFakeLibusb modifies a shared global state.
-	_, done := newFakeLibusb()
-	defer done()
+	t.Parallel()
+	ctx := newContextWithImpl(newFakeLibusb())
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
 
 	for _, d := range []struct {
 		vid, pid ID
@@ -69,9 +74,7 @@ func TestOpenDeviceWithVIDPID(t *testing.T) {
 		{0x9999, 0x0001, true},
 		{0x9999, 0x0002, false},
 	} {
-		c := NewContext()
-		defer c.Close()
-		dev, err := c.OpenDeviceWithVIDPID(d.vid, d.pid)
+		dev, err := ctx.OpenDeviceWithVIDPID(d.vid, d.pid)
 		if (dev != nil) != d.exists {
 			t.Errorf("OpenDeviceWithVIDPID(%s/%s): device != nil is %v, want %v", ID(d.vid), ID(d.pid), dev != nil, d.exists)
 		}
