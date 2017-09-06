@@ -28,6 +28,7 @@ type DeviceDesc struct {
 	Bus     int   // The bus on which the device was detected
 	Address int   // The address of the device on the bus
 	Speed   Speed // The negotiated operating speed for the device
+	Port	int   // The usb port on which the device was detected
 
 	// Version information
 	Spec   BCD // USB Specification Release Number
