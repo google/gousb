@@ -27,10 +27,6 @@ type transferIntf interface {
 type stream struct {
 	// a fifo of USB transfers.
 	transfers chan transferIntf
-	// current holds the last transfer to return.
-	current transferIntf
-	// total/used are the number of all/used bytes in the current transfer.
-	total, used int
 	// err is the first encountered error, returned to the user.
 	err error
 }
@@ -46,6 +42,20 @@ func (s *stream) done() {
 	if s.err == nil {
 		close(s.transfers)
 	}
+}
+
+// Pull all transfers from the fifo, one by one, submit and add at the end.
+func (s *stream) submit() error {
+	all := len(s.transfers)
+	for i := 0; i < all; i++ {
+		t := <-s.transfers
+		if err := t.submit(); err != nil {
+			t.free()
+			return err
+		}
+		s.transfers <- t
+	}
+	return nil
 }
 
 func (s *stream) flush() {
@@ -66,6 +76,10 @@ func (s *stream) flush() {
 // data is left, io.EOF is returned.
 type ReadStream struct {
 	s *stream
+	// current holds the last transfer to return.
+	current transferIntf
+	// total/used are the number of all/used bytes in the current transfer.
+	total, used int
 }
 
 // Read reads data from the transfer stream.
@@ -74,49 +88,48 @@ type ReadStream struct {
 // After a non-nil error is returned, all subsequent attempts to read will
 // return io.ErrClosedPipe.
 // Read cannot be called concurrently with other Read or Close.
-func (r ReadStream) Read(p []byte) (int, error) {
-	s := r.s
-	if s.transfers == nil {
+func (r *ReadStream) Read(p []byte) (int, error) {
+	if r.s.transfers == nil {
 		return 0, io.ErrClosedPipe
 	}
-	if s.current == nil {
-		t, ok := <-s.transfers
+	if r.current == nil {
+		t, ok := <-r.s.transfers
 		if !ok {
 			// no more transfers in flight
-			s.transfers = nil
-			return 0, s.err
+			r.s.transfers = nil
+			return 0, r.s.err
 		}
 		n, err := t.wait()
 		if err != nil {
 			// wait error aborts immediately, all remaining data is invalid.
 			t.free()
-			s.done()
-			s.flush()
+			r.s.done()
+			r.s.flush()
 			return n, err
 		}
-		s.current = t
-		s.total = n
-		s.used = 0
+		r.current = t
+		r.total = n
+		r.used = 0
 	}
-	use := s.total - s.used
+	use := r.total - r.used
 	if use > len(p) {
 		use = len(p)
 	}
-	copy(p, s.current.data()[s.used:s.used+use])
-	s.used += use
-	if s.used == s.total {
-		if s.err == nil {
-			if err := s.current.submit(); err == nil {
+	copy(p, r.current.data()[r.used:r.used+use])
+	r.used += use
+	if r.used == r.total {
+		if r.s.err == nil {
+			if err := r.current.submit(); err == nil {
 				// guaranteed to not block, len(transfers) == number of allocated transfers
-				s.transfers <- s.current
+				r.s.transfers <- r.current
 			} else {
-				s.setErr(err)
+				r.s.setErr(err)
 			}
 		}
-		if s.err != nil {
-			s.current.free()
+		if r.s.err != nil {
+			r.current.free()
 		}
-		s.current = nil
+		r.current = nil
 	}
 	return use, nil
 }
@@ -126,7 +139,7 @@ func (r ReadStream) Read(p []byte) (int, error) {
 // in progress before returning an io.EOF error, unless another error
 // was encountered earlier.
 // Close cannot be called concurrently with Read.
-func (r ReadStream) Close() error {
+func (r *ReadStream) Close() error {
 	if r.s.transfers == nil {
 		return nil
 	}
@@ -199,8 +212,8 @@ func (w *WriteStream) Close() error {
 	w.s.done()
 	for t := range w.s.transfers {
 		n, err := t.wait()
-		w.total += n
-		if w.s.err == nil && err != nil {
+		if w.s.err == nil {
+			w.total += n
 			w.s.err = err
 		}
 		t.free()
@@ -220,14 +233,12 @@ func newStream(tt []transferIntf, submit bool) *stream {
 		transfers: make(chan transferIntf, len(tt)),
 	}
 	for _, t := range tt {
-		if submit {
-			if err := t.submit(); err != nil {
-				t.free()
-				s.setErr(err)
-				break
-			}
-		}
 		s.transfers <- t
+	}
+	if submit {
+		if err := s.submit(); err != nil {
+			s.setErr(err)
+		}
 	}
 	return s
 }
