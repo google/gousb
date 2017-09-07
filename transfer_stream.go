@@ -29,42 +29,48 @@ type stream struct {
 	transfers chan transferIntf
 	// err is the first encountered error, returned to the user.
 	err error
+	// finished is true if transfers has been already closed.
+	finished bool
 }
 
-func (s *stream) setErr(err error) {
+func (s *stream) gotError(err error) {
 	if s.err == nil {
 		s.err = err
-		close(s.transfers)
 	}
 }
 
-func (s *stream) done() {
-	if s.err == nil {
+func (s *stream) noMore() {
+	if !s.finished {
 		close(s.transfers)
+		s.finished = true
 	}
 }
 
-// Pull all transfers from the fifo, one by one, submit and add at the end.
-func (s *stream) submit() error {
-	all := len(s.transfers)
-	for i := 0; i < all; i++ {
-		t := <-s.transfers
+func (s *stream) submitAll() {
+	count := len(s.transfers)
+	var all []transferIntf
+	for i := 0; i < count; i++ {
+		all = append(all, <-s.transfers)
+	}
+	for _, t := range all {
 		if err := t.submit(); err != nil {
 			t.free()
-			return err
+			s.gotError(err)
+			s.noMore()
+			return
 		}
 		s.transfers <- t
 	}
-	return nil
+	return
 }
 
-func (s *stream) flush() {
+func (s *stream) flushRemaining() {
+	s.noMore()
 	for t := range s.transfers {
 		t.cancel()
 		t.wait()
 		t.free()
 	}
-	s.transfers = nil
 }
 
 // ReadStream is a buffer that tries to prefetch data from the IN endpoint,
@@ -103,8 +109,8 @@ func (r *ReadStream) Read(p []byte) (int, error) {
 		if err != nil {
 			// wait error aborts immediately, all remaining data is invalid.
 			t.free()
-			r.s.done()
-			r.s.flush()
+			r.s.flushRemaining()
+			r.s.transfers = nil
 			return n, err
 		}
 		r.current = t
@@ -123,7 +129,8 @@ func (r *ReadStream) Read(p []byte) (int, error) {
 				// guaranteed to not block, len(transfers) == number of allocated transfers
 				r.s.transfers <- r.current
 			} else {
-				r.s.setErr(err)
+				r.s.gotError(err)
+				r.s.noMore()
 			}
 		}
 		if r.s.err != nil {
@@ -143,7 +150,8 @@ func (r *ReadStream) Close() error {
 	if r.s.transfers == nil {
 		return nil
 	}
-	r.s.setErr(io.EOF)
+	r.s.gotError(io.EOF)
+	r.s.noMore()
 	return nil
 }
 
@@ -180,11 +188,11 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 		w.total += n
 		if err != nil {
 			t.free()
-			w.s.setErr(err)
+			w.s.gotError(err)
 			// This branch is used only after all the transfers were set in flight.
 			// That means all transfers left in the queue are in flight.
 			// They must be ignored, since this wait() failed.
-			w.s.flush()
+			w.s.flushRemaining()
 			return written, err
 		}
 		use := all - written
@@ -194,9 +202,11 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 		copy(t.data(), p[written:written+use])
 		if err := t.submit(); err != nil {
 			t.free()
-			w.s.setErr(err)
+			w.s.gotError(err)
 			// Even though this submit failed, all the transfers in flight are still valid.
 			// Don't flush remaining transfers.
+			// We won't submit any more transfers.
+			w.s.noMore()
 			return written, err
 		}
 		written += use
@@ -211,20 +221,19 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 // Close returning nil indicates all transfers completed successfuly.
 // After Close, the total number of bytes successfuly written can be
 // retrieved using Written().
+// Close may not be called concurrently with Write, Close or Written.
 func (w *WriteStream) Close() error {
 	if w.s.transfers == nil {
-		return w.s.err
+		return io.ErrClosedPipe
 	}
-	w.s.done()
+	w.s.noMore()
 	for t := range w.s.transfers {
 		n, err := t.wait()
 		w.total += n
 		t.free()
 		if err != nil {
-			if w.s.err == nil {
-				w.s.err = err
-			}
-			w.s.flush()
+			w.s.gotError(err)
+			w.s.flushRemaining()
 		}
 		t.free()
 	}
@@ -238,17 +247,12 @@ func (w *WriteStream) Written() int {
 	return w.total
 }
 
-func newStream(tt []transferIntf, submit bool) *stream {
+func newStream(tt []transferIntf) *stream {
 	s := &stream{
 		transfers: make(chan transferIntf, len(tt)),
 	}
 	for _, t := range tt {
 		s.transfers <- t
-	}
-	if submit {
-		if err := s.submit(); err != nil {
-			s.setErr(err)
-		}
 	}
 	return s
 }

@@ -26,7 +26,9 @@ func (e *endpoint) newStream(size, count int, submit bool) (*stream, error) {
 		}
 		ts = append(ts, t)
 	}
-	return newStream(ts, submit), nil
+	s := newStream(ts)
+	s.submitAll()
+	return s, nil
 }
 
 // NewStream prepares a new read stream that will keep reading data from the

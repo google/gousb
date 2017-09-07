@@ -224,7 +224,8 @@ func TestTransferReadStream(t *testing.T) {
 				}
 				tt[i] = ftt[i]
 			}
-			s := ReadStream{s: newStream(tt, true)}
+			s := ReadStream{s: newStream(tt)}
+			s.s.submitAll()
 			buf := make([]byte, 400)
 			got := make([]readRes, len(tc.want))
 			for i := range tc.want {
@@ -331,7 +332,7 @@ func TestTransferWriteStream(t *testing.T) {
 				}
 				tt[i] = ftt[i]
 			}
-			s := WriteStream{s: newStream(tt, false)}
+			s := WriteStream{s: newStream(tt)}
 			for i, w := range tc.writes {
 				got, err := s.Write(make([]byte, w))
 				if want := tc.want[i]; got != want {
@@ -344,8 +345,8 @@ func TestTransferWriteStream(t *testing.T) {
 			if err := s.Close(); err != tc.err {
 				t.Fatalf("WriteStream.Close: got %v, want %v", err, tc.err)
 			}
-			if err := s.Close(); err != tc.err {
-				t.Fatalf("second WriteStream.Close: got %v, want %v", err, tc.err)
+			if err := s.Close(); err != io.ErrClosedPipe {
+				t.Fatalf("second WriteStream.Close: got %v, want %v", err, io.ErrClosedPipe)
 			}
 			if got := s.Written(); got != tc.total {
 				t.Fatalf("WriteStream.Written: got %d, want %d", got, tc.total)
