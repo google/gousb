@@ -62,7 +62,7 @@ func (f *fakeStreamTransfer) wait() (int, error) {
 		return 0, errors.New("wait() called on a free()d transfer")
 	}
 	if !f.inFlight {
-		return 0, errors.New("wait() called without submit()")
+		return 0, nil
 	}
 	if len(f.res) == 0 {
 		return 0, errors.New("wait() called but fake result missing")
@@ -246,6 +246,108 @@ func TestTransferReadStream(t *testing.T) {
 				if !ftt[i].released {
 					t.Errorf("Transfer #%d was not freed after stream completed", i)
 				}
+			}
+		})
+	}
+}
+
+func TestTransferWriteStream(t *testing.T) {
+	for _, tc := range []struct {
+		desc      string
+		transfers [][]fakeStreamResult
+		writes    []int
+		want      []int
+		total     int
+		err       error
+	}{
+		{
+			desc: "successful two transfers",
+			transfers: [][]fakeStreamResult{
+				{{n: 1500}},
+				{{n: 1500}},
+				{{n: 1500}},
+			},
+			writes: []int{3000},
+			want:   []int{3000},
+			total:  3000,
+		},
+		{
+			desc: "submit failed on second transfer",
+			transfers: [][]fakeStreamResult{
+				{{n: 1500}},
+				{{submitErr: errSentinel}},
+				{{n: 1500}},
+			},
+			writes: []int{3000},
+			want:   []int{1500},
+			total:  1500,
+			err:    errSentinel,
+		},
+		{
+			desc: "wait failed on second transfer",
+			transfers: [][]fakeStreamResult{
+				{{n: 1500}},
+				{{waitErr: errSentinel}},
+				{{n: 1500}},
+			},
+			writes: []int{3000},
+			want:   []int{3000},
+			total:  1500,
+			err:    errSentinel,
+		},
+		{
+			desc: "reused transfer",
+			transfers: [][]fakeStreamResult{
+				{{n: 1500}, {n: 1500}},
+				{{n: 1500}, {n: 1500}},
+				{{n: 1500}, {n: 500}},
+			},
+			writes: []int{3000, 3000, 2000},
+			want:   []int{3000, 3000, 2000},
+			total:  8000,
+		},
+		{
+			desc: "wait failed on reused transfer",
+			transfers: [][]fakeStreamResult{
+				{{n: 1500}, {n: 1500}},
+				{{waitErr: errSentinel}, {n: 1500}},
+				{{n: 1500}, {n: 1500}},
+			},
+			writes: []int{1500, 1500, 1500, 1500, 1500},
+			want:   []int{1500, 1500, 1500, 1500, 0},
+			total:  1500,
+			err:    errSentinel,
+		},
+	} {
+		tc := tc
+		t.Run(tc.desc, func(t *testing.T) {
+			t.Parallel()
+			ftt := make([]*fakeStreamTransfer, len(tc.transfers))
+			tt := make([]transferIntf, len(tc.transfers))
+			for i := range tc.transfers {
+				ftt[i] = &fakeStreamTransfer{
+					res: tc.transfers[i],
+				}
+				tt[i] = ftt[i]
+			}
+			s := WriteStream{s: newStream(tt, false)}
+			for i, w := range tc.writes {
+				got, err := s.Write(make([]byte, w))
+				if want := tc.want[i]; got != want {
+					t.Errorf("WriteStream.Write #%d: got %d, want %d", i, got, want)
+				}
+				if err != nil && err != tc.err {
+					t.Errorf("WriteStream.Write: got error %v, want %v", err, tc.err)
+				}
+			}
+			if err := s.Close(); err != tc.err {
+				t.Fatalf("WriteStream.Close: got %v, want %v", err, tc.err)
+			}
+			if err := s.Close(); err != tc.err {
+				t.Fatalf("second WriteStream.Close: got %v, want %v", err, tc.err)
+			}
+			if got := s.Written(); got != tc.total {
+				t.Fatalf("WriteStream.Written: got %d, want %d", got, tc.total)
 			}
 		})
 	}
