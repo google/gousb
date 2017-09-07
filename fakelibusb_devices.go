@@ -29,6 +29,7 @@ var fakeDevices = []fakeDevice{
 		devDesc: &DeviceDesc{
 			Bus:      1,
 			Address:  1,
+			Port:	  1,
 			Spec:     Version(2, 0),
 			Device:   Version(1, 0),
 			Vendor:   ID(0x9999),
@@ -72,6 +73,7 @@ var fakeDevices = []fakeDevice{
 		devDesc: &DeviceDesc{
 			Bus:      1,
 			Address:  2,
+			Port:	  2,
 			Spec:     Version(2, 0),
 			Device:   Version(1, 3),
 			Vendor:   ID(0x8888),
@@ -179,6 +181,7 @@ var fakeDevices = []fakeDevice{
 		devDesc: &DeviceDesc{
 			Bus:      1,
 			Address:  3,
+			Port:	  3,
 			Spec:     Version(2, 0),
 			Device:   Version(1, 0),
 			Vendor:   ID(0x1111),
