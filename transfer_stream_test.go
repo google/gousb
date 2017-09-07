@@ -252,6 +252,7 @@ func TestTransferReadStream(t *testing.T) {
 }
 
 func TestTransferWriteStream(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		desc      string
 		transfers [][]fakeStreamResult

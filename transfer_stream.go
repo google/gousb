@@ -181,6 +181,10 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 		if err != nil {
 			t.free()
 			w.s.setErr(err)
+			// This branch is used only after all the transfers were set in flight.
+			// That means all transfers left in the queue are in flight.
+			// They must be ignored, since this wait() failed.
+			w.s.flush()
 			return written, err
 		}
 		use := all - written
@@ -191,6 +195,8 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 		if err := t.submit(); err != nil {
 			t.free()
 			w.s.setErr(err)
+			// Even though this submit failed, all the transfers in flight are still valid.
+			// Don't flush remaining transfers.
 			return written, err
 		}
 		written += use
@@ -212,9 +218,13 @@ func (w *WriteStream) Close() error {
 	w.s.done()
 	for t := range w.s.transfers {
 		n, err := t.wait()
-		if w.s.err == nil {
-			w.total += n
-			w.s.err = err
+		w.total += n
+		t.free()
+		if err != nil {
+			if w.s.err == nil {
+				w.s.err = err
+			}
+			w.s.flush()
 		}
 		t.free()
 	}
