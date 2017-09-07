@@ -224,7 +224,7 @@ func TestTransferReadStream(t *testing.T) {
 				}
 				tt[i] = ftt[i]
 			}
-			s := ReadStream{newStream(tt, true)}
+			s := ReadStream{s: newStream(tt, true)}
 			buf := make([]byte, 400)
 			got := make([]readRes, len(tc.want))
 			for i := range tc.want {
@@ -290,8 +290,8 @@ func TestTransferWriteStream(t *testing.T) {
 				{{waitErr: errSentinel}},
 				{{n: 1500}},
 			},
-			writes: []int{3000},
-			want:   []int{3000},
+			writes: []int{3000, 1500},
+			want:   []int{3000, 1500},
 			total:  1500,
 			err:    errSentinel,
 		},

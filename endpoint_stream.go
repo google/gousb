@@ -40,5 +40,5 @@ func (e *InEndpoint) NewStream(size, count int) (*ReadStream, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ReadStream{s}, nil
+	return &ReadStream{s: s}, nil
 }
