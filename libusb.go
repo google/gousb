@@ -230,6 +230,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	dev := &DeviceDesc{
 		Bus:                  int(C.libusb_get_bus_number((*C.libusb_device)(d))),
 		Address:              int(C.libusb_get_device_address((*C.libusb_device)(d))),
+		Port:                 int(C.libusb_get_port_number((*C.libusb_device)(d))),
 		Speed:                Speed(C.libusb_get_device_speed((*C.libusb_device)(d))),
 		Spec:                 BCD(desc.bcdUSB),
 		Device:               BCD(desc.bcdDevice),
