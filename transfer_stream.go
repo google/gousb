@@ -79,29 +79,6 @@ func (s *stream) done() {
 	}
 }
 
-// Pull all transfers from the fifo, one by one, submit and add at the end.
-func (s *stream) submit() error {
-	all := len(s.transfers)
-	for i := 0; i < all; i++ {
-		t := <-s.transfers
-		if err := t.submit(); err != nil {
-			t.free()
-			return err
-		}
-		s.transfers <- t
-	}
-	return nil
-}
-
-func (s *stream) flush() {
-	for t := range s.transfers {
-		t.cancel()
-		t.wait()
-		t.free()
-	}
-	s.transfers = nil
-}
-
 // ReadStream is a buffer that tries to prefetch data from the IN endpoint,
 // reducing the latency between subsequent Read()s.
 // ReadStream keeps prefetching data until Close() is called or until
