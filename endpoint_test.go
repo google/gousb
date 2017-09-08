@@ -100,7 +100,7 @@ func TestEndpoint(t *testing.T) {
 			ep := &endpoint{h: nil, ctx: ctx, InterfaceSetting: epData.intf, Desc: epData.ei}
 			if tc.wantSubmit {
 				go func() {
-					fakeT := lib.waitForSubmitted()
+					fakeT := lib.waitForSubmitted(nil)
 					fakeT.length = tc.ret
 					fakeT.status = tc.status
 					close(fakeT.done)
@@ -208,7 +208,7 @@ func TestEndpointInOut(t *testing.T) {
 	}
 	dataTransferred := 100
 	go func() {
-		fakeT := lib.waitForSubmitted()
+		fakeT := lib.waitForSubmitted(nil)
 		fakeT.length = dataTransferred
 		fakeT.status = TransferCompleted
 		close(fakeT.done)
@@ -232,7 +232,7 @@ func TestEndpointInOut(t *testing.T) {
 		t.Fatalf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
 	}
 	go func() {
-		fakeT := lib.waitForSubmitted()
+		fakeT := lib.waitForSubmitted(nil)
 		fakeT.length = dataTransferred
 		fakeT.status = TransferCompleted
 		close(fakeT.done)
