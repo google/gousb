@@ -63,7 +63,7 @@ func Example_simple() {
 	// Write data to the USB device.
 	numBytes, err := ep.Write(data)
 	if numBytes != 5 {
-		log.Fatalf("%s.Write([5]): only %d bytes written, returned error is %v", numBytes, err)
+		log.Fatalf("%s.Write([5]): only %d bytes written, returned error is %v", ep, numBytes, err)
 	}
 	fmt.Println("5 bytes successfuly sent to the endpoint")
 }
