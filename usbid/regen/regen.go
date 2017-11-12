@@ -60,7 +60,7 @@ func main() {
 
 	rawTemplate, err := ioutil.ReadFile(*dataFile)
 	if err != nil {
-		log.Fatalf("failed to read template %q: %s", *dataFile)
+		log.Fatalf("failed to read template %q: %s", *dataFile, err)
 	}
 
 	template, err := template.New("").Parse(string(rawTemplate))
