@@ -110,7 +110,7 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 
 	altInfo, err := c.Desc.intfDesc(num, alt)
 	if err != nil {
-		return nil, fmt.Errorf("in %s: %v", err)
+		return nil, fmt.Errorf("descriptor of interface (%d, %d) in %s: %v", num, alt, c, err)
 	}
 
 	c.mu.Lock()
