@@ -16,6 +16,7 @@ package gousb
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -57,7 +58,7 @@ func (f *fakeStreamTransfer) submit() error {
 	return nil
 }
 
-func (f *fakeStreamTransfer) wait() (int, error) {
+func (f *fakeStreamTransfer) wait(ctx context.Context) (int, error) {
 	if f.released {
 		return 0, errors.New("wait() called on a free()d transfer")
 	}
@@ -224,7 +225,7 @@ func TestTransferReadStream(t *testing.T) {
 				}
 				tt[i] = ftt[i]
 			}
-			s := ReadStream{s: newStream(tt)}
+			s := ReadStream{s: newStream(context.TODO(), tt)}
 			s.s.submitAll()
 			buf := make([]byte, 400)
 			got := make([]readRes, len(tc.want))
@@ -332,7 +333,7 @@ func TestTransferWriteStream(t *testing.T) {
 				}
 				tt[i] = ftt[i]
 			}
-			s := WriteStream{s: newStream(tt)}
+			s := WriteStream{s: newStream(context.TODO(), tt)}
 			for i, w := range tc.writes {
 				got, err := s.Write(make([]byte, w))
 				if want := tc.want[i]; got != want {

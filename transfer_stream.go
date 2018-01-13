@@ -14,12 +14,15 @@
 
 package gousb
 
-import "io"
+import (
+	"context"
+	"io"
+)
 
 type transferIntf interface {
 	submit() error
 	cancel() error
-	wait() (int, error)
+	wait(context.Context) (int, error)
 	free() error
 	data() []byte
 }
@@ -31,6 +34,8 @@ type stream struct {
 	err error
 	// finished is true if transfers has been already closed.
 	finished bool
+	// ctx is the stream context, used to control cancelation.
+	ctx context.Context
 }
 
 func (s *stream) gotError(err error) {
@@ -68,7 +73,7 @@ func (s *stream) flushRemaining() {
 	s.noMore()
 	for t := range s.transfers {
 		t.cancel()
-		t.wait()
+		t.wait(context.Background())
 		t.free()
 	}
 }
@@ -111,7 +116,7 @@ func (r *ReadStream) Read(p []byte) (int, error) {
 			r.s.transfers = nil
 			return 0, r.s.err
 		}
-		n, err := t.wait()
+		n, err := t.wait(r.s.ctx)
 		if err != nil {
 			// wait error aborts immediately, all remaining data is invalid.
 			t.free()
@@ -190,7 +195,7 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 	all := len(p)
 	for written < all {
 		t := <-w.s.transfers
-		n, err := t.wait() // unsubmitted transfers will return 0 bytes and no error
+		n, err := t.wait(w.s.ctx) // unsubmitted transfers will return 0 bytes and no error
 		w.total += n
 		if err != nil {
 			t.free()
@@ -234,7 +239,7 @@ func (w *WriteStream) Close() error {
 	}
 	w.s.noMore()
 	for t := range w.s.transfers {
-		n, err := t.wait()
+		n, err := t.wait(w.s.ctx)
 		w.total += n
 		t.free()
 		if err != nil {
@@ -253,9 +258,10 @@ func (w *WriteStream) Written() int {
 	return w.total
 }
 
-func newStream(tt []transferIntf) *stream {
+func newStream(ctx context.Context, tt []transferIntf) *stream {
 	s := &stream{
 		transfers: make(chan transferIntf, len(tt)),
+		ctx:       ctx,
 	}
 	for _, t := range tt {
 		s.transfers <- t

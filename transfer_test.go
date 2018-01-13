@@ -15,8 +15,8 @@
 package gousb
 
 import (
+	"context"
 	"testing"
-	"time"
 )
 
 func TestNewTransfer(t *testing.T) {
@@ -34,7 +34,6 @@ func TestNewTransfer(t *testing.T) {
 		tt          TransferType
 		maxPkt      int
 		buf         int
-		timeout     time.Duration
 		wantIso     int
 		wantLength  int
 		wantTimeout int
@@ -45,7 +44,6 @@ func TestNewTransfer(t *testing.T) {
 			tt:         TransferTypeBulk,
 			maxPkt:     512,
 			buf:        1024,
-			timeout:    time.Second,
 			wantLength: 1024,
 		},
 		{
@@ -62,7 +60,7 @@ func TestNewTransfer(t *testing.T) {
 			Direction:     tc.dir,
 			TransferType:  tc.tt,
 			MaxPacketSize: tc.maxPkt,
-		}, tc.buf, tc.timeout)
+		}, tc.buf)
 
 		if err != nil {
 			t.Fatalf("newUSBTransfer(): %v", err)
@@ -92,7 +90,7 @@ func TestTransferProtocol(t *testing.T) {
 			Direction:     EndpointDirectionIn,
 			TransferType:  TransferTypeBulk,
 			MaxPacketSize: 512,
-		}, 10240, time.Second)
+		}, 10240)
 		if err != nil {
 			t.Fatalf("newUSBTransfer: %v", err)
 		}
@@ -119,14 +117,14 @@ func TestTransferProtocol(t *testing.T) {
 
 	xfers[0].submit()
 	xfers[1].submit()
-	got, err := xfers[0].wait()
+	got, err := xfers[0].wait(context.TODO())
 	if err != nil {
 		t.Errorf("xfer#0.wait returned error %v, want nil", err)
 	}
 	if want := 5; got != want {
 		t.Errorf("xfer#0.wait returned %d bytes, want %d", got, want)
 	}
-	got, err = xfers[1].wait()
+	got, err = xfers[1].wait(context.TODO())
 	if err != nil {
 		t.Errorf("xfer#0.wait returned error %v, want nil", err)
 	}
@@ -136,7 +134,7 @@ func TestTransferProtocol(t *testing.T) {
 
 	xfers[1].submit()
 	xfers[1].cancel()
-	got, err = xfers[1].wait()
+	got, err = xfers[1].wait(context.TODO())
 	if err == nil {
 		t.Error("xfer#1(resubmitted).wait returned error nil, want non-nil")
 	}
@@ -146,7 +144,7 @@ func TestTransferProtocol(t *testing.T) {
 
 	for _, x := range xfers {
 		x.cancel()
-		x.wait()
+		x.wait(context.TODO())
 		x.free()
 	}
 }

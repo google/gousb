@@ -16,6 +16,7 @@
 package gousb
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -76,8 +77,6 @@ type endpoint struct {
 	InterfaceSetting
 	Desc EndpointDesc
 
-	Timeout time.Duration
-
 	ctx *Context
 }
 
@@ -86,12 +85,12 @@ func (e *endpoint) String() string {
 	return e.Desc.String()
 }
 
-func (e *endpoint) transfer(buf []byte) (int, error) {
+func (e *endpoint) transfer(ctx context.Context, buf []byte) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.ctx, e.h, &e.Desc, len(buf), e.Timeout)
+	t, err := newUSBTransfer(e.ctx, e.h, &e.Desc, len(buf))
 	if err != nil {
 		return 0, err
 	}
@@ -104,7 +103,7 @@ func (e *endpoint) transfer(buf []byte) (int, error) {
 		return 0, err
 	}
 
-	n, err := t.wait()
+	n, err := t.wait(ctx)
 	if e.Desc.Direction == EndpointDirectionIn {
 		copy(buf, t.data())
 	}
@@ -124,7 +123,13 @@ type InEndpoint struct {
 
 // Read reads data from an IN endpoint.
 func (e *InEndpoint) Read(buf []byte) (int, error) {
-	return e.transfer(buf)
+	return e.transfer(context.Background(), buf)
+}
+
+// ContextRead reads data from an IN endpoint. The passed context can be used
+// to control the cancellation of the read.
+func (e *InEndpoint) ContextRead(ctx context.Context, buf []byte) (int, error) {
+	return e.transfer(ctx, buf)
 }
 
 // OutEndpoint represents an OUT endpoint open for transfer.
@@ -134,5 +139,11 @@ type OutEndpoint struct {
 
 // Write writes data to an OUT endpoint.
 func (e *OutEndpoint) Write(buf []byte) (int, error) {
-	return e.transfer(buf)
+	return e.transfer(context.Background(), buf)
+}
+
+// ContextWrite writes data to an OUT endpoint. The passed context can be used
+// to control the cancellation of the write.
+func (e *OutEndpoint) ContextWrite(ctx context.Context, buf []byte) (int, error) {
+	return e.transfer(ctx, buf)
 }
