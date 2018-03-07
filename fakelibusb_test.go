@@ -209,6 +209,12 @@ func (f *fakeLibusb) empty() bool {
 	return len(f.submitted) == 0
 }
 
+func (f *fakeLibusb) registerHotplugCallback(ctx *libusbContext, events HotplugEventType, enumerate bool, vendorId int32, productId int32, devClass int32, fn libusbHotplugCallback) (func(), error) {
+	// TODO: implement
+	return func() {
+	}, nil
+}
+
 func newFakeLibusb() *fakeLibusb {
 	fl := &fakeLibusb{
 		fakeDevices: make(map[*libusbDevice]*fakeDevice),
