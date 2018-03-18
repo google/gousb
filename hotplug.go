@@ -15,132 +15,77 @@
 
 package gousb
 
-// HotplugOptions can be used to configure and register a hotplug event callback.
-// By default, the callback will be called when a new device arrives
-// or a device leaves.
-// Call Arrived to only receive HotplugEventDeviceArrived events,
-// and Left to only receive HotplugEventDeviceLeft events.
-// Call Enumerate to also receive HotplugEventDeviceArrived events for
-// devices that are already plugged in.
-// Use ProductID, VendorID and DeviceClass to filter by product id, vendor id
-// or device class.
-// Call Register to register the callback function. The options cannot
-// be changed after registering. The returned HotplugCallback
-// can be used to deregister the callback.
-// Callbacks are automatically deregistered when the Context is closed.
-type HotplugOptions interface {
-	Arrived() HotplugOptions
-	Left() HotplugOptions
-	Enumerate() HotplugOptions
-	ProductID(ID) HotplugOptions
-	VendorID(ID) HotplugOptions
-	DeviceClass(Class) HotplugOptions
-	Register(func(HotplugEvent)) (HotplugCallback, error)
-}
-
-// HotplugCallback is a registered hotplug callback.
-// It only method is Deregister, which can be used to deregister the callback.
-// It is safe to call deregister multiple times.
-// Callbacks are also automatically deregistered when the Context is closed.
-type HotplugCallback interface {
-	Deregister()
-}
-
-// HotplugEvent is a hotplug event.
-// Its methods should only be called during the event callback.
 type HotplugEvent interface {
 	// Type returns the event's type (HotplugEventDeviceArrived or HotplugEventDeviceLeft).
 	Type() HotplugEventType
+	// IsEnumerated returns true if the device was already plugged in when the callback was registered.
+	IsEnumerated() bool
 	// DeviceDesc returns the device's descriptor.
 	DeviceDesc() (*DeviceDesc, error)
 	// Open opens the device.
 	Open() (*Device, error)
+	// Deregister deregisters the callback registration after the callback function returns.
+	Deregister()
 }
 
-type hotplugOptions struct {
-	ctx       *Context
-	events    HotplugEventType
-	enumerate bool
-	productID int32
-	vendorID  int32
-	devClass  int32
+// RegisterHotplug registers a hotplug callback function.
+// The callback will receive arrive events for all currently plugged in devices.
+// These events will return true from IsEnumerated().
+// Note that events are delivered concurrently. You may receive arrive and leave events
+// concurrently with enumerated arrive events. You may also receive arrive events twice
+// for the same device, and you may receive a leave event for a device for which
+// you never received an arrive event.
+func (c *Context) RegisterHotplug(fn func(HotplugEvent)) (func(), error) {
+	dereg, err := c.libusb.registerHotplugCallback(c.ctx, HotplugEventAny, false, hotplugMatchAny, hotplugMatchAny, hotplugMatchAny, func(ctx *libusbContext, dev *libusbDevice, eventType HotplugEventType) bool {
+		desc, err := c.libusb.getDeviceDesc(dev)
+		e := &hotplugEvent{
+			eventType:  eventType,
+			ctx:        c,
+			dev:        dev,
+			desc:       desc,
+			err:        err,
+			enumerated: false,
+		}
+		fn(e)
+		return e.deregister
+	})
+	if err != nil {
+		return nil, err
+	}
+	// enumerate devices
+	// this is done in gousb to properly support cancellation and to distinguish enumerated devices
+	list, err := c.libusb.getDevices(c.ctx)
+	if err != nil {
+		dereg()
+		return nil, err
+	}
+	for _, dev := range list {
+		desc, err := c.libusb.getDeviceDesc(dev)
+		e := &hotplugEvent{
+			eventType:  HotplugEventDeviceArrived,
+			ctx:        c,
+			dev:        dev,
+			desc:       desc,
+			err:        err,
+			enumerated: true,
+		}
+		fn(e)
+		if e.deregister {
+			dereg()
+			break
+		}
+	}
+	return dereg, nil
 }
 
 type hotplugEvent struct {
-	eventType HotplugEventType
-	ctx       *Context
-	dev       *libusbDevice
-	desc      *DeviceDesc
-	err       error
-}
-
-type hotplugCallback struct {
-	fn func()
-}
-
-func (c *hotplugCallback) Deregister() {
-	c.fn()
-}
-
-// Hotplug sets up a hotplug event callback.
-// It returns a HotplugOptions that can be used to configure and register
-// the callback.
-func (c *Context) Hotplug() HotplugOptions {
-	return &hotplugOptions{
-		ctx:       c,
-		productID: HotplugMatchAny,
-		vendorID:  HotplugMatchAny,
-		devClass:  HotplugMatchAny,
-	}
-}
-
-func (h *hotplugOptions) Arrived() HotplugOptions {
-	h.events |= HotplugEventDeviceArrived
-	return h
-}
-
-func (h *hotplugOptions) Left() HotplugOptions {
-	h.events |= HotplugEventDeviceLeft
-	return h
-}
-
-func (h *hotplugOptions) Enumerate() HotplugOptions {
-	h.enumerate = true
-	return h
-}
-
-func (h *hotplugOptions) ProductID(pid ID) HotplugOptions {
-	h.productID = int32(pid)
-	return h
-}
-
-func (h *hotplugOptions) VendorID(vid ID) HotplugOptions {
-	h.vendorID = int32(vid)
-	return h
-}
-
-func (h *hotplugOptions) DeviceClass(devClass Class) HotplugOptions {
-	h.devClass = int32(devClass)
-	return h
-}
-
-func (h *hotplugOptions) Register(fn func(HotplugEvent)) (HotplugCallback, error) {
-	if h.events == 0 {
-		h.events = HotplugEventAny
-	}
-	dereg, err := h.ctx.libusb.registerHotplugCallback(h.ctx.ctx, h.events, h.enumerate, h.vendorID, h.productID, h.devClass, func(ctx *libusbContext, dev *libusbDevice, eventType HotplugEventType) {
-		desc, err := h.ctx.libusb.getDeviceDesc(dev)
-		fn(&hotplugEvent{
-			eventType: eventType,
-			ctx:       h.ctx,
-			dev:       dev,
-			desc:      desc,
-			err:       err,
-		})
-	})
-	return &hotplugCallback{
-		fn: dereg,
-	}, err
+	eventType  HotplugEventType
+	ctx        *Context
+	dev        *libusbDevice
+	desc       *DeviceDesc
+	err        error
+	enumerated bool
+	deregister bool
 }
 
 // Type returns the event's type (HotplugEventDeviceArrived or HotplugEventDeviceLeft).
@@ -153,6 +98,11 @@ func (e *hotplugEvent) DeviceDesc() (*DeviceDesc, error) {
 	return e.desc, e.err
 }
 
+// IsEnumerated returns true if the device was already plugged in when the callback was registered.
+func (e *hotplugEvent) IsEnumerated() bool {
+	return e.enumerated
+}
+
 // Open opens the device.
 func (e *hotplugEvent) Open() (*Device, error) {
 	if e.err != nil {
@@ -163,4 +113,9 @@ func (e *hotplugEvent) Open() (*Device, error) {
 		return nil, err
 	}
 	return &Device{handle: handle, ctx: e.ctx, Desc: e.desc}, nil
+}
+
+// Deregister deregisters the callback registration after the callback function returns.
+func (e *hotplugEvent) Deregister() {
+	e.deregister = true
 }

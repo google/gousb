@@ -136,7 +136,7 @@ func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 	return ei
 }
 
-type libusbHotplugCallback func(*libusbContext, *libusbDevice, HotplugEventType)
+type libusbHotplugCallback func(*libusbContext, *libusbDevice, HotplugEventType) bool
 
 // libusbIntf is a set of trivial idiomatic Go wrappers around libusb C functions.
 // The underlying code is generally not testable or difficult to test,
@@ -237,8 +237,8 @@ func (libusbImpl) exit(c *libusbContext) error {
 	hotplugCallbackMap.Lock()
 	if m, ok := hotplugCallbackMap.m[c]; ok {
 		for id := range m {
-			C.free(id)
 			delete(m, id)
+			C.free(id)
 		}
 	}
 	delete(hotplugCallbackMap.m, c)
@@ -562,10 +562,18 @@ func goHotplugCallback(ctx *C.libusb_context, device *C.libusb_device, event C.l
 		// This shouldn't happen. Deregister the callback.
 		return 1
 	}
-	fn((*libusbContext)(ctx), (*libusbDevice)(device), HotplugEventType(event))
+	dereg := fn((*libusbContext)(ctx), (*libusbDevice)(device), HotplugEventType(event))
 
-	// We don't support deregistering by returning 1 in the callback.
-	// The callback function can just call deregister directly.
+	if dereg {
+		hotplugCallbackMap.Lock()
+		m, ok := hotplugCallbackMap.m[(*libusbContext)(ctx)]
+		if ok {
+			delete(m, userData)
+			C.free(userData)
+		}
+		hotplugCallbackMap.Unlock()
+		return 1
+	}
 	return 0
 }
 
@@ -611,6 +619,7 @@ func (libusbImpl) registerHotplugCallback(ctx *libusbContext, events HotplugEven
 		m, ok := hotplugCallbackMap.m[ctx]
 		if ok {
 			delete(m, id)
+			C.free(id)
 		}
 		hotplugCallbackMap.Unlock()
 	}, nil
