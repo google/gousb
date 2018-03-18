@@ -594,7 +594,7 @@ func (libusbImpl) registerHotplugCallback(ctx *libusbContext, events HotplugEven
 	m[id] = fn
 	hotplugCallbackMap.Unlock()
 
-	var flags C.libusb_hotplug_flag = C.LIBUSB_HOTPLUG_NO_FLAGS
+	var flags C.libusb_hotplug_flag
 	if enumerate {
 		flags = C.LIBUSB_HOTPLUG_ENUMERATE
 	}
