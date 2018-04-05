@@ -201,28 +201,25 @@ func (ut UsageType) String() string {
 	return usageTypeDescription[ut]
 }
 
-// RequestType identifies a control transfer request type.
-type RequestType uint8
-
-// Control request types defined in the USB spec.
+// Control request type bit fields as defined in the USB spec. All values are
+// of uint8 type.  These constants can be used with Device.Control() method to
+// specify the type and destination of the control request, e.g.
+// `dev.Control(ControlOut|ControlVendor|ControlDevice, ...)`.
 const (
-	RequestTypeStandard = C.LIBUSB_REQUEST_TYPE_STANDARD
-	RequestTypeClass    = C.LIBUSB_REQUEST_TYPE_CLASS
-	RequestTypeVendor   = C.LIBUSB_REQUEST_TYPE_VENDOR
-	RequestTypeReserved = C.LIBUSB_REQUEST_TYPE_RESERVED
+	ControlIn  = C.LIBUSB_ENDPOINT_IN
+	ControlOut = C.LIBUSB_ENDPOINT_OUT
+
+	// "Standard" is explicitly omitted, as functionality of standard requests
+	// is exposed through higher level operations of gousb.
+	ControlClass  = C.LIBUSB_REQUEST_TYPE_CLASS
+	ControlVendor = C.LIBUSB_REQUEST_TYPE_VENDOR
+	// "Reserved" is explicitly omitted, should not be used.
+
+	ControlDevice    = C.LIBUSB_RECIPIENT_DEVICE
+	ControlInterface = C.LIBUSB_RECIPIENT_INTERFACE
+	ControlEndpoint  = C.LIBUSB_RECIPIENT_ENDPOINT
+	ControlOther     = C.LIBUSB_RECIPIENT_OTHER
 )
-
-var requestTypeDescription = map[RequestType]string{
-	RequestTypeStandard: "standard",
-	RequestTypeClass:    "class",
-	RequestTypeVendor:   "vendor",
-	RequestTypeReserved: "reserved",
-}
-
-// String returns a human-readable name of the control transfer request type.
-func (rt RequestType) String() string {
-	return requestTypeDescription[rt]
-}
 
 // Speed identifies the speed of the device.
 type Speed int
