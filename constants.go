@@ -253,3 +253,15 @@ const (
 
 // Milliamperes is a unit of electric current consumption.
 type Milliamperes uint
+
+// HotplugEventType identifies the type of the hotplug event.
+type HotplugEventType uint
+
+// Hotplug events.
+const (
+	HotplugEventDeviceArrived HotplugEventType = C.LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED
+	HotplugEventDeviceLeft    HotplugEventType = C.LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT
+	HotplugEventAny           HotplugEventType = HotplugEventDeviceArrived | HotplugEventDeviceLeft
+)
+
+const hotplugMatchAny = C.LIBUSB_HOTPLUG_MATCH_ANY

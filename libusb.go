@@ -15,6 +15,7 @@
 package gousb
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -26,11 +27,22 @@ import (
 /*
 #cgo pkg-config: libusb-1.0
 #include <libusb.h>
+#include <stdlib.h>
 
 int gousb_compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
 struct libusb_transfer *gousb_alloc_transfer_and_buffer(int bufLen, int numIsoPackets);
 void gousb_free_transfer_and_buffer(struct libusb_transfer *xfer);
 int submit(struct libusb_transfer *xfer);
+int gousb_hotplug_register_callback(
+	libusb_context* ctx,
+	libusb_hotplug_event events,
+	libusb_hotplug_flag flags,
+	int vid,
+	int pid,
+	int dev_class,
+	void *user_data,
+	libusb_hotplug_callback_handle *handle
+);
 */
 import "C"
 
@@ -124,6 +136,8 @@ func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 	return ei
 }
 
+type libusbHotplugCallback func(*libusbContext, *libusbDevice, HotplugEventType) bool
+
 // libusbIntf is a set of trivial idiomatic Go wrappers around libusb C functions.
 // The underlying code is generally not testable or difficult to test,
 // since libusb interacts directly with the host USB stack.
@@ -165,6 +179,9 @@ type libusbIntf interface {
 	data(*libusbTransfer) (int, TransferStatus)
 	free(*libusbTransfer)
 	setIsoPacketLengths(*libusbTransfer, uint32)
+
+	// hotplug
+	registerHotplugCallback(ctx *libusbContext, events HotplugEventType, enumerate bool, vendorID int32, productID int32, devClass int32, fn libusbHotplugCallback) (func(), error)
 }
 
 // libusbImpl is an implementation of libusbIntf using real CGo-wrapped libusb.
@@ -215,6 +232,17 @@ func (libusbImpl) getDevices(ctx *libusbContext) ([]*libusbDevice, error) {
 
 func (libusbImpl) exit(c *libusbContext) error {
 	C.libusb_exit((*C.libusb_context)(c))
+	// libusb_exit automatically deregisters hotplug callbacks,
+	// but we need to free the callback map.
+	hotplugCallbackMap.Lock()
+	if m, ok := hotplugCallbackMap.m[c]; ok {
+		for id := range m {
+			delete(m, id)
+			C.free(id)
+		}
+	}
+	delete(hotplugCallbackMap.m, c)
+	hotplugCallbackMap.Unlock()
 	return nil
 }
 
@@ -508,4 +536,91 @@ func newDevicePointer() *libusbDevice {
 
 func newFakeTransferPointer() *libusbTransfer {
 	return (*libusbTransfer)(unsafe.Pointer(C.malloc(1)))
+}
+
+// hotplugCallbackMap keeps a map of go callback functions for libusb hotplug callbacks
+// for each context.
+// When a context is closed with libusb_exit, its callbacks are automatically deregistered
+// by libusb, and they are removed from this map too.
+var hotplugCallbackMap = struct {
+	m map[*libusbContext]map[unsafe.Pointer]libusbHotplugCallback
+	sync.RWMutex
+}{
+	m: make(map[*libusbContext]map[unsafe.Pointer]libusbHotplugCallback),
+}
+
+//export goHotplugCallback
+func goHotplugCallback(ctx *C.libusb_context, device *C.libusb_device, event C.libusb_hotplug_event, userData unsafe.Pointer) C.int {
+	var fn libusbHotplugCallback
+	hotplugCallbackMap.RLock()
+	m, ok := hotplugCallbackMap.m[(*libusbContext)(ctx)]
+	if ok {
+		fn, ok = m[userData]
+	}
+	hotplugCallbackMap.RUnlock()
+	if !ok {
+		// This shouldn't happen. Deregister the callback.
+		return 1
+	}
+	dereg := fn((*libusbContext)(ctx), (*libusbDevice)(device), HotplugEventType(event))
+
+	if dereg {
+		hotplugCallbackMap.Lock()
+		m, ok := hotplugCallbackMap.m[(*libusbContext)(ctx)]
+		if ok {
+			delete(m, userData)
+			C.free(userData)
+		}
+		hotplugCallbackMap.Unlock()
+		return 1
+	}
+	return 0
+}
+
+func (libusbImpl) registerHotplugCallback(ctx *libusbContext, events HotplugEventType, enumerate bool, vendorID int32, productID int32, devClass int32, fn libusbHotplugCallback) (func(), error) {
+	// We must allocate memory to pass to C, since we can't pass a go pointer.
+	// We can use the resulting pointer as a map key instead of
+	// storing the map key inside the memory allocated.
+	id := C.malloc(1)
+	if id == nil {
+		panic(errors.New("Failed to allocate memory during callback registration"))
+	}
+	hotplugCallbackMap.Lock()
+	m, ok := hotplugCallbackMap.m[ctx]
+	if !ok {
+		hotplugCallbackMap.m[ctx] = make(map[unsafe.Pointer]libusbHotplugCallback)
+		m = hotplugCallbackMap.m[ctx]
+	}
+	m[id] = fn
+	hotplugCallbackMap.Unlock()
+
+	var flags C.libusb_hotplug_flag
+	if enumerate {
+		flags = C.LIBUSB_HOTPLUG_ENUMERATE
+	}
+	var handle C.libusb_hotplug_callback_handle
+
+	// TODO: figure out how to run deregister in callback.
+	// There's a race condition here, because the callback may be called before
+	// gousb_hotplug_register_callback returns, depending on libusb's implementation.
+	res := C.gousb_hotplug_register_callback((*C.libusb_context)(ctx), C.libusb_hotplug_event(events), flags, C.int(vendorID), C.int(productID), C.int(devClass), id, &handle)
+	err := fromErrNo(res)
+	if err != nil {
+		hotplugCallbackMap.Lock()
+		delete(hotplugCallbackMap.m[ctx], id)
+		hotplugCallbackMap.Unlock()
+		C.free(id)
+		return nil, err
+	}
+
+	return func() {
+		C.libusb_hotplug_deregister_callback((*C.libusb_context)(ctx), handle)
+		hotplugCallbackMap.Lock()
+		m, ok := hotplugCallbackMap.m[ctx]
+		if ok {
+			delete(m, id)
+			C.free(id)
+		}
+		hotplugCallbackMap.Unlock()
+	}, nil
 }
