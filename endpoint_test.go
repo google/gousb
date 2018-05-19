@@ -291,3 +291,84 @@ func TestSameEndpointNumberInOut(t *testing.T) {
 		t.Errorf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
 	}
 }
+
+func TestReadContext(t *testing.T) {
+	t.Parallel()
+	lib := newFakeLibusb()
+	ctx := newContextWithImpl(lib)
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
+
+	d, err := ctx.OpenDeviceWithVIDPID(0x9999, 0x0001)
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVIDPID(0x9999, 0x0001): got error %v, want nil", err)
+	}
+	defer func() {
+		if err := d.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", d, err)
+		}
+	}()
+	cfg, err := d.Config(1)
+	if err != nil {
+		t.Fatalf("%s.Config(1): %v", d, err)
+	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", cfg, err)
+		}
+	}()
+	intf, err := cfg.Interface(0, 0)
+	if err != nil {
+		t.Fatalf("%s.Interface(0, 0): %v", cfg, err)
+	}
+	defer intf.Close()
+	iep, err := intf.InEndpoint(2)
+	if err != nil {
+		t.Fatalf("%s.InEndpoint(2): got error %v, want nil", intf, err)
+	}
+	done := make(chan struct{})
+	go func() {
+		fakeT := lib.waitForSubmitted(nil)
+		fakeT.length = dataTransferred
+		fakeT.status = TransferCompleted
+		close(fakeT.done)
+	}()
+	buf := make([]byte, 512)
+	got, err := iep.Read(buf)
+	if err != nil {
+		t.Errorf("%s.Read: got error %v, want nil", iep, err)
+	} else if got != dataTransferred {
+		t.Errorf("%s.Read: got %d, want %d", iep, got, dataTransferred)
+	}
+
+	_, err = intf.InEndpoint(1)
+	if err == nil {
+		t.Errorf("%s.InEndpoint(1): got nil, want error", intf)
+	}
+
+	// OUT endpoint 1
+	oep, err := intf.OutEndpoint(1)
+	if err != nil {
+		t.Fatalf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
+	}
+	go func() {
+		fakeT := lib.waitForSubmitted(nil)
+		fakeT.length = dataTransferred
+		fakeT.status = TransferCompleted
+		close(fakeT.done)
+	}()
+	got, err = oep.Write(buf)
+	if err != nil {
+		t.Errorf("%s.Write: got error %v, want nil", oep, err)
+	} else if got != dataTransferred {
+		t.Errorf("%s.Write: got %d, want %d", oep, got, dataTransferred)
+	}
+
+	_, err = intf.OutEndpoint(2)
+	if err == nil {
+		t.Errorf("%s.OutEndpoint(2): got nil, want error", intf)
+	}
+}
