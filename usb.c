@@ -17,8 +17,7 @@
 
 void gousb_set_debug(libusb_context *ctx, int lvl) {
     // TODO(sebek): remove libusb_debug entirely in 2.1 or 3.0,
-    // require libusb >= 1.0.22. Accept a Go-typed levels instead
-    // of simple int.
+    // require libusb >= 1.0.22. libusb 1.0.22 sets API version 0x01000106.
 #if LIBUSB_API_VERSION >= 0x01000106
     libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, lvl);
 #else

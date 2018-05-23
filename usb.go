@@ -134,6 +134,8 @@ type Context struct {
 
 // Debug changes the debug level. Level 0 means no debug, higher levels
 // will print out more debugging information.
+// TODO(sebek): in the next major release, replace int levels with
+// Go-typed constants.
 func (c *Context) Debug(level int) {
 	c.libusb.setDebug(c.ctx, level)
 }
