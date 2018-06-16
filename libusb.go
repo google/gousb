@@ -500,7 +500,7 @@ func xferCallback(xfer *C.struct_libusb_transfer) {
 
 // for benchmarking and testing
 func libusbSetDebug(c *libusbContext, lvl int) {
-	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
+	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
 func newDevicePointer() *libusbDevice {
