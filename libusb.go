@@ -498,9 +498,10 @@ func xferCallback(xfer *C.struct_libusb_transfer) {
 	ch <- struct{}{}
 }
 
-// for benchmarking and testing
+// for benchmarking and testing. This function is used to compare
+// the performance overhead of a method vs vanilla function.
 func libusbSetDebug(c *libusbContext, lvl int) {
-	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
+	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
 func newDevicePointer() *libusbDevice {
