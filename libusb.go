@@ -498,7 +498,7 @@ func xferCallback(xfer *C.struct_libusb_transfer) {
 	ch <- struct{}{}
 }
 
-// for benchmarking and testing
+// for benchmarking of method on implementation vs vanilla function.
 func libusbSetDebug(c *libusbContext, lvl int) {
 	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
