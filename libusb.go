@@ -132,8 +132,6 @@ func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 // All functions here should operate on types defined on C.libusb* data types,
 // and occasionally on convenience data types (like TransferType or DeviceDesc).
 type libusbIntf interface {
-	getDevicePortNumbers(d *libusbDevice) ([]uint8)
-
 	// context
 	init() (*libusbContext, error)
 	handleEvents(*libusbContext, <-chan struct{})
