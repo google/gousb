@@ -132,6 +132,8 @@ func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 // All functions here should operate on types defined on C.libusb* data types,
 // and occasionally on convenience data types (like TransferType or DeviceDesc).
 type libusbIntf interface {
+	getDevicePortNumbers(d *libusbDevice) ([]uint8)
+
 	// context
 	init() (*libusbContext, error)
 	handleEvents(*libusbContext, <-chan struct{})
@@ -142,6 +144,7 @@ type libusbIntf interface {
 	// device
 	dereference(*libusbDevice)
 	getDeviceDesc(*libusbDevice) (*DeviceDesc, error)
+
 	open(*libusbDevice) (*libusbDevHandle, error)
 
 	close(*libusbDevHandle)
@@ -223,6 +226,17 @@ func (libusbImpl) setDebug(c *libusbContext, lvl int) {
 	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
+func getDevicePortNumbers(d *libusbDevice) ([]uint8) {
+	nums := make([]uint8, 4)
+	numberEl := int(C.libusb_get_port_numbers((*C.libusb_device)(d),
+		(*C.uint8_t)(unsafe.Pointer(&nums[0])),
+		4))
+	if numberEl > 0 {
+		return nums[0:numberEl]
+	}
+	return nums[0:0]
+}
+
 func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	var desc C.struct_libusb_device_descriptor
 	if err := fromErrNo(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
@@ -244,6 +258,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 		iManufacturer:        int(desc.iManufacturer),
 		iProduct:             int(desc.iProduct),
 		iSerialNumber:        int(desc.iSerialNumber),
+		DevivePortNumbers:    getDevicePortNumbers(d),
 	}
 	// Enumerate configurations
 	cfgs := make(map[int]ConfigDesc)
