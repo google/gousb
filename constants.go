@@ -24,33 +24,45 @@ type Class uint8
 
 // Standard classes defined by USB spec.
 const (
-	ClassPerInterface Class = C.LIBUSB_CLASS_PER_INTERFACE
-	ClassAudio        Class = C.LIBUSB_CLASS_AUDIO
-	ClassComm         Class = C.LIBUSB_CLASS_COMM
-	ClassHID          Class = C.LIBUSB_CLASS_HID
-	ClassPrinter      Class = C.LIBUSB_CLASS_PRINTER
-	ClassPTP          Class = C.LIBUSB_CLASS_PTP
-	ClassMassStorage  Class = C.LIBUSB_CLASS_MASS_STORAGE
-	ClassHub          Class = C.LIBUSB_CLASS_HUB
-	ClassData         Class = C.LIBUSB_CLASS_DATA
-	ClassWireless     Class = C.LIBUSB_CLASS_WIRELESS
-	ClassApplication  Class = C.LIBUSB_CLASS_APPLICATION
-	ClassVendorSpec   Class = C.LIBUSB_CLASS_VENDOR_SPEC
+	ClassPerInterface       Class = C.LIBUSB_CLASS_PER_INTERFACE
+	ClassAudio              Class = C.LIBUSB_CLASS_AUDIO
+	ClassComm               Class = C.LIBUSB_CLASS_COMM
+	ClassHID                Class = C.LIBUSB_CLASS_HID
+	ClassPhysical           Class = C.LIBUSB_CLASS_PHYSICAL
+	ClassPrinter            Class = C.LIBUSB_CLASS_PRINTER
+	ClassPTP                Class = C.LIBUSB_CLASS_PTP
+	ClassMassStorage        Class = C.LIBUSB_CLASS_MASS_STORAGE
+	ClassHub                Class = C.LIBUSB_CLASS_HUB
+	ClassData               Class = C.LIBUSB_CLASS_DATA
+	ClassSmartCard          Class = C.LIBUSB_CLASS_SMART_CARD
+	ClassContentSecurity    Class = C.LIBUSB_CLASS_CONTENT_SECURITY
+	ClassVideo              Class = C.LIBUSB_CLASS_VIDEO
+	ClassPersonalHealthcare Class = C.LIBUSB_CLASS_PERSONAL_HEALTHCARE
+	ClassDiagnosticDevice   Class = C.LIBUSB_CLASS_DIAGNOSTIC_DEVICE
+	ClassWireless           Class = C.LIBUSB_CLASS_WIRELESS
+	ClassApplication        Class = C.LIBUSB_CLASS_APPLICATION
+	ClassVendorSpec         Class = C.LIBUSB_CLASS_VENDOR_SPEC
 )
 
 var classDescription = map[Class]string{
-	ClassPerInterface: "per-interface",
-	ClassAudio:        "audio",
-	ClassComm:         "communications",
-	ClassHID:          "human interface device",
-	ClassPrinter:      "printer dclass",
-	ClassPTP:          "picture transfer protocol",
-	ClassMassStorage:  "mass storage",
-	ClassHub:          "hub",
-	ClassData:         "data",
-	ClassWireless:     "wireless",
-	ClassApplication:  "application",
-	ClassVendorSpec:   "vendor-specific",
+	ClassPerInterface:       "per-interface",
+	ClassAudio:              "audio",
+	ClassComm:               "communications",
+	ClassHID:                "human interface device",
+	ClassPhysical:           "physical",
+	ClassPrinter:            "printer",
+	ClassPTP:                "picture transfer protocol",
+	ClassMassStorage:        "mass storage",
+	ClassHub:                "hub",
+	ClassData:               "data",
+	ClassSmartCard:          "smart card",
+	ClassContentSecurity:    "content security",
+	ClassVideo:              "video",
+	ClassPersonalHealthcare: "personal healthcare",
+	ClassDiagnosticDevice:   "diagnostic device",
+	ClassWireless:           "wireless",
+	ClassApplication:        "application",
+	ClassVendorSpec:         "vendor-specific",
 }
 
 func (c Class) String() string {
