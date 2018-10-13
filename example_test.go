@@ -65,7 +65,7 @@ func Example_simple() {
 	if numBytes != 5 {
 		log.Fatalf("%s.Write([5]): only %d bytes written, returned error is %v", ep, numBytes, err)
 	}
-	fmt.Println("5 bytes successfuly sent to the endpoint")
+	fmt.Println("5 bytes successfully sent to the endpoint")
 }
 
 // This example demostrates the full API for accessing endpoints.
@@ -138,7 +138,7 @@ func Example_complex() {
 		if readBytes == 0 {
 			log.Fatalf("IN endpoint 6 returned 0 bytes of data.")
 		}
-		// writeBytes might be smaller than the buffer size if an error occured. writeBytes might be greater than zero even if err is not nil.
+		// writeBytes might be smaller than the buffer size if an error occurred. writeBytes might be greater than zero even if err is not nil.
 		writeBytes, err := epOut.Write(buf[:readBytes])
 		if err != nil {
 			fmt.Println("Write returned an error:", err)
