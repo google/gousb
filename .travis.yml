@@ -14,7 +14,8 @@ addons:
 
 install:
   - go get golang.org/x/tools/cmd/cover
-  - go get golang.org/x/lint/golint
+  # Golint requires Go 1.9 or later.
+  - if ! [[ "$TRAVIS_GO_VERSION" =~ ^1\.8\.([0-9]+|x)$ ]]; then go get golang.org/x/lint/golint; fi
   - go get github.com/mattn/goveralls
 
 script:
