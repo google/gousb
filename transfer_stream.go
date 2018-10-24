@@ -224,8 +224,8 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 // Close signals end of data to write. Close blocks until all transfers
 // that were sent are finished. The error returned by Close is the first
 // error encountered during writing the entire stream (if any).
-// Close returning nil indicates all transfers completed successfuly.
-// After Close, the total number of bytes successfuly written can be
+// Close returning nil indicates all transfers completed successfully.
+// After Close, the total number of bytes successfully written can be
 // retrieved using Written().
 // Close may not be called concurrently with Write, Close or Written.
 func (w *WriteStream) Close() error {
@@ -247,7 +247,7 @@ func (w *WriteStream) Close() error {
 	return w.s.err
 }
 
-// Written returns the number of bytes successfuly written by the stream.
+// Written returns the number of bytes successfully written by the stream.
 // Written may be called only after Close() has been called and returned.
 func (w *WriteStream) Written() int {
 	return w.total

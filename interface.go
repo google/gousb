@@ -30,7 +30,7 @@ type InterfaceDesc struct {
 	AltSettings []InterfaceSetting
 }
 
-// String returns a human-readable descripton of the interface descriptor and
+// String returns a human-readable description of the interface descriptor and
 // its alternate settings.
 func (i InterfaceDesc) String() string {
 	return fmt.Sprintf("Interface %d (%d alternate settings)", i.Number, len(i.AltSettings))
@@ -65,7 +65,7 @@ func (a InterfaceSetting) sortedEndpointIds() []string {
 	return eps
 }
 
-// String returns a human-readable descripton of the particular
+// String returns a human-readable description of the particular
 // alternate setting of an interface.
 func (a InterfaceSetting) String() string {
 	return fmt.Sprintf("Interface %d alternate setting %d (available endpoints: %v)", a.Number, a.Alternate, a.sortedEndpointIds())
