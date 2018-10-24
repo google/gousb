@@ -20,7 +20,8 @@ install:
 script:
   # a workaround for go test not supporting coverage for multiple packages in a single invocation.
   # If goveralls upload fails, ignore the result.
-  - $HOME/gopath/bin/golint ./...
+  # Golint requires Go 1.9 or later.
+  - if ! [[ "$TRAVIS_GO_VERSION" =~ ^1\.8\.([0-9]+|x)+$ ]]; then $HOME/gopath/bin/golint ./...; fi
   - |-
     echo 'mode: count' > coverage.merged && go list ./... | xargs -n1 -I{} sh -c ': > coverage.tmp; go test -v -covermode=count -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.merged' && rm coverage.tmp
   - |-
