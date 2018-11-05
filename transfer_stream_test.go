@@ -225,7 +225,7 @@ func TestTransferReadStream(t *testing.T) {
 				}
 				tt[i] = ftt[i]
 			}
-			s := ReadStream{s: newStream(context.TODO(), tt)}
+			s := ReadStream{s: newStream(tt)}
 			s.s.submitAll()
 			buf := make([]byte, 400)
 			got := make([]readRes, len(tc.want))
@@ -333,7 +333,7 @@ func TestTransferWriteStream(t *testing.T) {
 				}
 				tt[i] = ftt[i]
 			}
-			s := WriteStream{s: newStream(context.TODO(), tt)}
+			s := WriteStream{s: newStream(tt)}
 			for i, w := range tc.writes {
 				got, err := s.Write(make([]byte, w))
 				if want := tc.want[i]; got != want {

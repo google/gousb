@@ -34,8 +34,6 @@ type stream struct {
 	err error
 	// finished is true if transfers has been already closed.
 	finished bool
-	// ctx is the stream context, used to control cancelation.
-	ctx context.Context
 }
 
 func (s *stream) gotError(err error) {
@@ -104,8 +102,23 @@ type ReadStream struct {
 // might be smaller than the length of p.
 // After a non-nil error is returned, all subsequent attempts to read will
 // return io.ErrClosedPipe.
-// Read cannot be called concurrently with other Read or Close.
+// Read cannot be called concurrently with other Read, ReadContext
+// or Close.
 func (r *ReadStream) Read(p []byte) (int, error) {
+	return r.ReadContext(context.Background(), p)
+}
+
+// ReadContext reads data from the transfer stream.
+// The data will come from at most a single transfer, so the returned number
+// might be smaller than the length of p.
+// After a non-nil error is returned, all subsequent attempts to read will
+// return io.ErrClosedPipe.
+// ReadContext cannot be called concurrently with other Read, ReadContext
+// or Close.
+// The context passed controls the cancellation of this particular read
+// operation within the stream. The semantics is identical to
+// Endpoint.ReadContext.
+func (r *ReadStream) ReadContext(ctx context.Context, p []byte) (int, error) {
 	if r.s.transfers == nil {
 		return 0, io.ErrClosedPipe
 	}
@@ -116,7 +129,7 @@ func (r *ReadStream) Read(p []byte) (int, error) {
 			r.s.transfers = nil
 			return 0, r.s.err
 		}
-		n, err := t.wait(r.s.ctx)
+		n, err := t.wait(ctx)
 		if err != nil {
 			// wait error aborts immediately, all remaining data is invalid.
 			t.free()
@@ -188,6 +201,25 @@ type WriteStream struct {
 // call after Close() has returned.
 // Write cannot be called concurrently with another Write, Written or Close.
 func (w *WriteStream) Write(p []byte) (int, error) {
+	return w.WriteContext(context.Background(), p)
+}
+
+// WriteContext sends the data to the endpoint. Write returning a nil error doesn't
+// mean that data was written to the device, only that it was written to the
+// buffer. Only a call to Close() that returns nil error guarantees that
+// all transfers have succeeded.
+// If the slice passed to WriteContext does not align exactly with the transfer
+// buffer size (as declared in a call to NewStream), the last USB transfer
+// of this Write will be sent with less data than the full buffer.
+// After a non-nil error is returned, all subsequent attempts to write will
+// return io.ErrClosedPipe.
+// If WriteContext encounters an error when preparing the transfer, the stream
+// will still try to complete any pending transfers. The total number
+// of bytes successfully written can be retrieved through a Written()
+// call after Close() has returned.
+// WriteContext cannot be called concurrently with another Write, WriteContext,
+// Written, Close or CloseContext.
+func (w *WriteStream) WriteContext(ctx context.Context, p []byte) (int, error) {
 	if w.s.transfers == nil || w.s.err != nil {
 		return 0, io.ErrClosedPipe
 	}
@@ -195,7 +227,7 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 	all := len(p)
 	for written < all {
 		t := <-w.s.transfers
-		n, err := t.wait(w.s.ctx) // unsubmitted transfers will return 0 bytes and no error
+		n, err := t.wait(ctx) // unsubmitted transfers will return 0 bytes and no error
 		w.total += n
 		if err != nil {
 			t.free()
@@ -234,12 +266,24 @@ func (w *WriteStream) Write(p []byte) (int, error) {
 // retrieved using Written().
 // Close may not be called concurrently with Write, Close or Written.
 func (w *WriteStream) Close() error {
+	return w.CloseContext(context.Background())
+}
+
+// Close signals end of data to write. Close blocks until all transfers
+// that were sent are finished. The error returned by Close is the first
+// error encountered during writing the entire stream (if any).
+// Close returning nil indicates all transfers completed successfully.
+// After Close, the total number of bytes successfully written can be
+// retrieved using Written().
+// Close may not be called concurrently with Write, Close or Written.
+// CloseContext
+func (w *WriteStream) CloseContext(ctx context.Context) error {
 	if w.s.transfers == nil {
 		return io.ErrClosedPipe
 	}
 	w.s.noMore()
 	for t := range w.s.transfers {
-		n, err := t.wait(w.s.ctx)
+		n, err := t.wait(ctx)
 		w.total += n
 		t.free()
 		if err != nil {
@@ -253,15 +297,15 @@ func (w *WriteStream) Close() error {
 }
 
 // Written returns the number of bytes successfully written by the stream.
-// Written may be called only after Close() has been called and returned.
+// Written may be called only after Close() or CloseContext()
+// has been called and returned.
 func (w *WriteStream) Written() int {
 	return w.total
 }
 
-func newStream(ctx context.Context, tt []transferIntf) *stream {
+func newStream(tt []transferIntf) *stream {
 	s := &stream{
 		transfers: make(chan transferIntf, len(tt)),
-		ctx:       ctx,
 	}
 	for _, t := range tt {
 		s.transfers <- t

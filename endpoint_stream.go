@@ -14,9 +14,7 @@
 
 package gousb
 
-import "context"
-
-func (e *endpoint) newStream(ctx context.Context, size, count int) (*stream, error) {
+func (e *endpoint) newStream(size, count int) (*stream, error) {
 	var ts []transferIntf
 	for i := 0; i < count; i++ {
 		t, err := newUSBTransfer(e.ctx, e.h, &e.Desc, size)
@@ -28,17 +26,17 @@ func (e *endpoint) newStream(ctx context.Context, size, count int) (*stream, err
 		}
 		ts = append(ts, t)
 	}
-	return newStream(ctx, ts), nil
+	return newStream(ts), nil
 }
 
-// NewStreamContext prepares a new read stream that will keep reading data from
-// the endpoint until closed, or until context is cancelled.
+// NewStream prepares a new read stream that will keep reading data from
+// the endpoint until closed or until an error or timeout is encountered.
 // Size defines a buffer size for a single read transaction and count
 // defines how many transactions should be active at any time.
 // By keeping multiple transfers active at the same time, a Stream reduces
 // the latency between subsequent transfers and increases reading throughput.
-func (e *InEndpoint) NewStreamContext(ctx context.Context, size, count int) (*ReadStream, error) {
-	s, err := e.newStream(ctx, size, count)
+func (e *InEndpoint) NewStream(size, count int) (*ReadStream, error) {
+	s, err := e.newStream(size, count)
 	if err != nil {
 		return nil, err
 	}
@@ -46,30 +44,15 @@ func (e *InEndpoint) NewStreamContext(ctx context.Context, size, count int) (*Re
 	return &ReadStream{s: s}, nil
 }
 
-// NewStreamContext prepares a new read stream that will keep reading data
-// from the endpoint until closed, or until context is cancelled.
-// It uses NewStreamContext with a context that is never cancelled.
-func (e *InEndpoint) NewStream(size, count int) (*ReadStream, error) {
-	return e.NewStreamContext(context.Background(), size, count)
-}
-
-// NewStreamContext prepares a new write stream that will write data in the
+// NewStream prepares a new write stream that will write data in the
 // background. Size defines a buffer size for a single write transaction and
 // count defines how many transactions may be active at any time. By buffering
 // the writes, a Stream reduces the latency between subsequent transfers and
 // increases writing throughput.
-// The passed context can be used to cancel the write.
-func (e *OutEndpoint) NewStreamContext(ctx context.Context, size, count int) (*WriteStream, error) {
-	s, err := e.newStream(ctx, size, count)
+func (e *OutEndpoint) NewStream(size, count int) (*WriteStream, error) {
+	s, err := e.newStream(size, count)
 	if err != nil {
 		return nil, err
 	}
 	return &WriteStream{s: s}, nil
-}
-
-// NewStream prepares a new write stream that will write data in the
-// background. It uses NewStreamContext with a context that is never
-// cancelled.
-func (e *OutEndpoint) NewStream(size, count int) (*WriteStream, error) {
-	return e.NewStreamContext(context.Background(), size, count)
 }

@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -39,6 +40,7 @@ var (
 	size      = flag.Int("read_size", 1024, "Number of bytes of data to read in a single transaction.")
 	bufSize   = flag.Int("buffer_size", 0, "Number of buffer transfers, for data prefetching.")
 	num       = flag.Int("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
+	timeout   = flag.Duration("timeout", 0, "Timeout for the command. 0 means infinite.")
 )
 
 func parseVIDPID(vidPid string) (gousb.ID, gousb.ID, error) {
@@ -170,11 +172,16 @@ func main() {
 		defer s.Close()
 		rdr = s
 	}
-	log.Print("Reading...")
 
+	opCtx := context.Background()
+	if *timeout > 0 {
+		opCtx, done := context.WithDeadline(opCtx, *timeout)
+		defer done()
+	}
 	buf := make([]byte, *size)
+	log.Print("Reading...")
 	for i := 0; *num == 0 || i < *num; i++ {
-		num, err := rdr.Read(buf)
+		num, err := rdr.ReadContext(opCtx, buf)
 		if err != nil {
 			log.Fatalf("Reading from device failed: %v", err)
 		}
