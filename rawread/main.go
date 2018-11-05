@@ -20,7 +20,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strconv"
@@ -73,6 +72,10 @@ func parseBusAddr(busAddr string) (int, int, error) {
 		return 0, 0, fmt.Errorf("device address must be an 8-bit decimal unsigned integer")
 	}
 	return int(bus), int(addr), nil
+}
+
+type contextReader interface {
+	ReadContext(context.Context, []byte) (int, error)
 }
 
 func main() {
@@ -162,7 +165,7 @@ func main() {
 		log.Fatalf("dev.InEndpoint(): %s", err)
 	}
 	log.Printf("Found endpoint: %s", ep)
-	var rdr io.Reader = ep
+	var rdr contextReader = ep
 	if *bufSize > 1 {
 		log.Print("Creating buffer...")
 		s, err := ep.NewStream(*size, *bufSize)
@@ -175,7 +178,8 @@ func main() {
 
 	opCtx := context.Background()
 	if *timeout > 0 {
-		opCtx, done := context.WithDeadline(opCtx, *timeout)
+		var done func()
+		opCtx, done = context.WithTimeout(opCtx, *timeout)
 		defer done()
 	}
 	buf := make([]byte, *size)
