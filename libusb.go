@@ -31,6 +31,7 @@ int gousb_compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
 struct libusb_transfer *gousb_alloc_transfer_and_buffer(int bufLen, int numIsoPackets);
 void gousb_free_transfer_and_buffer(struct libusb_transfer *xfer);
 int submit(struct libusb_transfer *xfer);
+void gousb_set_debug(libusb_context *ctx, int lvl);
 */
 import "C"
 
@@ -219,7 +220,7 @@ func (libusbImpl) exit(c *libusbContext) error {
 }
 
 func (libusbImpl) setDebug(c *libusbContext, lvl int) {
-	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
+	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
 func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
@@ -496,9 +497,9 @@ func xferCallback(xfer *C.struct_libusb_transfer) {
 	ch <- struct{}{}
 }
 
-// for benchmarking and testing
+// for benchmarking of method on implementation vs vanilla function.
 func libusbSetDebug(c *libusbContext, lvl int) {
-	C.libusb_set_debug((*C.libusb_context)(c), C.int(lvl))
+	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
 func newDevicePointer() *libusbDevice {

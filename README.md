@@ -4,6 +4,8 @@ Introduction
 [![Build Status][ciimg]][ci]
 [![GoDoc][docimg]][doc]
 [![Coverage Status][coverimg]][cover]
+[![Build status][appveimg]][appveyor]
+
 
 The gousb package is an attempt at wrapping the libusb library into a Go-like binding.
 
@@ -23,6 +25,8 @@ As of 2017-07-13 the 2.0 API is considered stable and 1.0 is deprecated.
 [ci]:       https://travis-ci.org/google/gousb
 [docimg]:   https://godoc.org/github.com/google/gousb?status.svg
 [doc]:      https://godoc.org/github.com/google/gousb
+[appveimg]: https://ci.appveyor.com/api/projects/status/661qp7x33o3wqe4o?svg=true
+[appveyor]: https://ci.appveyor.com/project/zagrodzki/gousb
 
 Documentation
 =============
