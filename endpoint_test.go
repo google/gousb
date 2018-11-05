@@ -102,9 +102,8 @@ func TestEndpoint(t *testing.T) {
 			if tc.wantSubmit {
 				go func() {
 					fakeT := lib.waitForSubmitted(nil)
-					fakeT.length = tc.ret
-					fakeT.status = tc.status
-					close(fakeT.done)
+					fakeT.setData(make([]byte, tc.ret))
+					fakeT.setStatus(tc.status)
 				}()
 			}
 			got, err := ep.transfer(context.TODO(), tc.buf)
@@ -210,9 +209,8 @@ func TestEndpointInOut(t *testing.T) {
 	dataTransferred := 100
 	go func() {
 		fakeT := lib.waitForSubmitted(nil)
-		fakeT.length = dataTransferred
-		fakeT.status = TransferCompleted
-		close(fakeT.done)
+		fakeT.setData(make([]byte, dataTransferred))
+		fakeT.setStatus(TransferCompleted)
 	}()
 	buf := make([]byte, 512)
 	got, err := iep.Read(buf)
@@ -234,9 +232,8 @@ func TestEndpointInOut(t *testing.T) {
 	}
 	go func() {
 		fakeT := lib.waitForSubmitted(nil)
-		fakeT.length = dataTransferred
-		fakeT.status = TransferCompleted
-		close(fakeT.done)
+		fakeT.setData(make([]byte, dataTransferred))
+		fakeT.setStatus(TransferCompleted)
 	}()
 	got, err = oep.Write(buf)
 	if err != nil {
@@ -329,46 +326,27 @@ func TestReadContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%s.InEndpoint(2): got error %v, want nil", intf, err)
 	}
-	done := make(chan struct{})
-	go func() {
-		fakeT := lib.waitForSubmitted(nil)
-		fakeT.length = dataTransferred
-		fakeT.status = TransferCompleted
-		close(fakeT.done)
-	}()
 	buf := make([]byte, 512)
-	got, err := iep.Read(buf)
-	if err != nil {
-		t.Errorf("%s.Read: got error %v, want nil", iep, err)
-	} else if got != dataTransferred {
-		t.Errorf("%s.Read: got %d, want %d", iep, got, dataTransferred)
+
+	rCtx, done := context.WithCancel(context.Background())
+	go func() {
+		lib.waitForSubmitted(nil)
+		done()
+	}()
+	if _, err := iep.ReadContext(rCtx, buf); err != TransferTimedOut {
+		t.Errorf("%s.Read: got error %v, want %v ", iep, err, TransferTimedOut)
 	}
 
-	_, err = intf.InEndpoint(1)
-	if err == nil {
-		t.Errorf("%s.InEndpoint(1): got nil, want error", intf)
-	}
-
-	// OUT endpoint 1
 	oep, err := intf.OutEndpoint(1)
 	if err != nil {
 		t.Fatalf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
 	}
+	wCtx, done := context.WithCancel(context.Background())
 	go func() {
-		fakeT := lib.waitForSubmitted(nil)
-		fakeT.length = dataTransferred
-		fakeT.status = TransferCompleted
-		close(fakeT.done)
+		lib.waitForSubmitted(nil)
+		done()
 	}()
-	got, err = oep.Write(buf)
-	if err != nil {
-		t.Errorf("%s.Write: got error %v, want nil", oep, err)
-	} else if got != dataTransferred {
-		t.Errorf("%s.Write: got %d, want %d", oep, got, dataTransferred)
-	}
-
-	_, err = intf.OutEndpoint(2)
-	if err == nil {
-		t.Errorf("%s.OutEndpoint(2): got nil, want error", intf)
+	if _, err := oep.WriteContext(wCtx, buf); err != TransferTimedOut {
+		t.Errorf("%s.Write: got error %v, want %v", oep, err, TransferTimedOut)
 	}
 }

@@ -36,13 +36,11 @@ func TestEndpointReadStream(t *testing.T) {
 				return
 			}
 			if num < goodTransfers {
-				xfr.status = TransferCompleted
-				xfr.length = len(xfr.buf)
+				xfr.setData(make([]byte, len(xfr.buf)))
+				xfr.setStatus(TransferCompleted)
 			} else {
-				xfr.status = TransferError
-				xfr.length = 0
+				xfr.setStatus(TransferError)
 			}
-			xfr.done <- struct{}{}
 			num++
 		}
 	}()
@@ -106,9 +104,8 @@ func TestEndpointWriteStream(t *testing.T) {
 			if xfr == nil {
 				return
 			}
-			xfr.length = len(xfr.buf)
-			xfr.status = TransferCompleted
-			xfr.done <- struct{}{}
+			xfr.setData(make([]byte, len(xfr.buf)))
+			xfr.setStatus(TransferCompleted)
 			num++
 			total += xfr.length
 		}

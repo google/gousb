@@ -98,21 +98,16 @@ func TestTransferProtocol(t *testing.T) {
 
 	go func() {
 		ft := f.waitForSubmitted(nil)
-		ft.length = 5
-		ft.status = TransferCompleted
-		copy(ft.buf, []byte{1, 2, 3, 4, 5})
-		ft.done <- struct{}{}
+		ft.setData([]byte{1, 2, 3, 4, 5})
+		ft.setStatus(TransferCompleted)
 
 		ft = f.waitForSubmitted(nil)
-		ft.length = 99
-		ft.status = TransferCompleted
-		copy(ft.buf, []byte{12, 12, 12, 12, 12})
-		ft.done <- struct{}{}
+		ft.setData(make([]byte, 99))
+		ft.setStatus(TransferCompleted)
 
 		ft = f.waitForSubmitted(nil)
-		ft.length = 123
-		ft.status = TransferCancelled
-		ft.done <- struct{}{}
+		ft.setData(make([]byte, 123))
+		ft.setStatus(TransferCancelled)
 	}()
 
 	xfers[0].submit()

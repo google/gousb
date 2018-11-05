@@ -126,9 +126,9 @@ func (e *InEndpoint) Read(buf []byte) (int, error) {
 	return e.transfer(context.Background(), buf)
 }
 
-// ContextRead reads data from an IN endpoint. The passed context can be used
+// ReadContext reads data from an IN endpoint. The passed context can be used
 // to control the cancellation of the read.
-func (e *InEndpoint) ContextRead(ctx context.Context, buf []byte) (int, error) {
+func (e *InEndpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }
 
@@ -142,8 +142,8 @@ func (e *OutEndpoint) Write(buf []byte) (int, error) {
 	return e.transfer(context.Background(), buf)
 }
 
-// ContextWrite writes data to an OUT endpoint. The passed context can be used
+// WriteContext writes data to an OUT endpoint. The passed context can be used
 // to control the cancellation of the write.
-func (e *OutEndpoint) ContextWrite(ctx context.Context, buf []byte) (int, error) {
+func (e *OutEndpoint) WriteContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }

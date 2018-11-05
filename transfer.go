@@ -66,13 +66,13 @@ func (t *usbTransfer) wait(ctx context.Context) (n int, err error) {
 	if !t.submitted {
 		return 0, nil
 	}
+	t.submitted = false
 	select {
 	case <-ctx.Done():
-		go t.cancel()
+		t.ctx.libusb.cancel(t.xfer)
 		return 0, TransferTimedOut
 	case <-t.done:
 	}
-	t.submitted = false
 	n, status := t.ctx.libusb.data(t.xfer)
 	if status != TransferCompleted {
 		return n, status
