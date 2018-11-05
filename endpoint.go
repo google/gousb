@@ -121,13 +121,18 @@ type InEndpoint struct {
 	*endpoint
 }
 
-// Read reads data from an IN endpoint.
+// Read reads data from an IN endpoint. Read returns number of bytes obtained
+// from the endpoint. Read may return non-zero length even if
+// the returned error is not nil (partial read).
 func (e *InEndpoint) Read(buf []byte) (int, error) {
 	return e.transfer(context.Background(), buf)
 }
 
-// ReadContext reads data from an IN endpoint. The passed context can be used
-// to control the cancellation of the read.
+// ReadContext reads data from an IN endpoint. Read returns number of bytes
+// obtained from the endpoint. Read may return non-zero length even if the
+// returned error is not nil (partial read).
+// The passed context can be used to control the cancellation of the read. If
+// the context is cancelled, ReadContext will return a TransferTimedOut error.
 func (e *InEndpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }
@@ -137,13 +142,18 @@ type OutEndpoint struct {
 	*endpoint
 }
 
-// Write writes data to an OUT endpoint.
+// Write writes data to an OUT endpoint. Write returns number of bytes comitted
+// to the endpoint. Write may return non-zero length even if the returned error
+// is not nil (partial write).
 func (e *OutEndpoint) Write(buf []byte) (int, error) {
 	return e.transfer(context.Background(), buf)
 }
 
-// WriteContext writes data to an OUT endpoint. The passed context can be used
-// to control the cancellation of the write.
+// WriteContext writes data to an OUT endpoint. Write returns number of bytes
+// comitted to the endpoint. Write may return non-zero length even if the
+// returned error is not nil (partial write).
+// The passed context can be used to control the cancellation of the write. If
+// the context is cancelled, WriteContext will return a TransferTimedOut error.
 func (e *OutEndpoint) WriteContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }
