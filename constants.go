@@ -22,26 +22,31 @@ import "strconv"
 // Class represents a USB-IF (Implementers Forum) class or subclass code.
 type Class uint8
 
-// Standard classes defined by USB spec.
+// Standard classes defined by USB spec, see https://www.usb.org/defined-class-codes
 const (
-	ClassPerInterface       Class = C.LIBUSB_CLASS_PER_INTERFACE
-	ClassAudio              Class = C.LIBUSB_CLASS_AUDIO
-	ClassComm               Class = C.LIBUSB_CLASS_COMM
-	ClassHID                Class = C.LIBUSB_CLASS_HID
-	ClassPhysical           Class = C.LIBUSB_CLASS_PHYSICAL
-	ClassPrinter            Class = C.LIBUSB_CLASS_PRINTER
-	ClassPTP                Class = C.LIBUSB_CLASS_PTP
-	ClassMassStorage        Class = C.LIBUSB_CLASS_MASS_STORAGE
-	ClassHub                Class = C.LIBUSB_CLASS_HUB
-	ClassData               Class = C.LIBUSB_CLASS_DATA
-	ClassSmartCard          Class = C.LIBUSB_CLASS_SMART_CARD
-	ClassContentSecurity    Class = C.LIBUSB_CLASS_CONTENT_SECURITY
-	ClassVideo              Class = C.LIBUSB_CLASS_VIDEO
-	ClassPersonalHealthcare Class = C.LIBUSB_CLASS_PERSONAL_HEALTHCARE
-	ClassDiagnosticDevice   Class = C.LIBUSB_CLASS_DIAGNOSTIC_DEVICE
-	ClassWireless           Class = C.LIBUSB_CLASS_WIRELESS
-	ClassApplication        Class = C.LIBUSB_CLASS_APPLICATION
-	ClassVendorSpec         Class = C.LIBUSB_CLASS_VENDOR_SPEC
+	ClassPerInterface       Class = 0x00
+	ClassAudio              Class = 0x01
+	ClassComm               Class = 0x02
+	ClassHID                Class = 0x03
+	ClassPhysical           Class = 0x05
+	ClassImage              Class = 0x06
+	ClassPTP                Class = ClassImage // legacy name for image
+	ClassPrinter            Class = 0x07
+	ClassMassStorage        Class = 0x08
+	ClassHub                Class = 0x09
+	ClassData               Class = 0x0a
+	ClassSmartCard          Class = 0x0b
+	ClassContentSecurity    Class = 0x0d
+	ClassVideo              Class = 0x0e
+	ClassPersonalHealthcare Class = 0x0f
+	ClassAudioVideo         Class = 0x10
+	ClassBillboard          Class = 0x11
+	ClassUSBTypeCBridge     Class = 0x12
+	ClassDiagnosticDevice   Class = 0xdc
+	ClassWireless           Class = 0xe0
+	ClassMiscellaneous      Class = 0xef
+	ClassApplication        Class = 0xfe
+	ClassVendorSpec         Class = 0xff
 )
 
 var classDescription = map[Class]string{
@@ -50,8 +55,8 @@ var classDescription = map[Class]string{
 	ClassComm:               "communications",
 	ClassHID:                "human interface device",
 	ClassPhysical:           "physical",
+	ClassImage:              "image",
 	ClassPrinter:            "printer",
-	ClassPTP:                "picture transfer protocol",
 	ClassMassStorage:        "mass storage",
 	ClassHub:                "hub",
 	ClassData:               "data",
@@ -59,9 +64,13 @@ var classDescription = map[Class]string{
 	ClassContentSecurity:    "content security",
 	ClassVideo:              "video",
 	ClassPersonalHealthcare: "personal healthcare",
+	ClassAudioVideo:         "audio/video",
+	ClassBillboard:          "billboard",
+	ClassUSBTypeCBridge:     "USB type-C bridge",
 	ClassDiagnosticDevice:   "diagnostic device",
 	ClassWireless:           "wireless",
-	ClassApplication:        "application",
+	ClassMiscellaneous:      "miscellaneous",
+	ClassApplication:        "application-specific",
 	ClassVendorSpec:         "vendor-specific",
 }
 
