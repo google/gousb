@@ -330,11 +330,14 @@ func TestReadContext(t *testing.T) {
 
 	rCtx, done := context.WithCancel(context.Background())
 	go func() {
-		lib.waitForSubmitted(nil)
+		ft := lib.waitForSubmitted(nil)
+		ft.setData([]byte{1, 2, 3, 4, 5})
 		done()
 	}()
-	if _, err := iep.ReadContext(rCtx, buf); err != TransferCancelled {
-		t.Errorf("%s.Read: got error %v, want %v ", iep, err, TransferCancelled)
+	if got, err := iep.ReadContext(rCtx, buf); err != TransferCancelled {
+		t.Errorf("%s.Read: got error %v, want %v", iep, err, TransferCancelled)
+	} else if want := 5; got != want {
+		t.Errorf("%s.Read: got %d bytes, want %d (partial read success)", iep, got, want)
 	}
 
 	oep, err := intf.OutEndpoint(1)
@@ -343,10 +346,13 @@ func TestReadContext(t *testing.T) {
 	}
 	wCtx, done := context.WithCancel(context.Background())
 	go func() {
-		lib.waitForSubmitted(nil)
+		ft := lib.waitForSubmitted(nil)
+		ft.setLength(5)
 		done()
 	}()
-	if _, err := oep.WriteContext(wCtx, buf); err != TransferCancelled {
+	if got, err := oep.WriteContext(wCtx, buf); err != TransferCancelled {
 		t.Errorf("%s.Write: got error %v, want %v", oep, err, TransferCancelled)
+	} else if want := 5; got != want {
+		t.Errorf("%s.Write: got %d bytes, want %d (partial write success)", oep, got, want)
 	}
 }

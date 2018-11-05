@@ -50,6 +50,15 @@ func (t *fakeTransfer) setData(d []byte) {
 	t.length = len(d)
 }
 
+func (t *fakeTransfer) setLength(n int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.finished {
+		return
+	}
+	t.length = n
+}
+
 func (t *fakeTransfer) setStatus(st TransferStatus) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
