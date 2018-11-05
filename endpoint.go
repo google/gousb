@@ -133,7 +133,7 @@ func (e *InEndpoint) Read(buf []byte) (int, error) {
 // even if the returned error is not nil (partial read).
 // The passed context can be used to control the cancellation of the read. If
 // the context is cancelled, ReadContext will cancel the underlying transfers,
-// resuling in TransferCancelled error.
+// resulting in TransferCancelled error.
 func (e *InEndpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }
