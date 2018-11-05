@@ -333,8 +333,8 @@ func TestReadContext(t *testing.T) {
 		lib.waitForSubmitted(nil)
 		done()
 	}()
-	if _, err := iep.ReadContext(rCtx, buf); err != TransferTimedOut {
-		t.Errorf("%s.Read: got error %v, want %v ", iep, err, TransferTimedOut)
+	if _, err := iep.ReadContext(rCtx, buf); err != TransferCancelled {
+		t.Errorf("%s.Read: got error %v, want %v ", iep, err, TransferCancelled)
 	}
 
 	oep, err := intf.OutEndpoint(1)
@@ -346,7 +346,7 @@ func TestReadContext(t *testing.T) {
 		lib.waitForSubmitted(nil)
 		done()
 	}()
-	if _, err := oep.WriteContext(wCtx, buf); err != TransferTimedOut {
-		t.Errorf("%s.Write: got error %v, want %v", oep, err, TransferTimedOut)
+	if _, err := oep.WriteContext(wCtx, buf); err != TransferCancelled {
+		t.Errorf("%s.Write: got error %v, want %v", oep, err, TransferCancelled)
 	}
 }

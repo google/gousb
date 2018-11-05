@@ -69,11 +69,12 @@ func (t *usbTransfer) wait(ctx context.Context) (n int, err error) {
 	select {
 	case <-ctx.Done():
 		t.ctx.libusb.cancel(t.xfer)
-		t.submitted = false
-		return 0, TransferTimedOut
+		// after the transfer is cancelled, it will run a callback
+		// that triggers the activation of t.done.
+		<-t.done
 	case <-t.done:
-		t.submitted = false
 	}
+	t.submitted = false
 	n, status := t.ctx.libusb.data(t.xfer)
 	if status != TransferCompleted {
 		return n, status

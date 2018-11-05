@@ -132,7 +132,8 @@ func (e *InEndpoint) Read(buf []byte) (int, error) {
 // bytes obtained from the endpoint. ReadContext may return non-zero length
 // even if the returned error is not nil (partial read).
 // The passed context can be used to control the cancellation of the read. If
-// the context is cancelled, ReadContext will return a TransferTimedOut error.
+// the context is cancelled, ReadContext will cancel the underlying transfers,
+// resuling in TransferCancelled error.
 func (e *InEndpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }
@@ -153,7 +154,8 @@ func (e *OutEndpoint) Write(buf []byte) (int, error) {
 // bytes comitted to the endpoint. WriteContext may return non-zero length even
 // if the returned error is not nil (partial write).
 // The passed context can be used to control the cancellation of the write. If
-// the context is cancelled, WriteContext will return a TransferTimedOut error.
+// the context is cancelled, WriteContext will cancel the underlying transfers,
+// resulting in TransferCancelled error.
 func (e *OutEndpoint) WriteContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }
