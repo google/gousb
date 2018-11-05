@@ -96,6 +96,7 @@ func TestTransferProtocol(t *testing.T) {
 		}
 	}
 
+	partial := make(chan struct{})
 	go func() {
 		ft := f.waitForSubmitted(nil)
 		ft.setData([]byte{1, 2, 3, 4, 5})
@@ -107,19 +108,19 @@ func TestTransferProtocol(t *testing.T) {
 
 		ft = f.waitForSubmitted(nil)
 		ft.setData(make([]byte, 123))
-		ft.setStatus(TransferCancelled)
+		close(partial)
 	}()
 
 	xfers[0].submit()
 	xfers[1].submit()
-	got, err := xfers[0].wait(context.TODO())
+	got, err := xfers[0].wait(context.Background())
 	if err != nil {
 		t.Errorf("xfer#0.wait returned error %v, want nil", err)
 	}
 	if want := 5; got != want {
 		t.Errorf("xfer#0.wait returned %d bytes, want %d", got, want)
 	}
-	got, err = xfers[1].wait(context.TODO())
+	got, err = xfers[1].wait(context.Background())
 	if err != nil {
 		t.Errorf("xfer#0.wait returned error %v, want nil", err)
 	}
@@ -128,8 +129,9 @@ func TestTransferProtocol(t *testing.T) {
 	}
 
 	xfers[1].submit()
+	<-partial
 	xfers[1].cancel()
-	got, err = xfers[1].wait(context.TODO())
+	got, err = xfers[1].wait(context.Background())
 	if err == nil {
 		t.Error("xfer#1(resubmitted).wait returned error nil, want non-nil")
 	}
@@ -139,7 +141,7 @@ func TestTransferProtocol(t *testing.T) {
 
 	for _, x := range xfers {
 		x.cancel()
-		x.wait(context.TODO())
+		x.wait(context.Background())
 		x.free()
 	}
 }

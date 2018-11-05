@@ -57,6 +57,7 @@ func (t *fakeTransfer) setStatus(st TransferStatus) {
 		return
 	}
 	t.status = st
+	t.finished = true
 	t.done <- struct{}{}
 }
 
@@ -197,12 +198,17 @@ func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointDesc, _ int, bufLen in
 	return t, nil
 }
 func (f *fakeLibusb) cancel(t *libusbTransfer) error {
-	return errors.New("not implemented")
+	f.mu.Lock()
+	ft := f.ts[t]
+	f.mu.Unlock()
+	ft.setStatus(TransferCancelled)
+	return nil
 }
 func (f *fakeLibusb) submit(t *libusbTransfer) error {
 	f.mu.Lock()
 	ft := f.ts[t]
 	f.mu.Unlock()
+	ft.finished = false
 	f.submitted <- ft
 	return nil
 }
