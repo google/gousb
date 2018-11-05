@@ -16,6 +16,7 @@
 package gousb
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -76,8 +77,6 @@ type endpoint struct {
 	InterfaceSetting
 	Desc EndpointDesc
 
-	Timeout time.Duration
-
 	ctx *Context
 }
 
@@ -86,12 +85,12 @@ func (e *endpoint) String() string {
 	return e.Desc.String()
 }
 
-func (e *endpoint) transfer(buf []byte) (int, error) {
+func (e *endpoint) transfer(ctx context.Context, buf []byte) (int, error) {
 	if len(buf) == 0 {
 		return 0, nil
 	}
 
-	t, err := newUSBTransfer(e.ctx, e.h, &e.Desc, len(buf), e.Timeout)
+	t, err := newUSBTransfer(e.ctx, e.h, &e.Desc, len(buf))
 	if err != nil {
 		return 0, err
 	}
@@ -104,7 +103,7 @@ func (e *endpoint) transfer(buf []byte) (int, error) {
 		return 0, err
 	}
 
-	n, err := t.wait()
+	n, err := t.wait(ctx)
 	if e.Desc.Direction == EndpointDirectionIn {
 		copy(buf, t.data())
 	}
@@ -122,9 +121,21 @@ type InEndpoint struct {
 	*endpoint
 }
 
-// Read reads data from an IN endpoint.
+// Read reads data from an IN endpoint. Read returns number of bytes obtained
+// from the endpoint. Read may return non-zero length even if
+// the returned error is not nil (partial read).
 func (e *InEndpoint) Read(buf []byte) (int, error) {
-	return e.transfer(buf)
+	return e.transfer(context.Background(), buf)
+}
+
+// ReadContext reads data from an IN endpoint. ReadContext returns number of
+// bytes obtained from the endpoint. ReadContext may return non-zero length
+// even if the returned error is not nil (partial read).
+// The passed context can be used to control the cancellation of the read. If
+// the context is cancelled, ReadContext will cancel the underlying transfers,
+// resulting in TransferCancelled error.
+func (e *InEndpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
+	return e.transfer(ctx, buf)
 }
 
 // OutEndpoint represents an OUT endpoint open for transfer.
@@ -132,7 +143,19 @@ type OutEndpoint struct {
 	*endpoint
 }
 
-// Write writes data to an OUT endpoint.
+// Write writes data to an OUT endpoint. Write returns number of bytes comitted
+// to the endpoint. Write may return non-zero length even if the returned error
+// is not nil (partial write).
 func (e *OutEndpoint) Write(buf []byte) (int, error) {
-	return e.transfer(buf)
+	return e.transfer(context.Background(), buf)
+}
+
+// WriteContext writes data to an OUT endpoint. WriteContext returns number of
+// bytes comitted to the endpoint. WriteContext may return non-zero length even
+// if the returned error is not nil (partial write).
+// The passed context can be used to control the cancellation of the write. If
+// the context is cancelled, WriteContext will cancel the underlying transfers,
+// resulting in TransferCancelled error.
+func (e *OutEndpoint) WriteContext(ctx context.Context, buf []byte) (int, error) {
+	return e.transfer(ctx, buf)
 }

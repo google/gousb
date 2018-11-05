@@ -159,7 +159,7 @@ type libusbIntf interface {
 	setAlt(*libusbDevHandle, uint8, uint8) error
 
 	// transfer
-	alloc(*libusbDevHandle, *EndpointDesc, time.Duration, int, int, chan struct{}) (*libusbTransfer, error)
+	alloc(*libusbDevHandle, *EndpointDesc, int, int, chan struct{}) (*libusbTransfer, error)
 	cancel(*libusbTransfer) error
 	submit(*libusbTransfer) error
 	buffer(*libusbTransfer) []byte
@@ -422,7 +422,7 @@ func (libusbImpl) setAlt(d *libusbDevHandle, iface, setup uint8) error {
 	return fromErrNo(C.libusb_set_interface_alt_setting((*C.libusb_device_handle)(d), C.int(iface), C.int(setup)))
 }
 
-func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointDesc, timeout time.Duration, isoPackets int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
+func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointDesc, isoPackets int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
 	xfer := C.gousb_alloc_transfer_and_buffer(C.int(bufLen), C.int(isoPackets))
 	if xfer == nil {
 		return nil, fmt.Errorf("gousb_alloc_transfer_and_buffer(%d, %d) failed", bufLen, isoPackets)
@@ -432,7 +432,6 @@ func (libusbImpl) alloc(d *libusbDevHandle, ep *EndpointDesc, timeout time.Durat
 	}
 	xfer.dev_handle = (*C.libusb_device_handle)(d)
 	xfer.endpoint = C.uchar(ep.Address)
-	xfer.timeout = C.uint(timeout / time.Millisecond)
 	xfer._type = C.uchar(ep.TransferType)
 	xfer.num_iso_packets = C.int(isoPackets)
 	ret := (*libusbTransfer)(xfer)

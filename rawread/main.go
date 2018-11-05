@@ -17,9 +17,9 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strconv"
@@ -39,6 +39,7 @@ var (
 	size      = flag.Int("read_size", 1024, "Number of bytes of data to read in a single transaction.")
 	bufSize   = flag.Int("buffer_size", 0, "Number of buffer transfers, for data prefetching.")
 	num       = flag.Int("read_num", 0, "Number of read transactions to perform. 0 means infinite.")
+	timeout   = flag.Duration("timeout", 0, "Timeout for the command. 0 means infinite.")
 )
 
 func parseVIDPID(vidPid string) (gousb.ID, gousb.ID, error) {
@@ -71,6 +72,10 @@ func parseBusAddr(busAddr string) (int, int, error) {
 		return 0, 0, fmt.Errorf("device address must be an 8-bit decimal unsigned integer")
 	}
 	return int(bus), int(addr), nil
+}
+
+type contextReader interface {
+	ReadContext(context.Context, []byte) (int, error)
 }
 
 func main() {
@@ -160,7 +165,7 @@ func main() {
 		log.Fatalf("dev.InEndpoint(): %s", err)
 	}
 	log.Printf("Found endpoint: %s", ep)
-	var rdr io.Reader = ep
+	var rdr contextReader = ep
 	if *bufSize > 1 {
 		log.Print("Creating buffer...")
 		s, err := ep.NewStream(*size, *bufSize)
@@ -170,11 +175,17 @@ func main() {
 		defer s.Close()
 		rdr = s
 	}
-	log.Print("Reading...")
 
+	opCtx := context.Background()
+	if *timeout > 0 {
+		var done func()
+		opCtx, done = context.WithTimeout(opCtx, *timeout)
+		defer done()
+	}
 	buf := make([]byte, *size)
+	log.Print("Reading...")
 	for i := 0; *num == 0 || i < *num; i++ {
-		num, err := rdr.Read(buf)
+		num, err := rdr.ReadContext(opCtx, buf)
 		if err != nil {
 			log.Fatalf("Reading from device failed: %v", err)
 		}

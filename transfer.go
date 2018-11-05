@@ -15,10 +15,10 @@
 package gousb
 
 import (
+	"context"
 	"errors"
 	"runtime"
 	"sync"
-	"time"
 )
 
 type usbTransfer struct {
@@ -60,13 +60,20 @@ func (t *usbTransfer) submit() error {
 // via t.buf. The number returned by wait indicates how many bytes
 // of the buffer were read or written by libusb, and it can be
 // smaller than the length of t.buf.
-func (t *usbTransfer) wait() (n int, err error) {
+func (t *usbTransfer) wait(ctx context.Context) (n int, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if !t.submitted {
 		return 0, nil
 	}
-	<-t.done
+	select {
+	case <-ctx.Done():
+		t.ctx.libusb.cancel(t.xfer)
+		// after the transfer is cancelled, it will run a callback
+		// that triggers the activation of t.done.
+		<-t.done
+	case <-t.done:
+	}
 	t.submitted = false
 	n, status := t.ctx.libusb.data(t.xfer)
 	if status != TransferCompleted {
@@ -117,7 +124,7 @@ func (t *usbTransfer) data() []byte {
 
 // newUSBTransfer allocates a new transfer structure and a new buffer for
 // communication with a given device/endpoint.
-func newUSBTransfer(ctx *Context, dev *libusbDevHandle, ei *EndpointDesc, bufLen int, timeout time.Duration) (*usbTransfer, error) {
+func newUSBTransfer(ctx *Context, dev *libusbDevHandle, ei *EndpointDesc, bufLen int) (*usbTransfer, error) {
 	var isoPackets, isoPktSize int
 	if ei.TransferType == TransferTypeIsochronous {
 		isoPktSize = ei.MaxPacketSize
@@ -129,7 +136,7 @@ func newUSBTransfer(ctx *Context, dev *libusbDevHandle, ei *EndpointDesc, bufLen
 	}
 
 	done := make(chan struct{}, 1)
-	xfer, err := ctx.libusb.alloc(dev, ei, timeout, isoPackets, bufLen, done)
+	xfer, err := ctx.libusb.alloc(dev, ei, isoPackets, bufLen, done)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +153,7 @@ func newUSBTransfer(ctx *Context, dev *libusbDevHandle, ei *EndpointDesc, bufLen
 	}
 	runtime.SetFinalizer(t, func(t *usbTransfer) {
 		t.cancel()
-		t.wait()
+		t.wait(context.Background())
 		t.free()
 	})
 	return t, nil

@@ -22,15 +22,52 @@ import (
 )
 
 type fakeTransfer struct {
-	// done is the channel that needs to be closed when the transfer has finished.
+	// done is the channel that needs to receive a signal when the transfer has
+	// finished.
+	// This is different from finished below - done is provided by the caller
+	// and is used to signal the caller.
 	done chan struct{}
+	// mu protects transfer data and status.
+	mu sync.Mutex
 	// buf is the slice for reading/writing data between the submit() and wait() returning.
 	buf []byte
+	// finished is true after the transfer is no longer in flight
+	finished bool
 	// status will be returned by wait() on this transfer
 	status TransferStatus
 	// length is the number of bytes used from the buffer (write) or available
 	// in the buffer (read).
 	length int
+}
+
+func (t *fakeTransfer) setData(d []byte) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.finished {
+		return
+	}
+	copy(t.buf, d)
+	t.length = len(d)
+}
+
+func (t *fakeTransfer) setLength(n int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.finished {
+		return
+	}
+	t.length = n
+}
+
+func (t *fakeTransfer) setStatus(st TransferStatus) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.finished {
+		return
+	}
+	t.status = st
+	t.finished = true
+	t.done <- struct{}{}
 }
 
 // fakeLibusb implements a fake libusb stack that pretends to have a number of
@@ -162,18 +199,25 @@ func (f *fakeLibusb) setAlt(d *libusbDevHandle, intf, alt uint8) error {
 	return nil
 }
 
-func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointDesc, _ time.Duration, _ int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
+func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointDesc, _ int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	t := newFakeTransferPointer()
 	f.ts[t] = &fakeTransfer{buf: make([]byte, bufLen), done: done}
 	return t, nil
 }
-func (f *fakeLibusb) cancel(t *libusbTransfer) error { return errors.New("not implemented") }
+func (f *fakeLibusb) cancel(t *libusbTransfer) error {
+	f.mu.Lock()
+	ft := f.ts[t]
+	f.mu.Unlock()
+	ft.setStatus(TransferCancelled)
+	return nil
+}
 func (f *fakeLibusb) submit(t *libusbTransfer) error {
 	f.mu.Lock()
 	ft := f.ts[t]
 	f.mu.Unlock()
+	ft.finished = false
 	f.submitted <- ft
 	return nil
 }

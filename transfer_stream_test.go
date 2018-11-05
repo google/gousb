@@ -16,6 +16,7 @@ package gousb
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -57,7 +58,7 @@ func (f *fakeStreamTransfer) submit() error {
 	return nil
 }
 
-func (f *fakeStreamTransfer) wait() (int, error) {
+func (f *fakeStreamTransfer) wait(ctx context.Context) (int, error) {
 	if f.released {
 		return 0, errors.New("wait() called on a free()d transfer")
 	}

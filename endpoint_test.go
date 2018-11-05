@@ -15,6 +15,7 @@
 package gousb
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -101,12 +102,11 @@ func TestEndpoint(t *testing.T) {
 			if tc.wantSubmit {
 				go func() {
 					fakeT := lib.waitForSubmitted(nil)
-					fakeT.length = tc.ret
-					fakeT.status = tc.status
-					close(fakeT.done)
+					fakeT.setData(make([]byte, tc.ret))
+					fakeT.setStatus(tc.status)
 				}()
 			}
-			got, err := ep.transfer(tc.buf)
+			got, err := ep.transfer(context.TODO(), tc.buf)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("%s, %s: ep.transfer(...): got err: %v, err != nil is %v, want %v", epData.ei, tc.desc, err, err != nil, tc.wantErr)
 				continue
@@ -209,9 +209,8 @@ func TestEndpointInOut(t *testing.T) {
 	dataTransferred := 100
 	go func() {
 		fakeT := lib.waitForSubmitted(nil)
-		fakeT.length = dataTransferred
-		fakeT.status = TransferCompleted
-		close(fakeT.done)
+		fakeT.setData(make([]byte, dataTransferred))
+		fakeT.setStatus(TransferCompleted)
 	}()
 	buf := make([]byte, 512)
 	got, err := iep.Read(buf)
@@ -233,9 +232,8 @@ func TestEndpointInOut(t *testing.T) {
 	}
 	go func() {
 		fakeT := lib.waitForSubmitted(nil)
-		fakeT.length = dataTransferred
-		fakeT.status = TransferCompleted
-		close(fakeT.done)
+		fakeT.setData(make([]byte, dataTransferred))
+		fakeT.setStatus(TransferCompleted)
 	}()
 	got, err = oep.Write(buf)
 	if err != nil {
@@ -288,5 +286,73 @@ func TestSameEndpointNumberInOut(t *testing.T) {
 	}
 	if _, err := intf.OutEndpoint(1); err != nil {
 		t.Errorf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
+	}
+}
+
+func TestReadContext(t *testing.T) {
+	t.Parallel()
+	lib := newFakeLibusb()
+	ctx := newContextWithImpl(lib)
+	defer func() {
+		if err := ctx.Close(); err != nil {
+			t.Errorf("Context.Close(): %v", err)
+		}
+	}()
+
+	d, err := ctx.OpenDeviceWithVIDPID(0x9999, 0x0001)
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVIDPID(0x9999, 0x0001): got error %v, want nil", err)
+	}
+	defer func() {
+		if err := d.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", d, err)
+		}
+	}()
+	cfg, err := d.Config(1)
+	if err != nil {
+		t.Fatalf("%s.Config(1): %v", d, err)
+	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			t.Errorf("%s.Close(): %v", cfg, err)
+		}
+	}()
+	intf, err := cfg.Interface(0, 0)
+	if err != nil {
+		t.Fatalf("%s.Interface(0, 0): %v", cfg, err)
+	}
+	defer intf.Close()
+	iep, err := intf.InEndpoint(2)
+	if err != nil {
+		t.Fatalf("%s.InEndpoint(2): got error %v, want nil", intf, err)
+	}
+	buf := make([]byte, 512)
+
+	rCtx, done := context.WithCancel(context.Background())
+	go func() {
+		ft := lib.waitForSubmitted(nil)
+		ft.setData([]byte{1, 2, 3, 4, 5})
+		done()
+	}()
+	if got, err := iep.ReadContext(rCtx, buf); err != TransferCancelled {
+		t.Errorf("%s.Read: got error %v, want %v", iep, err, TransferCancelled)
+	} else if want := 5; got != want {
+		t.Errorf("%s.Read: got %d bytes, want %d (partial read success)", iep, got, want)
+	}
+
+	oep, err := intf.OutEndpoint(1)
+	if err != nil {
+		t.Fatalf("%s.OutEndpoint(1): got error %v, want nil", intf, err)
+	}
+	wCtx, done := context.WithCancel(context.Background())
+	go func() {
+		ft := lib.waitForSubmitted(nil)
+		ft.setLength(5)
+		done()
+	}()
+	if got, err := oep.WriteContext(wCtx, buf); err != TransferCancelled {
+		t.Errorf("%s.Write: got error %v, want %v", oep, err, TransferCancelled)
+	} else if want := 5; got != want {
+		t.Errorf("%s.Write: got %d bytes, want %d (partial write success)", oep, got, want)
 	}
 }
