@@ -112,7 +112,7 @@ The control endpoint is present regardless of the current device config, claimed
 interfaces and their alternate settings. It makes a lot of sense, as the control endpoint is actually used, among others,
 to issue commands to switch the active config or select an alternate setting for an interface.
 
-Control commands are also ofen use to control the behavior of the device. There is no single
+Control commands are also often used to control the behavior of the device. There is no single
 standard for control commands though, and many devices implement their custom control command schema.
 
 Control commands can be issued through Device.Control().
