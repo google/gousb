@@ -26,7 +26,7 @@ import (
 
 const (
 	// LinuxUsbDotOrg is one source of files in the format used by this package.
-	LinuxUsbDotOrg = "http://www.linux-gousb.org/usb.ids"
+	LinuxUsbDotOrg = "http://www.linux-usb.org/usb.ids"
 )
 
 var (

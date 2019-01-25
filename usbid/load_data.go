@@ -26,13 +26,13 @@ var LastUpdate = time.Unix(0, 1489154954940548227)
 const usbIDListData = `#
 #	List of USB ID's
 #
-#	Maintained by Stephen J. Gowdy <linux.gousb.ids@gmail.com>
+#	Maintained by Stephen J. Gowdy <linux.usb.ids@gmail.com>
 #	If you have any new entries, please submit them via
-#		http://www.linux-gousb.org/usb-ids.html
+#		http://www.linux-usb.org/usb-ids.html
 #	or send entries as patches (diff -u old new) in the
 #	body of your email (a bot will attempt to deal with it).
 #	The latest version can be obtained from
-#		http://www.linux-gousb.org/usb.ids
+#		http://www.linux-usb.org/usb.ids
 #
 # Version: 2017.02.12
 # Date:    2017-02-12 20:34:05
