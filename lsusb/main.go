@@ -78,7 +78,7 @@ func main() {
 		}
 	}()
 
-	// OpenDevices can occaionally fail, so be sure to check its return value.
+	// OpenDevices can occasionally fail, so be sure to check its return value.
 	if err != nil {
 		log.Fatalf("list: %s", err)
 	}
