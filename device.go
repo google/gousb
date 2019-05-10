@@ -287,3 +287,17 @@ func (d *Device) SetAutoDetach(autodetach bool) error {
 	}
 	return d.ctx.libusb.setAutoDetach(d.handle, autodetachInt)
 }
+
+// SetAutoDetachLibOnly is similar to SetAutoDetach, except it will not
+// flag the Device instance to detach all interfaces when changing Configs.
+// This will only call the libusb implementation of auto detach.
+func (d *Device) SetAutoDetachLibOnly(autodetach bool) error {
+	if d.handle == nil {
+		return fmt.Errorf("SetAutoDetachLibOnly(%v) called on %s after Close", autodetach, d)
+	}
+	var autodetachInt int
+	if autodetach {
+		autodetachInt = 1
+	}
+	return d.ctx.libusb.setAutoDetach(d.handle, autodetachInt)
+}
