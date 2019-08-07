@@ -130,20 +130,19 @@ func TestEndpointWriteStream(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%s.Endpoint(1): %v", intf, err)
 	}
-	pktSize := 1024
-	stream, err := ep.NewStream(pktSize, 5)
+	bufSize := 1024
+	stream, err := ep.NewStream(bufSize, 5)
 	if err != nil {
-		t.Fatalf("%s.NewStream(%d, 5): %v", ep, pktSize, err)
+		t.Fatalf("%s.NewStream(%d, 5): %v", ep, bufSize, err)
 	}
 	defer stream.Close()
 	for i := 0; i < 5; i++ {
-		if n, err := stream.Write(make([]byte, pktSize*2)); err != nil {
+		if n, err := stream.Write(make([]byte, bufSize*2)); err != nil {
 			t.Fatalf("stream.Write: got error %v", err)
-		} else if n != pktSize*2 {
-			t.Fatalf("stream.Write: %d, want %d", n, pktSize*2)
+		} else if n != bufSize*2 {
+			t.Fatalf("stream.Write: %d, want %d", n, bufSize*2)
 		}
 	}
-	want := pktSize * 10
 	if err := stream.Close(); err != nil {
 		t.Fatalf("stream.Close: got error %v", err)
 	}
@@ -151,10 +150,10 @@ func TestEndpointWriteStream(t *testing.T) {
 		t.Errorf("stream.Written: got %d, want %d", got, want)
 	}
 	done <- struct{}{}
-	if num != 20 { // 10 writes with stream packet size is 1024, device max packet size is 512
-		t.Errorf("received transfers: got %d, want %d", num, 20)
-	}
-	if total != want {
+	if want := 10240; total != want { // 5 stream.Writes, each with 2048 bytes
 		t.Errorf("received data: got %d, want %d", total, want)
+	}
+	if wantXfers := 20; num != wantXfers { // transferred 10240 bytes, device max packet size is 512
+		t.Errorf("received transfers: got %d, want %d", num, wantXfers)
 	}
 }
