@@ -76,9 +76,9 @@ func TestEndpoint(t *testing.T) {
 		}{
 			{
 				desc:       "empty buffer",
-				buf:        nil,
-				ret:        10,
-				wantSubmit: false,
+				buf:        []byte{},
+				ret:        0,
+				wantSubmit: true,
 				want:       0,
 			},
 			{

@@ -54,6 +54,14 @@ func TestNewTransfer(t *testing.T) {
 			buf:        10000,
 			wantLength: 10000,
 		},
+		{
+			desc:       "iso out transfer, 512B packets",
+			dir:        EndpointDirectionOut,
+			tt:         TransferTypeIsochronous,
+			maxPkt:     512,
+			buf:        3000,
+			wantLength: 3000,
+		},
 	} {
 		xfer, err := newUSBTransfer(ctx, nil, &EndpointDesc{
 			Number:        2,
