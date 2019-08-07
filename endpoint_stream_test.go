@@ -146,12 +146,12 @@ func TestEndpointWriteStream(t *testing.T) {
 	if err := stream.Close(); err != nil {
 		t.Fatalf("stream.Close: got error %v", err)
 	}
-	if got := stream.Written(); got != want {
+	if got, want := stream.Written(), 10240; got != want { // 5 stream.Writes, each with 2048 bytes
 		t.Errorf("stream.Written: got %d, want %d", got, want)
 	}
 	done <- struct{}{}
-	if want := 10240; total != want { // 5 stream.Writes, each with 2048 bytes
-		t.Errorf("received data: got %d, want %d", total, want)
+	if w := stream.Written(); total != w {
+		t.Errorf("received data: got %d, but stream.Written returned %d, results should be identical", total, w)
 	}
 	if wantXfers := 20; num != wantXfers { // transferred 10240 bytes, device max packet size is 512
 		t.Errorf("received transfers: got %d, want %d", num, wantXfers)
