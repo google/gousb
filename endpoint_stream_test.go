@@ -70,7 +70,7 @@ func TestEndpointReadStream(t *testing.T) {
 	}
 	defer stream.Close()
 	var got int
-	want := goodTransfers * 1024
+	want := goodTransfers * 512 // EP max packet size is 512
 	buf := make([]byte, 1024)
 	for got <= want {
 		num, err := stream.Read(buf)
@@ -151,8 +151,8 @@ func TestEndpointWriteStream(t *testing.T) {
 		t.Errorf("stream.Written: got %d, want %d", got, want)
 	}
 	done <- struct{}{}
-	if num != 10 {
-		t.Errorf("received transfers: got %d, want %d", num, 10)
+	if num != 20 { // 10 writes with stream packet size is 1024, device max packet size is 512
+		t.Errorf("received transfers: got %d, want %d", num, 20)
 	}
 	if total != want {
 		t.Errorf("received data: got %d, want %d", total, want)

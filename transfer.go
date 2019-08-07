@@ -133,9 +133,6 @@ func newUSBTransfer(ctx *Context, dev *libusbDevHandle, ei *EndpointDesc, bufLen
 		}
 		if isoPktSize > 0 {
 			isoPackets = bufLen / isoPktSize
-			if bufLen%isoPktSize > 0 {
-				isoPackets += 1
-			}
 		} else {
 			isoPackets = 1
 		}
