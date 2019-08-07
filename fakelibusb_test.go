@@ -269,7 +269,6 @@ func (f *fakeLibusb) setIsoPacketLengths(t *libusbTransfer, length uint32) {
 }
 
 // waitForSubmitted can be used by tests to define custom behavior of the transfers submitted on the USB bus.
-// TODO(sebek): add fields in fakeTransfer to differentiate between different devices/endpoints used concurrently.
 func (f *fakeLibusb) waitForSubmitted(done <-chan struct{}) *fakeTransfer {
 	select {
 	case t, ok := <-f.submitted:
