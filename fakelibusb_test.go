@@ -38,6 +38,12 @@ type fakeTransfer struct {
 	// length is the number of bytes used from the buffer (write) or available
 	// in the buffer (read).
 	length int
+	// ep is the endpoint that this transfer was created for.
+	ep *EndpointDesc
+	// isoPackets is the number of isochronous transfers performed in a single libusb transfer
+	isoPackets int
+	// maxLength is the maximum number of bytes this transfer could contain
+	maxLength int
 }
 
 func (t *fakeTransfer) setData(d []byte) {
@@ -199,11 +205,27 @@ func (f *fakeLibusb) setAlt(d *libusbDevHandle, intf, alt uint8) error {
 	return nil
 }
 
-func (f *fakeLibusb) alloc(_ *libusbDevHandle, _ *EndpointDesc, _ int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
+func (f *fakeLibusb) alloc(_ *libusbDevHandle, ep *EndpointDesc, isoPackets int, bufLen int, done chan struct{}) (*libusbTransfer, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	maxLen := ep.MaxPacketSize
+	if isoPackets > 0 {
+		if ep.TransferType != TransferTypeIsochronous {
+			return nil, fmt.Errorf("alloc(..., ep: %s, isoPackets: %d, ...): endpoint is not an isochronous type endpoint, iso packets must be 0", ep, isoPackets)
+		}
+		maxLen = isoPackets * ep.MaxPacketSize
+	}
+	if bufLen > maxLen {
+		bufLen = maxLen
+	}
 	t := newFakeTransferPointer()
-	f.ts[t] = &fakeTransfer{buf: make([]byte, bufLen), done: done}
+	f.ts[t] = &fakeTransfer{
+		buf:        make([]byte, bufLen),
+		ep:         ep,
+		isoPackets: isoPackets,
+		maxLength:  maxLen,
+		done:       done,
+	}
 	return t, nil
 }
 func (f *fakeLibusb) cancel(t *libusbTransfer) error {
@@ -225,17 +247,28 @@ func (f *fakeLibusb) buffer(t *libusbTransfer) []byte { return f.ts[t].buf }
 func (f *fakeLibusb) data(t *libusbTransfer) (int, TransferStatus) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.ts[t].length, f.ts[t].status
+	ret := f.ts[t].length
+	if maxRet := f.ts[t].maxLength; ret > maxRet {
+		ret = maxRet
+	}
+	return ret, f.ts[t].status
 }
 func (f *fakeLibusb) free(t *libusbTransfer) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	delete(f.ts, t)
 }
-func (f *fakeLibusb) setIsoPacketLengths(*libusbTransfer, uint32) {}
+func (f *fakeLibusb) setIsoPacketLengths(t *libusbTransfer, length uint32) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	maxLen := f.ts[t].isoPackets * int(length)
+	if bufLen := len(f.ts[t].buf); maxLen > bufLen {
+		maxLen = bufLen
+	}
+	f.ts[t].maxLength = maxLen
+}
 
 // waitForSubmitted can be used by tests to define custom behavior of the transfers submitted on the USB bus.
-// TODO(sebek): add fields in fakeTransfer to differentiate between different devices/endpoints used concurrently.
 func (f *fakeLibusb) waitForSubmitted(done <-chan struct{}) *fakeTransfer {
 	select {
 	case t, ok := <-f.submitted:
