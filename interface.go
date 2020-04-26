@@ -23,8 +23,7 @@ import (
 // InterfaceDesc contains information about a USB interface, extracted from
 // the descriptor.
 type InterfaceDesc struct {
-	// Number is the number of this interface, a zero-based index in the array
-	// of interfaces supported by the device configuration.
+	// Number is the number of this interface.
 	Number int
 	// AltSettings is a list of alternate settings supported by the interface.
 	AltSettings []InterfaceSetting

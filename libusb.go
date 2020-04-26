@@ -271,7 +271,9 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			Cap:  int(cfg.bNumInterfaces),
 		}
 		c.Interfaces = make([]InterfaceDesc, 0, len(ifaces))
-		for ifNum, iface := range ifaces {
+		// a map of interface numbers to a set of alternate settings numbers
+		hasIntf := make(map[int]map[int]bool)
+		for _, iface := range ifaces {
 			if iface.num_altsetting == 0 {
 				continue
 			}
@@ -283,7 +285,7 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 				Cap:  int(iface.num_altsetting),
 			}
 			descs := make([]InterfaceSetting, 0, len(alts))
-			for altNum, alt := range alts {
+			for _, alt := range alts {
 				i := InterfaceSetting{
 					Number:     int(alt.bInterfaceNumber),
 					Alternate:  int(alt.bAlternateSetting),
@@ -292,12 +294,16 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 					Protocol:   Protocol(alt.bInterfaceProtocol),
 					iInterface: int(alt.iInterface),
 				}
-				if ifNum != i.Number {
-					return nil, fmt.Errorf("config %d interface at index %d has number %d, USB standard states they should be identical", c.Number, ifNum, i.Number)
+
+				if hasIntf[i.Number][i.Alternate] {
+					log.Printf("Device on bus %d address %d offered a descriptor for config %d with two different entries with the same interface number (%d) and the same alternate setting number (%d). gousb will use only the first one.", dev.Bus, dev.Address, c.Number, i.Number, i.Alternate)
+					continue
 				}
-				if altNum != i.Alternate {
-					return nil, fmt.Errorf("config %d interface %d alternate settings at index %d has number %d, USB standard states they should be identical", c.Number, i.Number, altNum, i.Alternate)
+				if hasIntf[i.Number] == nil {
+					hasIntf[i.Number] = make(map[int]bool)
 				}
+				hasIntf[i.Number][i.Alternate] = true
+
 				var ends []C.struct_libusb_endpoint_descriptor
 				*(*reflect.SliceHeader)(unsafe.Pointer(&ends)) = reflect.SliceHeader{
 					Data: uintptr(unsafe.Pointer(alt.endpoint)),
