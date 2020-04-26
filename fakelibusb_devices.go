@@ -29,7 +29,7 @@ var fakeDevices = []fakeDevice{
 		devDesc: &DeviceDesc{
 			Bus:      1,
 			Address:  1,
-			Port:	  1,
+			Port:     1,
 			Spec:     Version(2, 0),
 			Device:   Version(1, 0),
 			Vendor:   ID(0x9999),
@@ -73,7 +73,7 @@ var fakeDevices = []fakeDevice{
 		devDesc: &DeviceDesc{
 			Bus:      1,
 			Address:  2,
-			Port:	  2,
+			Port:     2,
 			Spec:     Version(2, 0),
 			Device:   Version(1, 3),
 			Vendor:   ID(0x8888),
@@ -158,6 +158,18 @@ var fakeDevices = []fakeDevice{
 							},
 						},
 					}},
+				}, {
+					// Malformed descriptior, non contiguous interface
+					// number (previous interface is #1), alt settings
+					// not starting from 0.
+					// See https://github.com/google/gousb/issues/65
+					Number: 3,
+					AltSettings: []InterfaceSetting{{
+						Number:     3,
+						Alternate:  2,
+						Class:      ClassVendorSpec,
+						iInterface: 9,
+					}},
 				}},
 			}},
 			iManufacturer: 1,
@@ -172,6 +184,7 @@ var fakeDevices = []fakeDevice{
 			6: "Boring setting",
 			7: "Fast streaming",
 			8: "Slower streaming",
+			9: "Interface for https://github.com/google/gousb/issues/65",
 		},
 	},
 	// Bus 001 Device 003: ID 9999:0002
@@ -181,7 +194,7 @@ var fakeDevices = []fakeDevice{
 		devDesc: &DeviceDesc{
 			Bus:      1,
 			Address:  3,
-			Port:	  3,
+			Port:     3,
 			Spec:     Version(2, 0),
 			Device:   Version(1, 0),
 			Vendor:   ID(0x1111),

@@ -81,6 +81,7 @@ func TestClaimAndRelease(t *testing.T) {
 		{1, 0, "Fast streaming"},
 		{1, 1, "Slower streaming"},
 		{1, 2, ""},
+		{3, 2, "Interface for https://github.com/google/gousb/issues/65"},
 	} {
 		if got, err := dev.InterfaceDescription(1, tc.intf, tc.alt); err != nil {
 			t.Errorf("%s.InterfaceDescription(1, %d, %d): %v", dev, tc.intf, tc.alt, err)
