@@ -50,14 +50,26 @@ func (c ConfigDesc) String() string {
 }
 
 func (c ConfigDesc) intfDesc(num, alt int) (*InterfaceSetting, error) {
-	if num < 0 || num >= len(c.Interfaces) {
-		return nil, fmt.Errorf("interface %d not found, available interfaces 0..%d", num, len(c.Interfaces)-1)
+	// In an ideal world, interfaces in the descriptor would be numbered
+	// contiguously starting from 0, as required by the specification. In the
+	// real world however the specification is sometimes ignored:
+	// https://github.com/google/gousb/issues/65
+	ifs := make([]int, len(c.Interfaces))
+	for i := range c.Interfaces {
+		ifs[i] = c.Interfaces[i].Number
+		if ifs[i] != num {
+			continue
+		}
+		alts := make([]int, len(c.Interfaces[i].AltSettings))
+		for a := range c.Interfaces[i].AltSettings {
+			alts[a] = c.Interfaces[i].AltSettings[a].Alternate
+			if alts[a] == alt {
+				return &c.Interfaces[i].AltSettings[a], nil
+			}
+		}
+		return nil, fmt.Errorf("alternate setting %d not found for %s, available alt settings: %v", alt, c.Interfaces[i], alts)
 	}
-	ifInfo := c.Interfaces[num]
-	if alt < 0 || alt >= len(ifInfo.AltSettings) {
-		return nil, fmt.Errorf("alternate setting %d not found for %s, available alt settings 0..%d", alt, ifInfo, len(ifInfo.AltSettings)-1)
-	}
-	return &ifInfo.AltSettings[alt], nil
+	return nil, fmt.Errorf("interface %d not found, available interface numbers: %v", num, ifs)
 }
 
 // Config represents a USB device set to use a particular configuration.
