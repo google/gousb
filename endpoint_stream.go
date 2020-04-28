@@ -35,6 +35,9 @@ func (e *endpoint) newStream(size, count int) (*stream, error) {
 // defines how many transactions should be active at any time.
 // By keeping multiple transfers active at the same time, a Stream reduces
 // the latency between subsequent transfers and increases reading throughput.
+// Similarly to InEndpoint.Read, the size of the buffer should be a multiple
+// of EndpointDesc.MaxPacketSize to avoid overflows, see documentation
+// in InEndpoint.Read for more details.
 func (e *InEndpoint) NewStream(size, count int) (*ReadStream, error) {
 	s, err := e.newStream(size, count)
 	if err != nil {
