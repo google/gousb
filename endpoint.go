@@ -111,7 +111,7 @@ func (e *endpoint) transfer(ctx context.Context, buf []byte) (int, error) {
 
 // InEndpoint represents an IN endpoint open for transfer.
 // InEndpoint implements the io.Reader interface.
-// For high-throughput transfers, consider creating a bufffered read stream
+// For high-throughput transfers, consider creating a buffered read stream
 // through InEndpoint.ReadStream.
 type InEndpoint struct {
 	*endpoint
@@ -120,6 +120,13 @@ type InEndpoint struct {
 // Read reads data from an IN endpoint. Read returns number of bytes obtained
 // from the endpoint. Read may return non-zero length even if
 // the returned error is not nil (partial read).
+// It's recommended to use buffer sizes that are multiples of
+// EndpointDesc.MaxPacketSize to avoid overflows.
+// When a USB device receives a read request, it doesn't know the size of the
+// buffer and may send too much data in one packet to fit in the buffer.
+// If that happens, Read will return an error signaling an overflow.
+// See http://libusb.sourceforge.net/api-1.0/libusb_packetoverflow.html
+// for more details.
 func (e *InEndpoint) Read(buf []byte) (int, error) {
 	return e.transfer(context.Background(), buf)
 }
@@ -130,6 +137,13 @@ func (e *InEndpoint) Read(buf []byte) (int, error) {
 // The passed context can be used to control the cancellation of the read. If
 // the context is cancelled, ReadContext will cancel the underlying transfers,
 // resulting in TransferCancelled error.
+// It's recommended to use buffer sizes that are multiples of
+// EndpointDesc.MaxPacketSize to avoid overflows.
+// When a USB device receives a read request, it doesn't know the size of the
+// buffer and may send too much data in one packet to fit in the buffer.
+// If that happens, Read will return an error signaling an overflow.
+// See http://libusb.sourceforge.net/api-1.0/libusb_packetoverflow.html
+// for more details.
 func (e *InEndpoint) ReadContext(ctx context.Context, buf []byte) (int, error) {
 	return e.transfer(ctx, buf)
 }
