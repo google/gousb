@@ -121,7 +121,7 @@ type InEndpoint struct {
 // from the endpoint. Read may return non-zero length even if
 // the returned error is not nil (partial read).
 // It's recommended to use buffer sizes that are multiples of
-// EndpointDesc.MaxPacketSize.
+// EndpointDesc.MaxPacketSize to avoid overflows.
 // When a USB device receives a read request, it doesn't know the size of the
 // buffer and may send too much data in one packet to fit in the buffer.
 // If that happens, Read will return an error signaling an overflow.
@@ -137,6 +137,8 @@ func (e *InEndpoint) Read(buf []byte) (int, error) {
 // The passed context can be used to control the cancellation of the read. If
 // the context is cancelled, ReadContext will cancel the underlying transfers,
 // resulting in TransferCancelled error.
+// It's recommended to use buffer sizes that are multiples of
+// EndpointDesc.MaxPacketSize to avoid overflows.
 // When a USB device receives a read request, it doesn't know the size of the
 // buffer and may send too much data in one packet to fit in the buffer.
 // If that happens, Read will return an error signaling an overflow.
