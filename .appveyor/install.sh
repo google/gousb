@@ -7,6 +7,8 @@ export GOROOT=/mingw64/lib/go
 export GOPATH=/go
 export CGO_ENABLED=1
 
+find /mingw64
+
 pacman --noconfirm -S \
     mingw-w64-x86_64-go \
     mingw-w64-x86_64-libusb
