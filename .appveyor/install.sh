@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -x
 export PATH="/mingw64/bin:${PATH}"
 export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig:${PKG_CONFIG_PATH}"
 export GOROOT=/mingw64/lib/go
