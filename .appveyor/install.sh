@@ -7,12 +7,16 @@ export GOROOT=/mingw64/lib/go
 export GOPATH=/go
 export CGO_ENABLED=1
 
-find /etc
+echo "pacman.conf"
+cat /etc/pacman/pacman.conf
 
-pacman --noconfirm -S \
-    mingw-w64-x86_64-go \
-    mingw-w64-x86_64-libusb
+echo "conf.d"
+cat /etc/pacman.d/mirror*
 
-go version
-go get -t github.com/google/gousb/...
-go test github.com/google/gousb/...
+#pacman --noconfirm -S \
+#    mingw-w64-x86_64-go \
+#    mingw-w64-x86_64-libusb
+#
+#go version
+#go get -t github.com/google/gousb/...
+#go test github.com/google/gousb/...
