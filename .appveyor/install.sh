@@ -7,7 +7,7 @@ export GOROOT=/mingw64/lib/go
 export GOPATH=/go
 export CGO_ENABLED=1
 
-find /mingw64
+find /etc
 
 pacman --noconfirm -S \
     mingw-w64-x86_64-go \
