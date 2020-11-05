@@ -7,8 +7,8 @@ export GOPATH=/go
 export CGO_ENABLED=1
 
 pacman --noconfirm -S \
-    mingw64/mingw-w64-x86_64-go \
-    mingw64/mingw-w64-x86_64-libusb
+    mingw-w64-x86_64-go \
+    mingw-w64-x86_64-libusb
 
 go version
 go get -t github.com/google/gousb/...
