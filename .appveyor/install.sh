@@ -7,13 +7,6 @@ export GOROOT=/mingw64/lib/go
 export GOPATH=/go
 export CGO_ENABLED=1
 
-curl -O https://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
-curl -O https://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
-pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig &&\
-pacman --noconfirm -U msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
-
-pacman --noconfirm -Syy pacman
-pacman --noconfirm -Su
 pacman --noconfirm -S \
     mingw-w64-x86_64-go \
     mingw-w64-x86_64-libusb
