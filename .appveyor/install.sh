@@ -10,7 +10,7 @@ export CGO_ENABLED=1
 curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 curl -O http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig
 pacman-key --verify msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz.sig &&\
-pacman -U msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
+pacman --noconfirm -U msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz
 
 pacman -Syy
 pacman --noconfirm -S \
