@@ -508,10 +508,19 @@ func libusbSetDebug(c *libusbContext, lvl int) {
 	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
+// for obtaining unique CGo pointers.
 func newDevicePointer() *libusbDevice {
 	return (*libusbDevice)(unsafe.Pointer(C.malloc(1)))
 }
 
 func newFakeTransferPointer() *libusbTransfer {
 	return (*libusbTransfer)(unsafe.Pointer(C.malloc(1)))
+}
+
+func newContextPointer() *libusbContext {
+	return (*libusbContext)(unsafe.Pointer(C.malloc(1)))
+}
+
+func newDevHandlePointer() *libusbDevHandle {
+	return (*libusbDevHandle)(unsafe.Pointer(C.malloc(1)))
 }
