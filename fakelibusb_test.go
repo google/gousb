@@ -98,7 +98,7 @@ type fakeLibusb struct {
 	claims map[*libusbDevice]map[uint8]bool
 }
 
-func (f *fakeLibusb) init() (*libusbContext, error)                       { return new(libusbContext), nil }
+func (f *fakeLibusb) init() (*libusbContext, error)                       { return newContextPointer(), nil }
 func (f *fakeLibusb) handleEvents(c *libusbContext, done <-chan struct{}) { <-done }
 func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 	ret := make([]*libusbDevice, 0, len(fakeDevices))
@@ -128,7 +128,7 @@ func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	return nil, fmt.Errorf("invalid USB device %p", d)
 }
 func (f *fakeLibusb) open(d *libusbDevice) (*libusbDevHandle, error) {
-	h := new(libusbDevHandle)
+	h := newDevHandlePointer()
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.handles[h] = d
