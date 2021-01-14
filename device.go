@@ -209,7 +209,7 @@ func (d *Device) Close() error {
 	if d.claimed != nil {
 		return fmt.Errorf("can't release the device %s, it has an open config %d", d, d.claimed.Desc.Number)
 	}
-	d.ctx.libusb.close(d.handle)
+	d.ctx.closeDev(d)
 	d.handle = nil
 	return nil
 }

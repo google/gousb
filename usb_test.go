@@ -41,6 +41,11 @@ func TestOPenDevices(t *testing.T) {
 		t.Fatalf("OpenDevices(): %s", err)
 	}
 
+	// attempt to Close() should fail because of open devices
+	if err := c.Close(); err == nil {
+		t.Fatal("Context.Close succeeded while some devices were still open")
+	}
+
 	if got, want := len(devs), len(fakeDevices); got != want {
 		t.Fatalf("len(devs) = %d, want %d (based on num fake devs)", got, want)
 	}
