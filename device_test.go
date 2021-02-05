@@ -241,6 +241,20 @@ func TestActiveConfigNumFailure(t *testing.T) {
 	}
 }
 
+func TestDeviceDescString(t *testing.T) {
+	dev, err := createFakeDevice(0x8888, 0x0002)
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := "1.2: 8888:0002 (available configs: [1])"
+	result := dev.Desc.String()
+
+	if expected != result {
+		t.Fatalf("Device String() failed, expeceted: \"%s\", got: \"%s\"", expected, result)
+	}
+}
+
 func createFakeDevice(vid ID, pid ID) (*Device, error) {
 	fake := newFakeLibusb()
 	c := newContextWithImpl(&failDetachLib{fake})
