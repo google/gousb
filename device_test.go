@@ -244,3 +244,21 @@ func TestAutoDetachFailure(t *testing.T) {
 		t.Fatalf("%s.Config(1) got nil, but want no nil because interface fails to detach", dev)
 	}
 }
+
+func TestActiveConfigNumFailure(t *testing.T) {
+	fake := newFakeLibusb()
+	c := newContextWithImpl(&failDetachLib{fake})
+	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
+	if dev == nil {
+		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
+	}
+	defer dev.Close()
+	if err != nil {
+		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
+	}
+	dev.handle = nil
+	_, err = dev.ActiveConfigNum()
+	if err == nil {
+		t.Fatalf("Error on failing ActiveConfigNum()")
+	}
+}
