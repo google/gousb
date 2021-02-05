@@ -16,6 +16,7 @@ package gousb
 
 import (
 	"errors"
+	"log"
 	"reflect"
 	"testing"
 )
@@ -193,20 +194,7 @@ func TestInterfaceDescriptionError(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			c := newContextWithImpl(newFakeLibusb())
-			defer func() {
-				if err := c.Close(); err != nil {
-					t.Errorf("Context.Close(): %v", err)
-				}
-			}()
-			dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
-			if dev == nil {
-				t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
-			}
-			defer dev.Close()
-			if err != nil {
-				t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
-			}
+			dev := createFakeDevice(0x8888, 0x0002)
 			if desc, err := dev.InterfaceDescription(tc.cfg, tc.intf, tc.alt); err == nil {
 				t.Errorf("%s.InterfaceDescriptor(%d, %d, %d): %q, want error", dev, tc.cfg, tc.intf, tc.alt, desc)
 			}
@@ -227,38 +215,33 @@ func (*failDetachLib) detachKernelDriver(h *libusbDevHandle, i uint8) error {
 
 func TestAutoDetachFailure(t *testing.T) {
 	t.Parallel()
-	fake := newFakeLibusb()
-	c := newContextWithImpl(&failDetachLib{fake})
-	defer c.Close()
-	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
-	if dev == nil {
-		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
-	}
-	defer dev.Close()
-	if err != nil {
-		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
-	}
+	dev := createFakeDevice(0x8888, 0x0002)
 	dev.SetAutoDetach(true)
-	_, err = dev.Config(1)
+	_, err := dev.Config(1)
 	if err == nil {
 		t.Fatalf("%s.Config(1) got nil, but want no nil because interface fails to detach", dev)
 	}
 }
 
 func TestActiveConfigNumFailure(t *testing.T) {
-	fake := newFakeLibusb()
-	c := newContextWithImpl(&failDetachLib{fake})
-	dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
-	if dev == nil {
-		t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
-	}
-	defer dev.Close()
-	if err != nil {
-		t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
-	}
+	dev := createFakeDevice(0x8888, 0x0002)
 	dev.handle = nil
-	_, err = dev.ActiveConfigNum()
+	_, err := dev.ActiveConfigNum()
 	if err == nil {
 		t.Fatalf("Error on failing ActiveConfigNum()")
 	}
+}
+
+func createFakeDevice(vid ID, pid ID) *Device {
+	fake := newFakeLibusb()
+	c := newContextWithImpl(&failDetachLib{fake})
+	dev, err := c.OpenDeviceWithVIDPID(vid, pid)
+	if dev == nil {
+		log.Fatalf("OpenDeviceWithVIDPID(%s, %s): got nil device, need non-nil", vid, pid)
+	}
+	defer dev.Close()
+	if err != nil {
+		log.Fatalf("OpenDeviceWithVIDPID(%s, %s): %v", vid, pid, err)
+	}
+	return dev
 }
