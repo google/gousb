@@ -187,8 +187,8 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 	var ret []*Device
 	for _, dev := range list {
 		desc, err := c.libusb.getDeviceDesc(dev)
+		defer c.libusb.dereference(dev)
 		if err != nil {
-			c.libusb.dereference(dev)
 			reterr = err
 			continue
 		}
@@ -196,7 +196,6 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 		if opener(desc) {
 			handle, err := c.libusb.open(dev)
 			if err != nil {
-				c.libusb.dereference(dev)
 				reterr = err
 				continue
 			}
@@ -205,8 +204,6 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 			c.mu.Lock()
 			c.devices[o] = true
 			c.mu.Unlock()
-		} else {
-			c.libusb.dereference(dev)
 		}
 	}
 	return ret, reterr
