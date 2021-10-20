@@ -25,10 +25,11 @@ import (
 // DeviceDesc is a representation of a USB device descriptor.
 type DeviceDesc struct {
 	// Bus information
-	Bus     int   // The bus on which the device was detected
-	Address int   // The address of the device on the bus
-	Speed   Speed // The negotiated operating speed for the device
-	Port    int   // The usb port on which the device was detected
+	Bus     int     // The bus on which the device was detected
+	Address int     // The address of the device on the bus
+	Speed   Speed   // The negotiated operating speed for the device
+	Port    int     // The usb port on which the device was detected
+	Path    []uint8 //The usb port path of the device
 
 	// Version information
 	Spec   BCD // USB Specification Release Number

@@ -228,10 +228,17 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	if err := fromErrNo(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
 		return nil, err
 	}
+	var data [8]uint8
+	pathLen := int(C.libusb_get_port_numbers((*C.libusb_device)(d), (*C.uint8_t)(&data[0]), 8))
+	path := []uint8{}
+	if pathLen > 0 {
+		path = data[:pathLen-1]
+	}
 	dev := &DeviceDesc{
 		Bus:                  int(C.libusb_get_bus_number((*C.libusb_device)(d))),
 		Address:              int(C.libusb_get_device_address((*C.libusb_device)(d))),
 		Port:                 int(C.libusb_get_port_number((*C.libusb_device)(d))),
+		Path:                 path,
 		Speed:                Speed(C.libusb_get_device_speed((*C.libusb_device)(d))),
 		Spec:                 BCD(desc.bcdUSB),
 		Device:               BCD(desc.bcdDevice),
