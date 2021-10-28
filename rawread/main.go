@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/gousb"
+	"github.com/sulfurheron/gousb"
 )
 
 var (

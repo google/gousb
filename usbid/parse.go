@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/gousb"
+	"github.com/sulfurheron/gousb"
 )
 
 // A Vendor contains the name of the vendor and mappings corresponding to all

@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/google/gousb"
-	"github.com/google/gousb/usbid"
+	"github.com/sulfurheron/gousb"
+	"github.com/sulfurheron/gousb/usbid"
 )
 
 var (
