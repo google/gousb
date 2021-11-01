@@ -25,5 +25,5 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: c:\msys64\usr\bin\pacman.exe --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb
-      - shell: c:\msys64\msys.exe {0}
+      - shell: c:\msys64\usr\bin\bash.exe -c {0}
         run: go test ./...
