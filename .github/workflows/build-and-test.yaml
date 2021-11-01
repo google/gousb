@@ -18,7 +18,7 @@ jobs:
           path-to-profile: coverage.merged
           ignore: libusb.go,error.go
   windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       PKG_CONFIG_PATH: C:\msys64\mingw64\lib\pkgconfig
     defaults:
