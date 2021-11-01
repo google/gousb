@@ -31,4 +31,4 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - run: go test ./...
+      - run: msys2 -c 'go test ./...'
