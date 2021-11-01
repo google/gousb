@@ -32,5 +32,4 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - run: Get-ChildItem -r d:\
-      - run: go test ./...
+      - run: CGO_CFLAGS="-ID:\a\_temp\msys64\mingw64\include\libusb-1.0" go test ./...
