@@ -23,7 +23,7 @@ jobs:
       PKG_CONFIG_PATH: C:\msys64\mingw64\lib\pkgconfig
     defaults:
       run:
-        shell: c:\msys64\usr\bin\bash.exe
+        shell: c:\msys64\usr\bin\bash.exe {0}
     steps:
       - uses: actions/checkout@v2
       - run: pacman --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb
