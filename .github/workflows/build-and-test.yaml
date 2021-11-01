@@ -18,3 +18,7 @@ jobs:
       - run: go get github.com/mattn/goveralls
       - run: $HOME/go/bin/golint ./...
       - run: sh ./.github/test-coverage.sh
+      - uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.merged
+          ignore: libusb.go,error.go
