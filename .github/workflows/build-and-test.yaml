@@ -21,12 +21,11 @@ jobs:
     runs-on: windows-2019
     env:
       PKG_CONFIG_PATH: C:\msys64\mingw64\lib\pkgconfig
-      PATH: /bin:/usr/bin
     defaults:
       run:
-        shell: c:\msys64\usr\bin\bash.exe {0}
+        shell: c:\msys64\usr\bin\bash.exe --noprofile --norc -eo pipefail {0}
     steps:
       - uses: actions/checkout@v2
       - run: pacman --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb
       - run: pkg-config --cflags libusb-1.0
-        # - run: go test ./...
+      # - run: go test ./...
