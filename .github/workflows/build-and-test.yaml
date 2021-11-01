@@ -12,7 +12,6 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: ${{matrix.go}}
-      - run: find $HOME
       - run: sudo apt-get install libusb-1.0-0-dev
       - run: go get golang.org/x/tools/cmd/cover
       - run: go get golang.org/x/lint/golint
