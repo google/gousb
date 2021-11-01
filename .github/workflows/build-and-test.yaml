@@ -2,7 +2,6 @@ name: build-and-test
 on: [pull_request, push]
 jobs:
   linux:
-    name: Ubuntu, Go ${{matrix.go}}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -12,9 +11,19 @@ jobs:
       - run: sudo apt-get install libusb-1.0-0-dev
       - run: go get golang.org/x/tools/cmd/cover
       - run: go get golang.org/x/lint/golint
+      - run: pwd
       - run: $HOME/go/bin/golint ./...
       - run: sh ./.github/test-coverage.sh
       - uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: coverage.merged
           ignore: libusb.go,error.go
+  windows:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - run: c:\msys64\pacman --noconfirm -S mingw-w64-x86_64-libusb
+      - run: go test ./...
