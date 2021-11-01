@@ -11,7 +11,7 @@ jobs:
       - run: sudo apt-get install libusb-1.0-0-dev
       - run: go get golang.org/x/tools/cmd/cover
       - run: go get golang.org/x/lint/golint
-      - run: pwd
+      - run: find .
       - run: $HOME/go/bin/golint ./...
       - run: sh ./.github/test-coverage.sh
       - uses: shogo82148/actions-goveralls@v1
