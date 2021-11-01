@@ -33,5 +33,5 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - run: echo %PATH%
+      - run: $Env:Path
 #      - run: go test ./...
