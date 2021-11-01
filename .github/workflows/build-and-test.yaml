@@ -25,5 +25,9 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - run: pacman --noconfirm -S mingw-w64-x86_64-libusb
+      - uses: msys2/setup-msys2@v2
+        with:
+          install: |-
+            base-devel
+            libusb
       - run: go test ./...
