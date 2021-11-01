@@ -19,6 +19,8 @@ jobs:
           ignore: libusb.go,error.go
   windows:
     runs-on: windows-2019
+    env:
+      - PKG_CONFIG_PATH: /mingw64/lib/pkgconfig
     steps:
       - uses: actions/checkout@v2
       - uses: msys2/setup-msys2@v2
