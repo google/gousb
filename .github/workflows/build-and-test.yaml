@@ -26,6 +26,6 @@ jobs:
         shell: c:\msys64\usr\bin\bash.exe --noprofile --norc -eo pipefail {0}
     steps:
       - uses: actions/checkout@v2
-      - run: /usr/bin/pacman --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb
-      - run: pkg-config --cflags libusb-1.0
+      - run: /usr/bin/pacman --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb mingw-w64-x86_64-pkg-config
+      - run: /usr/bin/pkg-config --cflags libusb-1.0
       # - run: go test ./...
