@@ -30,4 +30,5 @@ jobs:
             mingw64/mingw-w64-x86_64-pkg-config
       - shell: msys2 {0}
         run: /mingw64/bin/pkg-config --cflags libusb-1.0
-      # - run: go test ./...
+      - shell: msys2 {0}
+        run: go test ./...
