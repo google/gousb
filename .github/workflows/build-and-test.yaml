@@ -18,7 +18,7 @@ jobs:
           path-to-profile: coverage.merged
           ignore: libusb.go,error.go
   windows:
-    runs-on: windows-2022
+    runs-on: windows-2019
     steps:
       - uses: actions/checkout@v2
       - uses: msys2/setup-msys2@v2
@@ -28,7 +28,5 @@ jobs:
             mingw64/mingw-w64-x86_64-go
             mingw64/mingw-w64-x86_64-libusb
             mingw64/mingw-w64-x86_64-pkg-config
-      - shell: msys2 {0}
-        run: which go
       - shell: msys2 {0}
         run: go test ./...
