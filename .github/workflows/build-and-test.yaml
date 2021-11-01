@@ -17,5 +17,5 @@ jobs:
       - run: go get golang.org/x/tools/cmd/cover
       - run: go get golang.org/x/lint/golint
       - run: go get github.com/mattn/goveralls
-      - run: $HOME/gopath/bin/golint ./...
+      - run: $HOME/go/bin/golint ./...
       - run: sh ./.github/test-coverage.sh
