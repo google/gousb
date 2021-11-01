@@ -20,8 +20,7 @@ jobs:
   windows:
     runs-on: windows-2019
     env:
-      PKG_CONFIG_PATH: D:\a\_temp\msys64\mingw64\lib\pkgconfig
-      CGO_CFLAGS: -ID:\a\_temp\msys64\mingw64\include\libusb-1.0
+      PKG_CONFIG_PATH: C:\msys64\mingw64\lib\pkgconfig
     steps:
       - uses: actions/checkout@v2
       - run: c:\msys64\usr\bin\pacman.exe --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb
