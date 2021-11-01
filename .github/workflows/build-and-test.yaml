@@ -27,6 +27,6 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - run: pacman --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb
+      - run: c:\msys64\usr\bin\pacman.exe --noconfirm -S mingw64/mingw-w64-x86_64-go mingw64/mingw-w64-x86_64-libusb
       - shell: msys {0}
         run: go test ./...
