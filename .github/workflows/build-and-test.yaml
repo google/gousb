@@ -33,5 +33,5 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.17
-      - run: pkg-config --cflags  -- libusb-1.0
-      - run: go test ./...
+      - run: Get-ChildItem Env:Path
+#      - run: go test ./...
