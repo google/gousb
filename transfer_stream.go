@@ -276,7 +276,7 @@ func (w *WriteStream) Close() error {
 // CloseContext returning nil indicates all transfers completed successfully.
 // After CloseContext, the total number of bytes successfully written can be
 // retrieved using Written().
-// Close may not be called concurrently with Write, WriteContext, Close,
+// CloseContext may not be called concurrently with Write, WriteContext, Close,
 // CloseContext or Written.
 func (w *WriteStream) CloseContext(ctx context.Context) error {
 	if w.s.transfers == nil {
