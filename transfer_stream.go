@@ -269,14 +269,15 @@ func (w *WriteStream) Close() error {
 	return w.CloseContext(context.Background())
 }
 
-// Close signals end of data to write. Close blocks until all transfers
-// that were sent are finished. The error returned by Close is the first
-// error encountered during writing the entire stream (if any).
-// Close returning nil indicates all transfers completed successfully.
-// After Close, the total number of bytes successfully written can be
+// CloseContext signals end of data to write. CloseContext blocks until all
+// transfers that were sent are finished or until the context is canceled. The
+// error returned by CloseContext is the first error encountered during writing
+// the entire stream (if any).
+// CloseContext returning nil indicates all transfers completed successfully.
+// After CloseContext, the total number of bytes successfully written can be
 // retrieved using Written().
-// Close may not be called concurrently with Write, Close or Written.
-// CloseContext
+// CloseContext may not be called concurrently with Write, WriteContext, Close,
+// CloseContext or Written.
 func (w *WriteStream) CloseContext(ctx context.Context) error {
 	if w.s.transfers == nil {
 		return io.ErrClosedPipe

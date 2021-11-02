@@ -209,7 +209,7 @@ func (libusbImpl) getDevices(ctx *libusbContext) ([]*libusbDevice, error) {
 	for _, d := range devs {
 		ret = append(ret, (*libusbDevice)(d))
 	}
-	// devices must be dereferenced by the caller to prevent memoryleaks
+	// devices must be dereferenced by the caller to prevent memory leaks.
 	C.libusb_free_device_list(list, 0)
 	return ret, nil
 }

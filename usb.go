@@ -246,7 +246,7 @@ func (c *Context) checkOpenDevs() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if l := len(c.devices); l > 0 {
-		return fmt.Errorf("Context.Close called while %d Devices are still open, Close may be called only after all previously opened devices were successfuly closed.", l)
+		return fmt.Errorf("Context.Close called while %d Devices are still open, Close may be called only after all previously opened devices were successfuly closed", l)
 	}
 	return nil
 }
