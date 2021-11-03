@@ -22,14 +22,19 @@ import (
 	"time"
 )
 
+// DevicePath is a representation of a USB port path
+// The path describes the physical port connections, ordered from Bus to Device.
+type DevicePath []int
+
 // DeviceDesc is a representation of a USB device descriptor.
+// Root Hubs are represented solely by Bus, do not have a path, and have a port value of 0.
 type DeviceDesc struct {
 	// Bus information
-	Bus     int     // The bus on which the device was detected
-	Address int     // The address of the device on the bus
-	Speed   Speed   // The negotiated operating speed for the device
-	Port    int     // The usb port on which the device was detected
-	Path    []uint8 //The usb port path of the device
+	Bus     int        // The bus on which the device was detected
+	Address int        // The address of the device on the bus
+	Speed   Speed      // The negotiated operating speed for the device
+	Port    int        // The usb port on which the device was detected
+	Path    DevicePath // The usb port path of the device
 
 	// Version information
 	Spec   BCD // USB Specification Release Number

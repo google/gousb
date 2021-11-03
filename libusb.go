@@ -224,20 +224,26 @@ func (libusbImpl) setDebug(c *libusbContext, lvl int) {
 }
 
 func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
-	var desc, pathData, path = C.struct_libusb_device_descriptor{}, [8]uint8{}, []uint8{}
+	var (
+		desc     C.struct_libusb_device_descriptor
+		pathData [8]uint8
+		path = []int{}
+		pathLen  int
+	)
 	if err := fromErrNo(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
 		return nil, err
 	}
-	pathLen := int(C.libusb_get_port_numbers((*C.libusb_device)(d), (*C.uint8_t)(&pathData[0]), 8))
-	if pathLen > 0 {
-		path = pathData[:pathLen-1]
+	if pathLen = int(C.libusb_get_port_numbers((*C.libusb_device)(d), (*C.uint8_t)(&pathData[0]), 8)); pathLen == 0{
+		pathLen = 1 //Root devices will have no path, increment pathLen to return port as 0
+	}else{
+		for _, port := range pathData[:pathLen]{
+			path = append(path, int(port))
+		}
 	}
-	port := int(C.libusb_get_port_number((*C.libusb_device)(d)))
-	path = append(path, uint8(port))
 	dev := &DeviceDesc{
 		Bus:                  int(C.libusb_get_bus_number((*C.libusb_device)(d))),
 		Address:              int(C.libusb_get_device_address((*C.libusb_device)(d))),
-		Port:                 port,
+		Port:                 int(pathData[pathLen-1]),
 		Path:                 path,
 		Speed:                Speed(C.libusb_get_device_speed((*C.libusb_device)(d))),
 		Spec:                 BCD(desc.bcdUSB),
