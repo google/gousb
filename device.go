@@ -30,14 +30,15 @@ type DeviceDesc struct {
 	Address int
 	// The negotiated operating speed for the device
 	Speed Speed
-	// The pyhsical port on the parent hub on which the device is connected. Ports are numbered from 1,
-	// excepting root hub devices which are always 0
+	// The pyhsical port on the parent hub on which the device is connected.
+	// Ports are numbered from 1, excepting root hub devices which are always 0.
 	Port int
-	// The physical path of connected parent port numbers, starting at the root hub device
-	// A path length of 1 indicates that this device is connected directly to a root hub,
-	// A path length of 2 or more are connected to intermediate devices,
-	// Root hub devices have an empty path
-	// i.e. [1,2,3] represents a device connected to port 3 of a device connected to port 2 of a device attached to port 1 of a root hub.
+	// Physical path of connected parent ports, starting at the root hub device.
+	// A path length of 0 represents a root hub device,
+	// a path length of 1 represents a device directly connected to a root hub,
+	// a path length of 2 or more are connected to intermediate hub devices.
+	// e.g. [1,2,3] represents a device connected to port 3 of a hub connected
+	// to port 2 of a hub connected to port 1 of a root hub.
 	Path []int
 
 	// Version information

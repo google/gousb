@@ -233,12 +233,12 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 	if err := fromErrNo(C.libusb_get_device_descriptor((*C.libusb_device)(d), &desc)); err != nil {
 		return nil, err
 	}
-	if pathLen := int(C.libusb_get_port_numbers((*C.libusb_device)(d), (*C.uint8_t)(&pathData[0]), 8)); pathLen != 0 {
-		for _, nPort := range pathData[:pathLen] {
-			port = int(nPort)
-			path = append(path, port)
-		}
-	} // else default to port = 0, path = [] for root device
+	pathLen := int(C.libusb_get_port_numbers((*C.libusb_device)(d), (*C.uint8_t)(&pathData[0]), 8))
+	for _, nPort := range pathData[:pathLen] {
+		port = int(nPort)
+		path = append(path, port)
+	}
+	// Defaults to port = 0, path = [] for root device
 	dev := &DeviceDesc{
 		Bus:                  int(C.libusb_get_bus_number((*C.libusb_device)(d))),
 		Address:              int(C.libusb_get_device_address((*C.libusb_device)(d))),
