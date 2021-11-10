@@ -24,11 +24,22 @@ import (
 
 // DeviceDesc is a representation of a USB device descriptor.
 type DeviceDesc struct {
-	// Bus information
-	Bus     int   // The bus on which the device was detected
-	Address int   // The address of the device on the bus
-	Speed   Speed // The negotiated operating speed for the device
-	Port    int   // The usb port on which the device was detected
+	// The bus on which the device was detected
+	Bus int
+	// The address of the device on the bus
+	Address int
+	// The negotiated operating speed for the device
+	Speed Speed
+	// The pyhsical port on the parent hub on which the device is connected.
+	// Ports are numbered from 1, excepting root hub devices which are always 0.
+	Port int
+	// Physical path of connected parent ports, starting at the root hub device.
+	// A path length of 0 represents a root hub device,
+	// a path length of 1 represents a device directly connected to a root hub,
+	// a path length of 2 or more are connected to intermediate hub devices.
+	// e.g. [1,2,3] represents a device connected to port 3 of a hub connected
+	// to port 2 of a hub connected to port 1 of a root hub.
+	Path []int
 
 	// Version information
 	Spec   BCD // USB Specification Release Number
