@@ -188,7 +188,9 @@ func (libusbImpl) handleEvents(c *libusbContext, done <-chan struct{}) {
 		default:
 		}
 		if errno := C.libusb_handle_events_timeout_completed((*C.libusb_context)(c), &tv, nil); errno < 0 {
-			log.Printf("handle_events: error: %s", Error(errno))
+			if Error(errno) != ErrorInterrupted {
+				log.Printf("handle_events: error: %s", Error(errno))
+			}
 		}
 	}
 }
