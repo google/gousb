@@ -20,7 +20,8 @@ import "time"
 // LastUpdate stores the latest time that the library was updated.
 //
 // The baked-in data was last generated:
-//   2017-03-10 09:09:14.940548227 -0500 EST
+//
+//	2017-03-10 09:09:14.940548227 -0500 EST
 var LastUpdate = time.Unix(0, 1489154954940548227)
 
 const usbIDListData = `#

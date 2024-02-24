@@ -20,8 +20,9 @@
 // a reader.
 //
 // The bread and butter of this package are the following two functions:
-//   Describe - Pretty-print the vendor and product of a device descriptor
-//   Classify - Pretty-print the class/protocol info for a device/interface
+//
+//	Describe - Pretty-print the vendor and product of a device descriptor
+//	Classify - Pretty-print the class/protocol info for a device/interface
 package usbid
 
 import (
