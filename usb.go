@@ -16,7 +16,7 @@
 /*
 Package gousb provides an low-level interface to attached USB devices.
 
-A Short Tutorial
+# A Short Tutorial
 
 A Context manages all resources necessary for communicating with USB
 devices.
@@ -117,11 +117,10 @@ standard for control commands though, and many devices implement their custom co
 
 Control commands can be issued through Device.Control().
 
-See Also
+# See Also
 
 For more information about USB protocol and handling USB devices,
 see the excellent "USB in a nutshell" guide: http://www.beyondlogic.org/usbnutshell/
-
 */
 package gousb
 
