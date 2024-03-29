@@ -211,11 +211,11 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 }
 
 // OpenDeviceWithVIDPID opens Device from specific VendorId and ProductId.
-// If none is found, it returns nil and nil error. If there are multiple devices
-// with the same VID/PID, it will return one of them, picked arbitrarily.
-// If there were any errors during device list traversal, it is possible
-// it will return a non-nil device and non-nil error. A Device.Close() must
-// be called to release the device if the returned device wasn't nil.
+// If there are multiple devices  with the same VID/PID, it will return one
+// of them, picked arbitrarily. If there were any errors during device
+// list traversal, it is possible it will return a non-nil device and non-nil
+// error. A Device.Close() must be called to release the device if the
+// returned device wasn't nil.
 func (c *Context) OpenDeviceWithVIDPID(vid, pid ID) (*Device, error) {
 	var found bool
 	devs, err := c.OpenDevices(func(desc *DeviceDesc) bool {
@@ -228,9 +228,19 @@ func (c *Context) OpenDeviceWithVIDPID(vid, pid ID) (*Device, error) {
 		}
 		return false
 	})
+
+	// there was no error opening devices, but none of them matched
+	// or there were no devices connected
+	if !found && err == nil {
+		return nil, errors.New("no device with VID/PID found")
+	}
+
+	// there was an error opening devices, and none were found before the error
 	if len(devs) == 0 {
 		return nil, err
 	}
+
+	// at least one device was found, before there was an error
 	return devs[0], nil
 }
 
