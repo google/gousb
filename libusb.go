@@ -143,6 +143,7 @@ type libusbIntf interface {
 	dereference(*libusbDevice)
 	getDeviceDesc(*libusbDevice) (*DeviceDesc, error)
 	open(*libusbDevice) (*libusbDevHandle, error)
+	wrapSysDevice(*libusbContext, int) (*libusbDevHandle, error)
 
 	close(*libusbDevHandle)
 	reset(*libusbDevHandle) error
@@ -152,6 +153,7 @@ type libusbIntf interface {
 	getStringDesc(*libusbDevHandle, int) (string, error)
 	setAutoDetach(*libusbDevHandle, int) error
 	detachKernelDriver(*libusbDevHandle, uint8) error
+	getDevice(*libusbDevHandle) (*libusbDevice, error)
 
 	// interface
 	claim(*libusbDevHandle, uint8) error
@@ -215,6 +217,24 @@ func (libusbImpl) getDevices(ctx *libusbContext) ([]*libusbDevice, error) {
 	// devices must be dereferenced by the caller to prevent memory leaks.
 	C.libusb_free_device_list(list, 0)
 	return ret, nil
+}
+
+func (libusbImpl) wrapSysDevice(ctx *libusbContext, systemDeviceHandle int) (*libusbDevHandle, error) {
+	var handle *C.libusb_device_handle
+	if ret := C.libusb_wrap_sys_device((*C.libusb_context)(ctx), C.intptr_t(systemDeviceHandle), &handle); ret < 0 {
+		return nil, fromErrNo(C.int(ret))
+	}
+
+	return (*libusbDevHandle)(handle), nil
+}
+
+func (libusbImpl) getDevice(d *libusbDevHandle) (*libusbDevice, error) {
+	device := C.libusb_get_device((*C.libusb_device_handle)(d))
+	if device == nil {
+		return nil, fmt.Errorf("libusb_get_device failed")
+	}
+
+	return (*libusbDevice)(device), nil
 }
 
 func (libusbImpl) exit(c *libusbContext) error {

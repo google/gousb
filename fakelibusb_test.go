@@ -108,6 +108,16 @@ func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 	return ret, nil
 }
 
+func (f *fakeLibusb) wrapSysDevice(ctx *libusbContext, systemDeviceHandle int) (*libusbDevHandle, error) {
+	//TODO should we do something for this
+	return nil, nil
+}
+
+func (f *fakeLibusb) getDevice(d *libusbDevHandle) (*libusbDevice, error) {
+	//TODO should we do something for this
+	return nil, nil
+}
+
 func (f *fakeLibusb) exit(*libusbContext) error {
 	close(f.submitted)
 	if got := len(f.ts); got > 0 {

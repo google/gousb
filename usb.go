@@ -128,6 +128,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"syscall"
 )
 
 // Context manages all resources related to USB device handling.
@@ -208,6 +209,41 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 
 	}
 	return ret, reterr
+}
+
+func (c *Context) OpenDeviceWithFileDescriptor(fileDescriptor string) (*Device, error) {
+	fd, err := syscall.Open(fileDescriptor, syscall.O_RDWR, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	handle, err := c.libusb.wrapSysDevice(c.ctx, fd)
+	if err != nil {
+		return nil, err
+	}
+
+	dev, err := c.libusb.getDevice(handle)
+	if err != nil {
+		return nil, err
+	}
+
+	desc, err := c.libusb.getDeviceDesc(dev)
+	defer c.libusb.dereference(dev)
+	if err != nil {
+		return nil, err
+	}
+
+	handle, err = c.libusb.open(dev)
+	if err != nil {
+		return nil, err
+	}
+
+	o := &Device{handle: handle, ctx: c, Desc: desc}
+	c.mu.Lock()
+	c.devices[o] = true
+	c.mu.Unlock()
+
+	return o, nil
 }
 
 // OpenDeviceWithVIDPID opens Device from specific VendorId and ProductId.

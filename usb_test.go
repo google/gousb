@@ -15,7 +15,9 @@
 
 package gousb
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestOPenDevices(t *testing.T) {
 	t.Parallel()
@@ -93,4 +95,18 @@ func TestOpenDeviceWithVIDPID(t *testing.T) {
 			dev.Close()
 		}
 	}
+}
+
+func TestOpenDeviceWithFileDescriptor(t *testing.T) {
+	ctx := NewContext()
+	defer ctx.Close()
+
+	descriptor := "/dev/bus/usb/001/002"
+	device, err := ctx.OpenDeviceWithFileDescriptor(descriptor)
+	if err != nil {
+		t.Errorf("OpenDeviceWithFileDescriptor: failed opening device %s", descriptor)
+	}
+
+	device.Close()
+
 }
