@@ -16,6 +16,7 @@
 package gousb
 
 import (
+	"syscall"
 	"testing"
 )
 
@@ -101,10 +102,15 @@ func TestOpenDeviceWithFileDescriptor(t *testing.T) {
 	ctx := NewContext()
 	defer ctx.Close()
 
-	descriptor := "/dev/bus/usb/001/003"
-	device, err := ctx.OpenDeviceWithFileDescriptor(descriptor)
+	fd, err := syscall.Open("/dev/bus/usb/001/003", syscall.O_RDWR, 0)
 	if err != nil {
-		t.Errorf("OpenDeviceWithFileDescriptor: failed opening device %s", descriptor)
+
+		t.Fatal(err)
+	}
+
+	device, err := ctx.OpenDeviceWithFileDescriptor(uintptr(fd))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	device.Close()

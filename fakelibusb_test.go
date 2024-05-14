@@ -110,7 +110,7 @@ func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 	return ret, nil
 }
 
-func (f *fakeLibusb) wrapSysDevice(ctx *libusbContext, systemDeviceHandle int) (*libusbDevHandle, error) {
+func (f *fakeLibusb) wrapSysDevice(ctx *libusbContext, systemDeviceHandle uintptr) (*libusbDevHandle, error) {
 	//TODO should we do something for this
 	return nil, nil
 }

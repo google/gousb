@@ -128,7 +128,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"syscall"
 )
 
 // Context manages all resources related to USB device handling.
@@ -211,12 +210,7 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 	return ret, reterr
 }
 
-func (c *Context) OpenDeviceWithFileDescriptor(fileDescriptor string) (*Device, error) {
-	fd, err := syscall.Open(fileDescriptor, syscall.O_RDWR, 0)
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Context) OpenDeviceWithFileDescriptor(fd uintptr) (*Device, error) {
 	handle, err := c.libusb.wrapSysDevice(c.ctx, fd)
 	if err != nil {
 		return nil, err

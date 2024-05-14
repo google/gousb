@@ -150,7 +150,7 @@ type libusbIntf interface {
 	dereference(*libusbDevice)
 	getDeviceDesc(*libusbDevice) (*DeviceDesc, error)
 	open(*libusbDevice) (*libusbDevHandle, error)
-	wrapSysDevice(*libusbContext, int) (*libusbDevHandle, error)
+	wrapSysDevice(*libusbContext, uintptr) (*libusbDevHandle, error)
 
 	close(*libusbDevHandle)
 	reset(*libusbDevHandle) error
@@ -234,9 +234,9 @@ func (libusbImpl) getDevices(ctx *libusbContext) ([]*libusbDevice, error) {
 	return ret, nil
 }
 
-func (libusbImpl) wrapSysDevice(ctx *libusbContext, systemDeviceHandle int) (*libusbDevHandle, error) {
+func (libusbImpl) wrapSysDevice(ctx *libusbContext, fd uintptr) (*libusbDevHandle, error) {
 	var handle *C.libusb_device_handle
-	if ret := C.libusb_wrap_sys_device((*C.libusb_context)(ctx), C.intptr_t(systemDeviceHandle), &handle); ret < 0 {
+	if ret := C.libusb_wrap_sys_device((*C.libusb_context)(ctx), C.intptr_t(fd), &handle); ret < 0 {
 		return nil, fromErrNo(C.int(ret))
 	}
 
