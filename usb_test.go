@@ -101,7 +101,7 @@ func TestOpenDeviceWithFileDescriptor(t *testing.T) {
 	ctx := NewContext()
 	defer ctx.Close()
 
-	descriptor := "/dev/bus/usb/001/002"
+	descriptor := "/dev/bus/usb/001/003"
 	device, err := ctx.OpenDeviceWithFileDescriptor(descriptor)
 	if err != nil {
 		t.Errorf("OpenDeviceWithFileDescriptor: failed opening device %s", descriptor)

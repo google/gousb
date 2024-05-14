@@ -32,6 +32,7 @@ struct libusb_transfer *gousb_alloc_transfer_and_buffer(int bufLen, int numIsoPa
 void gousb_free_transfer_and_buffer(struct libusb_transfer *xfer);
 int submit(struct libusb_transfer *xfer);
 void gousb_set_debug(libusb_context *ctx, int lvl);
+int gousb_disable_device_discovery(libusb_context *ctx);
 */
 import "C"
 
@@ -40,6 +41,12 @@ type libusbDevice C.libusb_device
 type libusbDevHandle C.libusb_device_handle
 type libusbTransfer C.struct_libusb_transfer
 type libusbEndpoint C.struct_libusb_endpoint_descriptor
+
+type libusbOpt int
+
+const (
+	LIBUSB_OPTION_NO_DEVICE_DISCOVERY libusbOpt = iota
+)
 
 func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 	ei := EndpointDesc{
@@ -133,7 +140,7 @@ func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 // and occasionally on convenience data types (like TransferType or DeviceDesc).
 type libusbIntf interface {
 	// context
-	init() (*libusbContext, error)
+	init(flags ...libusbOpt) (*libusbContext, error)
 	handleEvents(*libusbContext, <-chan struct{})
 	getDevices(*libusbContext) ([]*libusbDevice, error)
 	exit(*libusbContext) error
@@ -173,11 +180,19 @@ type libusbIntf interface {
 // libusbImpl is an implementation of libusbIntf using real CGo-wrapped libusb.
 type libusbImpl struct{}
 
-func (libusbImpl) init() (*libusbContext, error) {
+func (libusbImpl) init(flags ...libusbOpt) (*libusbContext, error) {
 	var ctx *C.libusb_context
 	if err := fromErrNo(C.libusb_init(&ctx)); err != nil {
 		return nil, err
 	}
+
+	// for _, flag := range flags {
+	// 	switch flag {
+	// 	case LIBUSB_OPTION_NO_DEVICE_DISCOVERY:
+	// 		C.gousb_no_svc_discovery(ctx)
+	// 	}
+	// }
+
 	return (*libusbContext)(ctx), nil
 }
 

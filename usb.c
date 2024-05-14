@@ -24,3 +24,7 @@ void gousb_set_debug(libusb_context *ctx, int lvl) {
     libusb_set_debug(ctx, lvl);
 #endif
 }
+
+int gousb_disable_device_discovery(libusb_context *ctx) {
+  return libusb_set_option(ctx, 2);
+}

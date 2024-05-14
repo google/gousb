@@ -98,7 +98,9 @@ type fakeLibusb struct {
 	claims map[*libusbDevice]map[uint8]bool
 }
 
-func (f *fakeLibusb) init() (*libusbContext, error)                       { return newContextPointer(), nil }
+func (f *fakeLibusb) init(flags ...libusbOpt) (*libusbContext, error) {
+	return newContextPointer(), nil
+}
 func (f *fakeLibusb) handleEvents(c *libusbContext, done <-chan struct{}) { <-done }
 func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 	ret := make([]*libusbDevice, 0, len(fakeDevices))
