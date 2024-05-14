@@ -186,12 +186,12 @@ func (libusbImpl) init(flags ...libusbOpt) (*libusbContext, error) {
 		return nil, err
 	}
 
-	// for _, flag := range flags {
-	// 	switch flag {
-	// 	case LIBUSB_OPTION_NO_DEVICE_DISCOVERY:
-	// 		C.gousb_no_svc_discovery(ctx)
-	// 	}
-	// }
+	for _, flag := range flags {
+		switch flag {
+		case LIBUSB_OPTION_NO_DEVICE_DISCOVERY:
+			C.gousb_disable_device_discovery(ctx)
+		}
+	}
 
 	return (*libusbContext)(ctx), nil
 }
