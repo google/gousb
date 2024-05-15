@@ -301,12 +301,14 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			}
 			descs := make([]InterfaceSetting, 0, len(alts))
 			for _, alt := range alts {
+
 				i := InterfaceSetting{
 					Number:     int(alt.bInterfaceNumber),
 					Alternate:  int(alt.bAlternateSetting),
 					Class:      Class(alt.bInterfaceClass),
 					SubClass:   Class(alt.bInterfaceSubClass),
 					Protocol:   Protocol(alt.bInterfaceProtocol),
+					Extra:      C.GoBytes(unsafe.Pointer(alt.extra), alt.extra_length),
 					iInterface: int(alt.iInterface),
 				}
 
