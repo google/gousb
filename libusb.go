@@ -302,14 +302,27 @@ func (libusbImpl) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
 			descs := make([]InterfaceSetting, 0, len(alts))
 			for _, alt := range alts {
 
+				var extraDescriptors []*RawDescriptor
+				extra := C.GoBytes(unsafe.Pointer(alt.extra), alt.extra_length)
+				for i := 0; i != len(extra); i += int(extra[i]) {
+					block := extra[i : i+int(extra[i])]
+					bType := DescriptorType(block[1])
+
+					extraDescriptors = append(extraDescriptors,
+						&RawDescriptor{
+							Type: bType,
+							Data: block},
+					)
+				}
+
 				i := InterfaceSetting{
-					Number:     int(alt.bInterfaceNumber),
-					Alternate:  int(alt.bAlternateSetting),
-					Class:      Class(alt.bInterfaceClass),
-					SubClass:   Class(alt.bInterfaceSubClass),
-					Protocol:   Protocol(alt.bInterfaceProtocol),
-					Extra:      C.GoBytes(unsafe.Pointer(alt.extra), alt.extra_length),
-					iInterface: int(alt.iInterface),
+					Number:           int(alt.bInterfaceNumber),
+					Alternate:        int(alt.bAlternateSetting),
+					Class:            Class(alt.bInterfaceClass),
+					SubClass:         Class(alt.bInterfaceSubClass),
+					Protocol:         Protocol(alt.bInterfaceProtocol),
+					ExtraDescriptors: extraDescriptors,
+					iInterface:       int(alt.iInterface),
 				}
 
 				if hasIntf[i.Number][i.Alternate] {
