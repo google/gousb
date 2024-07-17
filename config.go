@@ -137,10 +137,12 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 	}
 
 	// Select an alternate setting if needed (device has multiple alternate settings).
-	if len(c.Desc.Interfaces[num-1].AltSettings) > 1 {
-		if err := c.dev.ctx.libusb.setAlt(c.dev.handle, uint8(num), uint8(alt)); err != nil {
-			c.dev.ctx.libusb.release(c.dev.handle, uint8(num))
-			return nil, fmt.Errorf("failed to set alternate config %d on interface %d of %s: %v", alt, num, c, err)
+	for i := range c.Desc.Interfaces {
+		if c.Desc.Interfaces[i].Number == num && len(c.Desc.Interfaces[i].AltSettings) > 1 {
+			if err := c.dev.ctx.libusb.setAlt(c.dev.handle, uint8(num), uint8(alt)); err != nil {
+				c.dev.ctx.libusb.release(c.dev.handle, uint8(num))
+				return nil, fmt.Errorf("failed to set alternate config %d on interface %d of %s: %v", alt, num, c, err)
+			}
 		}
 	}
 
