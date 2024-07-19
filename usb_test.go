@@ -16,7 +16,6 @@
 package gousb
 
 import (
-	"syscall"
 	"testing"
 )
 
@@ -99,20 +98,33 @@ func TestOpenDeviceWithVIDPID(t *testing.T) {
 }
 
 func TestOpenDeviceWithFileDescriptor(t *testing.T) {
-	ctx := NewContext()
+	ctx := newContextWithImpl(newFakeLibusb())
 	defer ctx.Close()
 
-	fd, err := syscall.Open("/dev/bus/usb/001/003", syscall.O_RDWR, 0)
-	if err != nil {
-
-		t.Fatal(err)
+	// file descriptor is an index to the FakeDevices array
+	for ix, d := range []struct {
+		vid, pid ID
+		exists   bool
+	}{
+		{0x9999, 0x0001, true},
+		{0x8888, 0x0002, true},
+		{0x1111, 0x1111, true},
+		{0x7777, 0x0003, false},
+	} {
+		// The fake keeps the order of fakeDevices so that it can be indexed by a fake "fileDescriptor"
+		dev, err := ctx.OpenDeviceWithFileDescriptor(uintptr(ix))
+		if (dev != nil) != d.exists {
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): device != nil is %v, want %v", ix, dev != nil, d.exists)
+		}
+		if err != nil && d.exists { // It's OK to get an error if device doesn't exist
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): got error %v, want nil", ix, err)
+		}
+		if dev != nil {
+			if dev.Desc.Vendor != ID(d.vid) || dev.Desc.Product != ID(d.pid) {
+				t.Errorf("OpenDeviceWithFileDescriptor(%d): the device returned has VID/PID %s/%s, different from specified in the arguments", ix, ID(d.vid), ID(d.pid))
+			}
+			dev.Close()
+		}
 	}
-
-	device, err := ctx.OpenDeviceWithFileDescriptor(uintptr(fd))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	device.Close()
 
 }

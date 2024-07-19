@@ -87,6 +87,8 @@ type fakeLibusb struct {
 	mu sync.Mutex
 	// fakeDevices has a map of devices and their descriptors.
 	fakeDevices map[*libusbDevice]*fakeDevice
+	// fakeLibUsbDevices keeps the order of devices to be accessd by wrapSysDevice
+	fakeLibUsbDevices []*libusbDevice
 	// ts has a map of all allocated transfers, indexed by the pointer of
 	// underlying libusbTransfer.
 	ts map[*libusbTransfer]*fakeTransfer
@@ -98,7 +100,7 @@ type fakeLibusb struct {
 	claims map[*libusbDevice]map[uint8]bool
 }
 
-func (f *fakeLibusb) init(flags ...libusbOpt) (*libusbContext, error) {
+func (f *fakeLibusb) init() (*libusbContext, error) {
 	return newContextPointer(), nil
 }
 func (f *fakeLibusb) handleEvents(c *libusbContext, done <-chan struct{}) { <-done }
@@ -111,13 +113,18 @@ func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 }
 
 func (f *fakeLibusb) wrapSysDevice(ctx *libusbContext, systemDeviceHandle uintptr) (*libusbDevHandle, error) {
-	//TODO should we do something for this
-	return nil, nil
+	if int(systemDeviceHandle) > len(fakeDevices)-1 {
+		return nil, nil
+	}
+	h := newDevHandlePointer()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.handles[h] = f.fakeLibUsbDevices[int(systemDeviceHandle)]
+	return h, nil
 }
 
-func (f *fakeLibusb) getDevice(d *libusbDevHandle) (*libusbDevice, error) {
-	//TODO should we do something for this
-	return nil, nil
+func (f *fakeLibusb) getDevice(handle *libusbDevHandle) *libusbDevice {
+	return f.handles[handle]
 }
 
 func (f *fakeLibusb) exit(*libusbContext) error {
@@ -300,11 +307,12 @@ func (f *fakeLibusb) empty() bool {
 
 func newFakeLibusb() *fakeLibusb {
 	fl := &fakeLibusb{
-		fakeDevices: make(map[*libusbDevice]*fakeDevice),
-		ts:          make(map[*libusbTransfer]*fakeTransfer),
-		submitted:   make(chan *fakeTransfer, 10),
-		handles:     make(map[*libusbDevHandle]*libusbDevice),
-		claims:      make(map[*libusbDevice]map[uint8]bool),
+		fakeDevices:       make(map[*libusbDevice]*fakeDevice),
+		fakeLibUsbDevices: []*libusbDevice{},
+		ts:                make(map[*libusbTransfer]*fakeTransfer),
+		submitted:         make(chan *fakeTransfer, 10),
+		handles:           make(map[*libusbDevHandle]*libusbDevice),
+		claims:            make(map[*libusbDevice]map[uint8]bool),
 	}
 	for _, d := range fakeDevices {
 		// libusb does not export a way to allocate a new libusb_device struct
@@ -313,7 +321,9 @@ func newFakeLibusb() *fakeLibusb {
 		// The contents of these pointers is never accessed.
 		fd := new(fakeDevice)
 		*fd = d
-		fl.fakeDevices[newDevicePointer()] = fd
+		devPointer := newDevicePointer()
+		fl.fakeDevices[devPointer] = fd
+		fl.fakeLibUsbDevices = append(fl.fakeLibUsbDevices, devPointer)
 	}
 	return fl
 }
