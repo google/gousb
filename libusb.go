@@ -15,6 +15,7 @@
 package gousb
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 	"reflect"
@@ -32,7 +33,6 @@ struct libusb_transfer *gousb_alloc_transfer_and_buffer(int bufLen, int numIsoPa
 void gousb_free_transfer_and_buffer(struct libusb_transfer *xfer);
 int submit(struct libusb_transfer *xfer);
 void gousb_set_debug(libusb_context *ctx, int lvl);
-int gousb_disable_device_discovery(libusb_context *ctx);
 */
 import "C"
 
@@ -41,12 +41,7 @@ type libusbDevice C.libusb_device
 type libusbDevHandle C.libusb_device_handle
 type libusbTransfer C.struct_libusb_transfer
 type libusbEndpoint C.struct_libusb_endpoint_descriptor
-
-type libusbOpt int
-
-const (
-	LIBUSB_OPTION_NO_DEVICE_DISCOVERY libusbOpt = iota
-)
+type libusbLogLevel C.enum_libusb_log_level
 
 func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 	ei := EndpointDesc{
@@ -140,7 +135,7 @@ func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 // and occasionally on convenience data types (like TransferType or DeviceDesc).
 type libusbIntf interface {
 	// context
-	init(flags ...libusbOpt) (*libusbContext, error)
+	init() (*libusbContext, error)
 	handleEvents(*libusbContext, <-chan struct{})
 	getDevices(*libusbContext) ([]*libusbDevice, error)
 	exit(*libusbContext) error
@@ -160,7 +155,7 @@ type libusbIntf interface {
 	getStringDesc(*libusbDevHandle, int) (string, error)
 	setAutoDetach(*libusbDevHandle, int) error
 	detachKernelDriver(*libusbDevHandle, uint8) error
-	getDevice(*libusbDevHandle) (*libusbDevice, error)
+	getDevice(*libusbDevHandle) *libusbDevice
 
 	// interface
 	claim(*libusbDevHandle, uint8) error
@@ -178,19 +173,35 @@ type libusbIntf interface {
 }
 
 // libusbImpl is an implementation of libusbIntf using real CGo-wrapped libusb.
-type libusbImpl struct{}
+type libusbImpl struct {
+	logLevel         int
+	disableDiscovery bool
+	useUsbDK         bool
+}
 
-func (libusbImpl) init(flags ...libusbOpt) (*libusbContext, error) {
+func (impl libusbImpl) init() (*libusbContext, error) {
 	var ctx *C.libusb_context
-	if err := fromErrNo(C.libusb_init(&ctx)); err != nil {
-		return nil, err
+
+	var libusb_options [4]C.struct_libusb_init_option // fixed to 4 - there are maximum 4 options
+	n_options := 0
+	if impl.logLevel != C.LIBUSB_LOG_LEVEL_NONE {
+		libusb_options[n_options].option = C.LIBUSB_OPTION_LOG_LEVEL
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, uint64(impl.logLevel))
+		copy(libusb_options[n_options].value[:], b)
+		n_options += 1
+	}
+	if impl.useUsbDK {
+		libusb_options[n_options].option = C.LIBUSB_OPTION_USE_USBDK
+		n_options += 1
+	}
+	if impl.disableDiscovery {
+		libusb_options[n_options].option = C.LIBUSB_OPTION_NO_DEVICE_DISCOVERY
+		n_options += 1
 	}
 
-	for _, flag := range flags {
-		switch flag {
-		case LIBUSB_OPTION_NO_DEVICE_DISCOVERY:
-			C.gousb_disable_device_discovery(ctx)
-		}
+	if err := fromErrNo(C.libusb_init_context(&ctx, &(libusb_options[0]), C.int(n_options))); err != nil {
+		return nil, err
 	}
 
 	return (*libusbContext)(ctx), nil
@@ -243,13 +254,9 @@ func (libusbImpl) wrapSysDevice(ctx *libusbContext, fd uintptr) (*libusbDevHandl
 	return (*libusbDevHandle)(handle), nil
 }
 
-func (libusbImpl) getDevice(d *libusbDevHandle) (*libusbDevice, error) {
+func (libusbImpl) getDevice(d *libusbDevHandle) *libusbDevice {
 	device := C.libusb_get_device((*C.libusb_device_handle)(d))
-	if device == nil {
-		return nil, fmt.Errorf("libusb_get_device failed")
-	}
-
-	return (*libusbDevice)(device), nil
+	return (*libusbDevice)(device)
 }
 
 func (libusbImpl) exit(c *libusbContext) error {

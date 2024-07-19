@@ -140,6 +140,17 @@ type Context struct {
 	devices map[*Device]bool
 }
 
+// LogLevel values match the levels of libusb
+type LogLevel int
+
+const (
+	LogLevelNone    = 0
+	LogLevelError   = 1
+	LogLevelWarning = 2
+	LogLevelInfo    = 3
+	LogLevelDebug   = 4
+)
+
 // Debug changes the debug level. Level 0 means no debug, higher levels
 // will print out more debugging information.
 // TODO(sebek): in the next major release, replace int levels with
@@ -166,6 +177,20 @@ func newContextWithImpl(impl libusbIntf) *Context {
 // NewContext returns a new Context instance.
 func NewContext() *Context {
 	return newContextWithImpl(libusbImpl{})
+}
+
+type ContextOptions struct {
+	LogLevel               LogLevel
+	DisableDeviceDiscovery bool
+	UseUsbDK               bool
+}
+
+func (o *ContextOptions) NewContext() *Context {
+	return newContextWithImpl(libusbImpl{
+		disableDiscovery: o.DisableDeviceDiscovery,
+		logLevel:         int(o.LogLevel),
+		useUsbDK:         o.UseUsbDK,
+	})
 }
 
 // OpenDevices calls opener with each enumerated device.
@@ -213,21 +238,12 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 func (c *Context) OpenDeviceWithFileDescriptor(fd uintptr) (*Device, error) {
 	handle, err := c.libusb.wrapSysDevice(c.ctx, fd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error opening device from file descriptor: %d, %s", fd, err.Error())
 	}
 
-	dev, err := c.libusb.getDevice(handle)
-	if err != nil {
-		return nil, err
-	}
+	dev := c.libusb.getDevice(handle)
 
 	desc, err := c.libusb.getDeviceDesc(dev)
-	defer c.libusb.dereference(dev)
-	if err != nil {
-		return nil, err
-	}
-
-	handle, err = c.libusb.open(dev)
 	if err != nil {
 		return nil, err
 	}
