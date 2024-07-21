@@ -415,7 +415,7 @@ func (libusbImpl) getStringDesc(d *libusbDevHandle, index int) (string, error) {
 }
 
 func (libusbImpl) getDescriptor(d *libusbDevHandle, index int) ([]byte, error) {
-	// allocate 200-byte array limited the length of descriptor
+	// allocate 256-byte array limited the length of descriptor
 	buf := make([]byte, 256)
 	// get descriptor from libusb. if errno < 0 then there are any errors.
 	// if errno >= 0; it is a length of result descriptor
