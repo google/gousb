@@ -243,7 +243,7 @@ func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
 // GetDescriptor returns a device descriptor with the given index number.
 func (d *Device) GetDescriptor(descIndex int) ([]byte, error) {
 	if d.handle == nil {
-		return nil, fmt.Errorf("GetStringDescriptor(%d) called on %s after Close", descIndex, d)
+		return nil, fmt.Errorf("GetDescriptor(%d) called on %s after Close", descIndex, d)
 	}
 	// descriptor index value of 0 indicates no string descriptor.
 	if descIndex == 0 {
