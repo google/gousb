@@ -150,6 +150,7 @@ type libusbIntf interface {
 	getConfig(*libusbDevHandle) (uint8, error)
 	setConfig(*libusbDevHandle, uint8) error
 	getStringDesc(*libusbDevHandle, int) (string, error)
+	getDescriptor(*libusbDevHandle, int) ([]byte, error)
 	setAutoDetach(*libusbDevHandle, int) error
 	detachKernelDriver(*libusbDevHandle, uint8) error
 
@@ -411,6 +412,22 @@ func (libusbImpl) getStringDesc(d *libusbDevHandle, index int) (string, error) {
 		return "", fmt.Errorf("failed to get string descriptor %d: %s", index, fromErrNo(errno))
 	}
 	return string(buf[:errno]), nil
+}
+
+func (libusbImpl) getDescriptor(d *libusbDevHandle, index int) ([]byte, error) {
+	// allocate 200-byte array limited the length of descriptor
+	buf := make([]byte, 256)
+	// get descriptor from libusb. if errno < 0 then there are any errors.
+	// if errno >= 0; it is a length of result descriptor
+	errno := C.libusb_get_descriptor(
+		(*C.libusb_device_handle)(d),
+		C.uint8_t(index), 0,
+		(*C.uchar)(unsafe.Pointer(&buf[0])),
+		256)
+	if errno < 0 {
+		return nil, fmt.Errorf("failed to get descriptor %d: %s", index, fromErrNo(errno))
+	}
+	return buf[:errno], nil
 }
 
 func (libusbImpl) setAutoDetach(d *libusbDevHandle, val int) error {

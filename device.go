@@ -240,6 +240,18 @@ func (d *Device) GetStringDescriptor(descIndex int) (string, error) {
 	return d.ctx.libusb.getStringDesc(d.handle, descIndex)
 }
 
+// GetDescriptor returns a device descriptor with the given index number.
+func (d *Device) GetDescriptor(descIndex int) ([]byte, error) {
+	if d.handle == nil {
+		return nil, fmt.Errorf("GetStringDescriptor(%d) called on %s after Close", descIndex, d)
+	}
+	// descriptor index value of 0 indicates no string descriptor.
+	if descIndex == 0 {
+		return nil, nil
+	}
+	return d.ctx.libusb.getDescriptor(d.handle, descIndex)
+}
+
 // Manufacturer returns the device's manufacturer name.
 // GetStringDescriptor's string conversion rules apply.
 func (d *Device) Manufacturer() (string, error) {
