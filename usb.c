@@ -24,4 +24,3 @@ void gousb_set_debug(libusb_context *ctx, int lvl) {
     libusb_set_debug(ctx, lvl);
 #endif
 }
-

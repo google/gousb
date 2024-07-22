@@ -174,9 +174,9 @@ type libusbIntf interface {
 
 // libusbImpl is an implementation of libusbIntf using real CGo-wrapped libusb.
 type libusbImpl struct {
-	logLevel         int
-	disableDiscovery bool
-	useUsbDK         bool
+	logLevel     int
+	discovery    DeviceDiscovery
+	useUSBDevKit bool
 }
 
 func (impl libusbImpl) init() (*libusbContext, error) {
@@ -191,11 +191,11 @@ func (impl libusbImpl) init() (*libusbContext, error) {
 		copy(libusb_options[n_options].value[:], b)
 		n_options += 1
 	}
-	if impl.useUsbDK {
+	if impl.useUSBDevKit {
 		libusb_options[n_options].option = C.LIBUSB_OPTION_USE_USBDK
 		n_options += 1
 	}
-	if impl.disableDiscovery {
+	if impl.discovery == DisableDeviceDiscovery {
 		libusb_options[n_options].option = C.LIBUSB_OPTION_NO_DEVICE_DISCOVERY
 		n_options += 1
 	}

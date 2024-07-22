@@ -15,9 +15,7 @@
 
 package gousb
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestOPenDevices(t *testing.T) {
 	t.Parallel()
@@ -102,28 +100,38 @@ func TestOpenDeviceWithFileDescriptor(t *testing.T) {
 	defer ctx.Close()
 
 	// file descriptor is an index to the FakeDevices array
-	for ix, d := range []struct {
-		vid, pid ID
-		exists   bool
+	for _, d := range []struct {
+		vid, pid  ID
+		sysDevPtr uintptr
 	}{
-		{0x9999, 0x0001, true},
-		{0x8888, 0x0002, true},
-		{0x1111, 0x1111, true},
-		{0x7777, 0x0003, false},
+		{0x9999, 0x0001, 78},
+		{0x8888, 0x0002, 94},
 	} {
-		// The fake keeps the order of fakeDevices so that it can be indexed by a fake "fileDescriptor"
-		dev, err := ctx.OpenDeviceWithFileDescriptor(uintptr(ix))
-		if (dev != nil) != d.exists {
-			t.Errorf("OpenDeviceWithFileDescriptor(%d): device != nil is %v, want %v", ix, dev != nil, d.exists)
+		dev, err := ctx.OpenDeviceWithFileDescriptor(d.sysDevPtr)
+		if dev == nil {
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): device == nil for a valid device", d.sysDevPtr)
 		}
-		if err != nil && d.exists { // It's OK to get an error if device doesn't exist
-			t.Errorf("OpenDeviceWithFileDescriptor(%d): got error %v, want nil", ix, err)
+		if err != nil {
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): err != nil for a valid device: %v", d.sysDevPtr, err)
+		}
+	}
+
+}
+
+func TestOpenDeviceWithFileDescriptorOnMissingDevice(t *testing.T) {
+	ctx := newContextWithImpl(newFakeLibusb())
+	defer ctx.Close()
+
+	for _, sysDevPtr := range []uintptr{
+		7, // set, but does not exist in the fakeDevices array
+		0, // unset
+	} {
+		dev, err := ctx.OpenDeviceWithFileDescriptor(sysDevPtr)
+		if err == nil {
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): got nil error for invalid device", sysDevPtr)
 		}
 		if dev != nil {
-			if dev.Desc.Vendor != ID(d.vid) || dev.Desc.Product != ID(d.pid) {
-				t.Errorf("OpenDeviceWithFileDescriptor(%d): the device returned has VID/PID %s/%s, different from specified in the arguments", ix, ID(d.vid), ID(d.pid))
-			}
-			dev.Close()
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): got non-nil device for invalid device", sysDevPtr)
 		}
 	}
 

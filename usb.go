@@ -179,17 +179,24 @@ func NewContext() *Context {
 	return newContextWithImpl(libusbImpl{})
 }
 
+type DeviceDiscovery int
+
+const (
+	EnableDeviceDiscovery = iota
+	DisableDeviceDiscovery
+)
+
 type ContextOptions struct {
-	LogLevel               LogLevel
-	DisableDeviceDiscovery bool
-	UseUsbDK               bool
+	LogLevel        LogLevel
+	DeviceDiscovery DeviceDiscovery
+	UseUSBDevKit    bool
 }
 
-func (o *ContextOptions) NewContext() *Context {
+func (o ContextOptions) New() *Context {
 	return newContextWithImpl(libusbImpl{
-		disableDiscovery: o.DisableDeviceDiscovery,
-		logLevel:         int(o.LogLevel),
-		useUsbDK:         o.UseUsbDK,
+		discovery:    o.DeviceDiscovery,
+		logLevel:     int(o.LogLevel),
+		useUSBDevKit: o.UseUSBDevKit,
 	})
 }
 
