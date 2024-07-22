@@ -140,17 +140,6 @@ type Context struct {
 	devices map[*Device]bool
 }
 
-// LogLevel values match the levels of libusb
-type LogLevel int
-
-const (
-	LogLevelNone    = 0
-	LogLevelError   = 1
-	LogLevelWarning = 2
-	LogLevelInfo    = 3
-	LogLevelDebug   = 4
-)
-
 // Debug changes the debug level. Level 0 means no debug, higher levels
 // will print out more debugging information.
 // TODO(sebek): in the next major release, replace int levels with
@@ -187,16 +176,12 @@ const (
 )
 
 type ContextOptions struct {
-	LogLevel        LogLevel
 	DeviceDiscovery DeviceDiscovery
-	UseUSBDevKit    bool
 }
 
 func (o ContextOptions) New() *Context {
 	return newContextWithImpl(libusbImpl{
-		discovery:    o.DeviceDiscovery,
-		logLevel:     int(o.LogLevel),
-		useUSBDevKit: o.UseUSBDevKit,
+		discovery: o.DeviceDiscovery,
 	})
 }
 

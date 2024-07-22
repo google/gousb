@@ -15,7 +15,6 @@
 package gousb
 
 import (
-	"encoding/binary"
 	"fmt"
 	"log"
 	"reflect"
@@ -174,9 +173,7 @@ type libusbIntf interface {
 
 // libusbImpl is an implementation of libusbIntf using real CGo-wrapped libusb.
 type libusbImpl struct {
-	logLevel     int
-	discovery    DeviceDiscovery
-	useUSBDevKit bool
+	discovery DeviceDiscovery
 }
 
 func (impl libusbImpl) init() (*libusbContext, error) {
@@ -184,17 +181,6 @@ func (impl libusbImpl) init() (*libusbContext, error) {
 
 	var libusb_options [4]C.struct_libusb_init_option // fixed to 4 - there are maximum 4 options
 	n_options := 0
-	if impl.logLevel != C.LIBUSB_LOG_LEVEL_NONE {
-		libusb_options[n_options].option = C.LIBUSB_OPTION_LOG_LEVEL
-		b := make([]byte, 8)
-		binary.LittleEndian.PutUint64(b, uint64(impl.logLevel))
-		copy(libusb_options[n_options].value[:], b)
-		n_options += 1
-	}
-	if impl.useUSBDevKit {
-		libusb_options[n_options].option = C.LIBUSB_OPTION_USE_USBDK
-		n_options += 1
-	}
 	if impl.discovery == DisableDeviceDiscovery {
 		libusb_options[n_options].option = C.LIBUSB_OPTION_NO_DEVICE_DISCOVERY
 		n_options += 1
