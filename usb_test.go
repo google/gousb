@@ -108,11 +108,13 @@ func TestOpenDeviceWithFileDescriptor(t *testing.T) {
 		{0x8888, 0x0002, 94},
 	} {
 		dev, err := ctx.OpenDeviceWithFileDescriptor(d.sysDevPtr)
-		if dev == nil {
-			t.Errorf("OpenDeviceWithFileDescriptor(%d): device == nil for a valid device", d.sysDevPtr)
-		}
 		if err != nil {
-			t.Errorf("OpenDeviceWithFileDescriptor(%d): err != nil for a valid device: %v", d.sysDevPtr, err)
+			t.Fatalf("OpenDeviceWithFileDescriptor(%d): err != nil for a valid device: %v", d.sysDevPtr, err)
+		}
+		if dev == nil {
+			t.Fatalf("OpenDeviceWithFileDescriptor(%d): device == nil for a valid device", d.sysDevPtr)
+		} else if dev.Desc.Vendor != ID(d.vid) || dev.Desc.Product != ID(d.pid) {
+			t.Fatalf("OpenDeviceWithFileDescriptor(%d): device's VID/PID %s/%s don't match expected: %s/%s", d.sysDevPtr, dev.Desc.Vendor, dev.Desc.Product, ID(d.vid), ID(d.pid))
 		}
 	}
 
@@ -126,12 +128,9 @@ func TestOpenDeviceWithFileDescriptorOnMissingDevice(t *testing.T) {
 		7, // set, but does not exist in the fakeDevices array
 		0, // unset
 	} {
-		dev, err := ctx.OpenDeviceWithFileDescriptor(sysDevPtr)
+		_, err := ctx.OpenDeviceWithFileDescriptor(sysDevPtr)
 		if err == nil {
 			t.Errorf("OpenDeviceWithFileDescriptor(%d): got nil error for invalid device", sysDevPtr)
-		}
-		if dev != nil {
-			t.Errorf("OpenDeviceWithFileDescriptor(%d): got non-nil device for invalid device", sysDevPtr)
 		}
 	}
 

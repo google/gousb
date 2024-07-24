@@ -111,13 +111,14 @@ func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 }
 
 func (f *fakeLibusb) wrapSysDevice(ctx *libusbContext, systemDeviceHandle uintptr) (*libusbDevHandle, error) {
-	if _, ok := f.fakeSysDevices[systemDeviceHandle]; !ok {
-		return nil, fmt.Errorf("The passed file descriptor %d does not point to a valid device", systemDeviceHandle)
+	dev, ok := f.fakeSysDevices[systemDeviceHandle]
+	if !ok {
+		return nil, fmt.Errorf("the passed file descriptor %d does not point to a valid device", systemDeviceHandle)
 	}
 	h := newDevHandlePointer()
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.handles[h] = f.fakeSysDevices[systemDeviceHandle]
+	f.handles[h] = dev
 	return h, nil
 }
 

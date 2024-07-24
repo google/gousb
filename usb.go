@@ -165,9 +165,10 @@ func newContextWithImpl(impl libusbIntf) *Context {
 
 // NewContext returns a new Context instance.
 func NewContext() *Context {
-	return newContextWithImpl(libusbImpl{})
+	return ContextOptions{}.New()
 }
 
+// DeviceDiscovery enables a scan of the available USB devices connected to the system
 type DeviceDiscovery int
 
 const (
@@ -175,10 +176,12 @@ const (
 	DisableDeviceDiscovery
 )
 
+// ContextOptions holds optional flags checked when creating a new Context
 type ContextOptions struct {
 	DeviceDiscovery DeviceDiscovery
 }
 
+// New creates a Context, taking into account the optional flags contained in ContextOptions
 func (o ContextOptions) New() *Context {
 	return newContextWithImpl(libusbImpl{
 		discovery: o.DeviceDiscovery,
@@ -227,17 +230,28 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 	return ret, reterr
 }
 
+// OpenDeviceWithFileDescriptor takes a (Unix) file descriptor of an opened USB device
+// and wraps the library around it.
+// This is particularly useful when working on Android, where the USB device must be opened
+// by the SDK (Java), giving access to the device through the file descriptor (https://developer.android.com/reference/android/hardware/usb/UsbDeviceConnection#getFileDescriptor()).
+//
+// Do note that for this to work the automatic device discovery must be disabled, by calling
+//
+//	ctx := ContextOptions{DeviceDiscovery: DisableDeviceDiscovery}.New()
+//	device, err := ctx.OpenDeviceWithFileDescriptor(fd)
+//
+// An error is returned in case the file descriptor is not valid.
 func (c *Context) OpenDeviceWithFileDescriptor(fd uintptr) (*Device, error) {
 	handle, err := c.libusb.wrapSysDevice(c.ctx, fd)
 	if err != nil {
-		return nil, fmt.Errorf("Error opening device from file descriptor: %d, %s", fd, err.Error())
+		return nil, err
 	}
 
 	dev := c.libusb.getDevice(handle)
 
 	desc, err := c.libusb.getDeviceDesc(dev)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("device was opened, but getting device descriptor failed: %v", err)
 	}
 
 	o := &Device{handle: handle, ctx: c, Desc: desc}

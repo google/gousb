@@ -40,7 +40,6 @@ type libusbDevice C.libusb_device
 type libusbDevHandle C.libusb_device_handle
 type libusbTransfer C.struct_libusb_transfer
 type libusbEndpoint C.struct_libusb_endpoint_descriptor
-type libusbLogLevel C.enum_libusb_log_level
 
 func (ep libusbEndpoint) endpointDesc(dev *DeviceDesc) EndpointDesc {
 	ei := EndpointDesc{
