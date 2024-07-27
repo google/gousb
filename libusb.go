@@ -178,14 +178,14 @@ type libusbImpl struct {
 func (impl libusbImpl) init() (*libusbContext, error) {
 	var ctx *C.libusb_context
 
-	var libusb_options [4]C.struct_libusb_init_option // fixed to 4 - there are maximum 4 options
-	n_options := 0
+	var libusbOpts [4]C.struct_libusb_init_option // fixed to 4 - there are maximum 4 options
+	nOpts := 0
 	if impl.discovery == DisableDeviceDiscovery {
-		libusb_options[n_options].option = C.LIBUSB_OPTION_NO_DEVICE_DISCOVERY
-		n_options += 1
+		libusbOpts[nOpts].option = C.LIBUSB_OPTION_NO_DEVICE_DISCOVERY
+		nOpts++
 	}
 
-	if err := fromErrNo(C.libusb_init_context(&ctx, &(libusb_options[0]), C.int(n_options))); err != nil {
+	if err := fromErrNo(C.libusb_init_context(&ctx, &(libusbOpts[0]), C.int(nOpts))); err != nil {
 		return nil, err
 	}
 

@@ -163,12 +163,14 @@ func newContextWithImpl(impl libusbIntf) *Context {
 	return ctx
 }
 
-// NewContext returns a new Context instance.
+// NewContext returns a new Context instance with default ContextOptions.
 func NewContext() *Context {
 	return ContextOptions{}.New()
 }
 
-// DeviceDiscovery enables a scan of the available USB devices connected to the system
+// DeviceDiscovery controls USB device discovery.
+// When set to EnableDeviceDiscovery (default), the connected USB devices will be discovered and enumerated, allowing the use os OpenDevices and OpenWithVIDPID.
+// When set to DisableDeviceDiscovery, OpenDevices will not return any devices. OpenDeviceWithFileDescriptor can be used on some systems to open a device that was otherwise discovered through the operating system.
 type DeviceDiscovery int
 
 const (
@@ -176,7 +178,7 @@ const (
 	DisableDeviceDiscovery
 )
 
-// ContextOptions holds optional flags checked when creating a new Context
+// ContextOptions holds parameters for Context initialization.
 type ContextOptions struct {
 	DeviceDiscovery DeviceDiscovery
 }
@@ -232,10 +234,11 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 
 // OpenDeviceWithFileDescriptor takes a (Unix) file descriptor of an opened USB device
 // and wraps the library around it.
-// This is particularly useful when working on Android, where the USB device must be opened
+// This is particularly useful when working on Android, where the USB device can be opened
 // by the SDK (Java), giving access to the device through the file descriptor (https://developer.android.com/reference/android/hardware/usb/UsbDeviceConnection#getFileDescriptor()).
 //
-// Do note that for this to work the automatic device discovery must be disabled, by calling
+// Do note that for this to work the automatic device discovery must be disabled at the time when the new Context is created, through the use of ContextOptions.DeviceDiscovery.
+// Example:
 //
 //	ctx := ContextOptions{DeviceDiscovery: DisableDeviceDiscovery}.New()
 //	device, err := ctx.OpenDeviceWithFileDescriptor(fd)
@@ -246,7 +249,6 @@ func (c *Context) OpenDeviceWithFileDescriptor(fd uintptr) (*Device, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	dev := c.libusb.getDevice(handle)
 
 	desc, err := c.libusb.getDeviceDesc(dev)
