@@ -24,7 +24,8 @@ import (
 )
 
 /*
-#cgo pkg-config: libusb-1.0
+#cgo windows LDFLAGS: -L${SRCDIR}/lib/windows -lusb-1.0
+#cgo windows CFLAGS: -I${SRCDIR}/include/windows
 #include <libusb.h>
 
 int gousb_compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
