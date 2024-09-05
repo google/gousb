@@ -1,2 +1,4 @@
 *.sw[op]
 .idea/
+rawread/
+.github/
