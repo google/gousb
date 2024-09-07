@@ -109,10 +109,10 @@ func TestOpenDeviceWithFileDescriptor(t *testing.T) {
 	} {
 		dev, err := ctx.OpenDeviceWithFileDescriptor(d.sysDevPtr)
 		if err != nil {
-			t.Errorf("OpenDeviceWithFileDescriptor(%d): err != nil for a valid device: %v", d.sysDevPtr, err)
+			t.Fatalf("OpenDeviceWithFileDescriptor(%d): err != nil for a valid device: %v", d.sysDevPtr, err)
 		}
 		if dev == nil {
-			t.Errorf("OpenDeviceWithFileDescriptor(%d): device == nil for a valid device", d.sysDevPtr)
+			t.Fatalf("OpenDeviceWithFileDescriptor(%d): device == nil for a valid device", d.sysDevPtr)
 		}
 		if dev != nil && (dev.Desc.Vendor != ID(d.vid) || dev.Desc.Product != ID(d.pid)) {
 			t.Errorf("OpenDeviceWithFileDescriptor(%d): device's VID/PID %s/%s don't match expected: %s/%s", d.sysDevPtr, dev.Desc.Vendor, dev.Desc.Product, ID(d.vid), ID(d.pid))

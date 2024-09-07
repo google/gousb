@@ -169,12 +169,17 @@ func NewContext() *Context {
 }
 
 // DeviceDiscovery controls USB device discovery.
-// When set to EnableDeviceDiscovery (default), the connected USB devices will be discovered and enumerated, allowing the use os OpenDevices and OpenWithVIDPID.
-// When set to DisableDeviceDiscovery, OpenDevices will not return any devices. OpenDeviceWithFileDescriptor can be used on some systems to open a device that was otherwise discovered through the operating system.
 type DeviceDiscovery int
 
 const (
+	// EnableDeviceDiscovery means the connected USB devices will be enumerated
+	// on Context initialization. This enables the use of OpenDevices and
+	// OpenWithVIDPID. This is the default.
 	EnableDeviceDiscovery = iota
+	// DisableDeviceDiscovery means the USB devices are not enumerated and
+	// OpenDevices will not return any devices.
+	// Without device discovery, OpenDeviceWithFileDescriptor can be used
+	// to open devices.
 	DisableDeviceDiscovery
 )
 
@@ -232,12 +237,16 @@ func (c *Context) OpenDevices(opener func(desc *DeviceDesc) bool) ([]*Device, er
 	return ret, reterr
 }
 
-// OpenDeviceWithFileDescriptor takes a (Unix) file descriptor of an opened USB device
-// and wraps the library around it.
-// This is particularly useful when working on Android, where the USB device can be opened
-// by the SDK (Java), giving access to the device through the file descriptor (https://developer.android.com/reference/android/hardware/usb/UsbDeviceConnection#getFileDescriptor()).
+// OpenDeviceWithFileDescriptor takes a (Unix) file descriptor of an opened USB
+// device and wraps the library around it.
+// This is particularly useful when working on Android, where the USB device can be
+// opened by the SDK (Java), giving access to the device through the file descriptor
+// (https://developer.android.com/reference/android/hardware/usb/UsbDeviceConnection#getFileDescriptor()).
 //
-// Do note that for this to work the automatic device discovery must be disabled at the time when the new Context is created, through the use of ContextOptions.DeviceDiscovery.
+// Do note that for this to work the automatic device discovery must be disabled
+// at the time when the new Context is created, through the use of
+// ContextOptions.DeviceDiscovery.
+//
 // Example:
 //
 //	ctx := ContextOptions{DeviceDiscovery: DisableDeviceDiscovery}.New()
