@@ -94,3 +94,44 @@ func TestOpenDeviceWithVIDPID(t *testing.T) {
 		}
 	}
 }
+
+func TestOpenDeviceWithFileDescriptor(t *testing.T) {
+	ctx := newContextWithImpl(newFakeLibusb())
+	defer ctx.Close()
+
+	// file descriptor is an index to the FakeDevices array
+	for _, d := range []struct {
+		vid, pid  ID
+		sysDevPtr uintptr
+	}{
+		{0x9999, 0x0001, 78},
+		{0x8888, 0x0002, 94},
+	} {
+		dev, err := ctx.OpenDeviceWithFileDescriptor(d.sysDevPtr)
+		if err != nil {
+			t.Fatalf("OpenDeviceWithFileDescriptor(%d): err != nil for a valid device: %v", d.sysDevPtr, err)
+		}
+		if dev == nil {
+			t.Fatalf("OpenDeviceWithFileDescriptor(%d): device == nil for a valid device", d.sysDevPtr)
+		}
+		if dev != nil && (dev.Desc.Vendor != ID(d.vid) || dev.Desc.Product != ID(d.pid)) {
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): device's VID/PID %s/%s don't match expected: %s/%s", d.sysDevPtr, dev.Desc.Vendor, dev.Desc.Product, ID(d.vid), ID(d.pid))
+		}
+	}
+
+}
+
+func TestOpenDeviceWithFileDescriptorOnMissingDevice(t *testing.T) {
+	ctx := newContextWithImpl(newFakeLibusb())
+	defer ctx.Close()
+
+	for _, sysDevPtr := range []uintptr{
+		7, // set, but does not exist in the fakeDevices array
+		0, // unset
+	} {
+		if _, err := ctx.OpenDeviceWithFileDescriptor(sysDevPtr); err == nil {
+			t.Errorf("OpenDeviceWithFileDescriptor(%d): got nil error for invalid device", sysDevPtr)
+		}
+	}
+
+}

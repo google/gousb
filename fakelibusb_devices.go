@@ -16,9 +16,10 @@ package gousb
 
 // fake devices connected through the fakeLibusb stack.
 type fakeDevice struct {
-	devDesc *DeviceDesc
-	strDesc map[int]string
-	alt     uint8
+	devDesc   *DeviceDesc
+	strDesc   map[int]string
+	alt       uint8
+	sysDevPtr uintptr
 }
 
 var fakeDevices = []fakeDevice{
@@ -64,6 +65,7 @@ var fakeDevices = []fakeDevice{
 				}},
 			}},
 		},
+		sysDevPtr: 78,
 	},
 	// Bus 001 Device 002: ID 8888:0002
 	// One config, two interfaces. interface #0 with no endpoints,
@@ -186,6 +188,7 @@ var fakeDevices = []fakeDevice{
 			8: "Slower streaming",
 			9: "Interface for https://github.com/google/gousb/issues/65",
 		},
+		sysDevPtr: 94,
 	},
 	// Bus 001 Device 003: ID 9999:0002
 	// One config, one interface, one setup,

@@ -85,8 +85,10 @@ func (t *fakeTransfer) setStatus(st TransferStatus) {
 // that allows the test to explicitly control individual transfer behavior.
 type fakeLibusb struct {
 	mu sync.Mutex
-	// fakeDevices has a map of devices and their descriptors.
-	fakeDevices map[*libusbDevice]*fakeDevice
+	// devices has a map of devices and their descriptors.
+	devices map[*libusbDevice]*fakeDevice
+	// sysDevices keeps the order of devices to be accessd by wrapSysDevice
+	sysDevices map[uintptr]*libusbDevice
 	// ts has a map of all allocated transfers, indexed by the pointer of
 	// underlying libusbTransfer.
 	ts map[*libusbTransfer]*fakeTransfer
@@ -102,10 +104,26 @@ func (f *fakeLibusb) init() (*libusbContext, error)                       { retu
 func (f *fakeLibusb) handleEvents(c *libusbContext, done <-chan struct{}) { <-done }
 func (f *fakeLibusb) getDevices(*libusbContext) ([]*libusbDevice, error) {
 	ret := make([]*libusbDevice, 0, len(fakeDevices))
-	for d := range f.fakeDevices {
+	for d := range f.devices {
 		ret = append(ret, d)
 	}
 	return ret, nil
+}
+
+func (f *fakeLibusb) wrapSysDevice(ctx *libusbContext, systemDeviceHandle uintptr) (*libusbDevHandle, error) {
+	dev, ok := f.sysDevices[systemDeviceHandle]
+	if !ok {
+		return nil, fmt.Errorf("the passed file descriptor %d does not point to a valid device", systemDeviceHandle)
+	}
+	h := newDevHandlePointer()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.handles[h] = dev
+	return h, nil
+}
+
+func (f *fakeLibusb) getDevice(handle *libusbDevHandle) *libusbDevice {
+	return f.handles[handle]
 }
 
 func (f *fakeLibusb) exit(*libusbContext) error {
@@ -122,7 +140,7 @@ func (f *fakeLibusb) exit(*libusbContext) error {
 func (f *fakeLibusb) setDebug(*libusbContext, int) {}
 func (f *fakeLibusb) dereference(d *libusbDevice)  {}
 func (f *fakeLibusb) getDeviceDesc(d *libusbDevice) (*DeviceDesc, error) {
-	if dev, ok := f.fakeDevices[d]; ok {
+	if dev, ok := f.devices[d]; ok {
 		return dev.devDesc, nil
 	}
 	return nil, fmt.Errorf("invalid USB device %p", d)
@@ -158,7 +176,7 @@ func (f *fakeLibusb) setConfig(d *libusbDevHandle, cfg uint8) error {
 	return nil
 }
 func (f *fakeLibusb) getStringDesc(d *libusbDevHandle, index int) (string, error) {
-	dev, ok := f.fakeDevices[f.handles[d]]
+	dev, ok := f.devices[f.handles[d]]
 	if !ok {
 		return "", fmt.Errorf("invalid USB device %p", d)
 	}
@@ -201,7 +219,7 @@ func (f *fakeLibusb) setAlt(d *libusbDevHandle, intf, alt uint8) error {
 	if !f.claims[f.handles[d]][intf] {
 		return fmt.Errorf("interface %d must be claimed before alt setup can be set", intf)
 	}
-	f.fakeDevices[f.handles[d]].alt = alt
+	f.devices[f.handles[d]].alt = alt
 	return nil
 }
 
@@ -288,11 +306,12 @@ func (f *fakeLibusb) empty() bool {
 
 func newFakeLibusb() *fakeLibusb {
 	fl := &fakeLibusb{
-		fakeDevices: make(map[*libusbDevice]*fakeDevice),
-		ts:          make(map[*libusbTransfer]*fakeTransfer),
-		submitted:   make(chan *fakeTransfer, 10),
-		handles:     make(map[*libusbDevHandle]*libusbDevice),
-		claims:      make(map[*libusbDevice]map[uint8]bool),
+		devices:    make(map[*libusbDevice]*fakeDevice),
+		sysDevices: make(map[uintptr]*libusbDevice),
+		ts:         make(map[*libusbTransfer]*fakeTransfer),
+		submitted:  make(chan *fakeTransfer, 10),
+		handles:    make(map[*libusbDevHandle]*libusbDevice),
+		claims:     make(map[*libusbDevice]map[uint8]bool),
 	}
 	for _, d := range fakeDevices {
 		// libusb does not export a way to allocate a new libusb_device struct
@@ -301,7 +320,11 @@ func newFakeLibusb() *fakeLibusb {
 		// The contents of these pointers is never accessed.
 		fd := new(fakeDevice)
 		*fd = d
-		fl.fakeDevices[newDevicePointer()] = fd
+		devPointer := newDevicePointer()
+		fl.devices[devPointer] = fd
+		if fd.sysDevPtr != 0 { // the sysDevPtr not being set in the fakeDevices list
+			fl.sysDevices[fd.sysDevPtr] = devPointer
+		}
 	}
 	return fl
 }
