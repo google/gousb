@@ -259,7 +259,6 @@ func (c *Context) OpenDeviceWithFileDescriptor(fd uintptr) (*Device, error) {
 		return nil, err
 	}
 	dev := c.libusb.getDevice(handle)
-
 	desc, err := c.libusb.getDeviceDesc(dev)
 	if err != nil {
 		return nil, fmt.Errorf("device was opened, but getting device descriptor failed: %v", err)
