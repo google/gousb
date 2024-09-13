@@ -46,6 +46,11 @@ func (i InterfaceDesc) String() string {
 	return fmt.Sprintf("Interface %d (%d alternate settings)", i.Number, len(i.AltSettings))
 }
 
+type RawDescriptor struct {
+	Type DescriptorType
+	Data []byte
+}
+
 // InterfaceSetting contains information about a USB interface with a particular
 // alternate setting, extracted from the descriptor.
 type InterfaceSetting struct {
@@ -62,6 +67,9 @@ type InterfaceSetting struct {
 	// Endpoints enumerates the endpoints available on this interface with
 	// this alternate setting.
 	Endpoints map[EndpointAddress]EndpointDesc
+	// Extra interface descriptors, these are descriptors that are not part of the USB spec
+	// Potential examples are Class-Specific VC Interface Descriptor (UVC spec)
+	ExtraDescriptors []*RawDescriptor
 
 	iInterface int // index of a string descriptor describing this interface.
 }

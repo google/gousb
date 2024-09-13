@@ -94,15 +94,16 @@ type DescriptorType uint8
 
 // Descriptor types defined by the USB spec.
 const (
-	DescriptorTypeDevice    DescriptorType = C.LIBUSB_DT_DEVICE
-	DescriptorTypeConfig    DescriptorType = C.LIBUSB_DT_CONFIG
-	DescriptorTypeString    DescriptorType = C.LIBUSB_DT_STRING
-	DescriptorTypeInterface DescriptorType = C.LIBUSB_DT_INTERFACE
-	DescriptorTypeEndpoint  DescriptorType = C.LIBUSB_DT_ENDPOINT
-	DescriptorTypeHID       DescriptorType = C.LIBUSB_DT_HID
-	DescriptorTypeReport    DescriptorType = C.LIBUSB_DT_REPORT
-	DescriptorTypePhysical  DescriptorType = C.LIBUSB_DT_PHYSICAL
-	DescriptorTypeHub       DescriptorType = C.LIBUSB_DT_HUB
+	DescriptorTypeDevice      DescriptorType = C.LIBUSB_DT_DEVICE
+	DescriptorTypeConfig      DescriptorType = C.LIBUSB_DT_CONFIG
+	DescriptorTypeString      DescriptorType = C.LIBUSB_DT_STRING
+	DescriptorTypeInterface   DescriptorType = C.LIBUSB_DT_INTERFACE
+	DescriptorTypeCSInterface DescriptorType = 0x24
+	DescriptorTypeEndpoint    DescriptorType = C.LIBUSB_DT_ENDPOINT
+	DescriptorTypeHID         DescriptorType = C.LIBUSB_DT_HID
+	DescriptorTypeReport      DescriptorType = C.LIBUSB_DT_REPORT
+	DescriptorTypePhysical    DescriptorType = C.LIBUSB_DT_PHYSICAL
+	DescriptorTypeHub         DescriptorType = C.LIBUSB_DT_HUB
 )
 
 var descriptorTypeDescription = map[DescriptorType]string{
