@@ -118,7 +118,7 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 	}
 	altInfo, err := intf.altSetting(alt)
 	if err != nil {
-		return nil, fmt.Errorf("descriptor of alternate setting %d fo interface %d in %s: %v", alt, num, c, err)
+		return nil, fmt.Errorf("descriptor of alternate setting %d of interface %d in %s: %v", alt, num, c, err)
 	}
 
 	c.mu.Lock()
