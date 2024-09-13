@@ -276,9 +276,13 @@ func (d *Device) InterfaceDescription(cfgNum, intfNum, altNum int) (string, erro
 	if err != nil {
 		return "", fmt.Errorf("%s: %v", d, err)
 	}
-	alt, err := cfg.intfDesc(intfNum, altNum)
+	intf, err := cfg.intfDesc(intfNum)
 	if err != nil {
-		return "", fmt.Errorf("%s, configuration %d: %v", d, cfgNum, err)
+		return "", fmt.Errorf("%s, configuration %d interface %d: %v", d, cfgNum, intfNum, err)
+	}
+	alt, err := intf.altSetting(altNum)
+	if err != nil {
+		return "", fmt.Errorf("%s, configuration %d interface %d alternate setting %d: %v", d, cfgNum, intfNum, altNum, err)
 	}
 	return d.GetStringDescriptor(alt.iInterface)
 }

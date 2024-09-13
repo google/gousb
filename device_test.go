@@ -117,18 +117,18 @@ func TestClaimAndRelease(t *testing.T) {
 		t.Errorf("%s.InEndpoint(%d): got %+v, want %+v", intf, ep1Addr, got, want)
 	}
 
-	if _, err := cfg.Interface(1, 0); err == nil {
+	if _, err := cfg.Interface(if1Num, 0); err == nil {
 		t.Fatalf("%s.Interface(1, 0): got nil, want non nil, because Interface 1 is already claimed.", cfg)
 	}
 
 	// intf2 is interface #0, not claimed yet.
-	intf2, err := cfg.Interface(0, 0)
+	intf2, err := cfg.Interface(if2Num, alt2Num)
 	if err != nil {
 		t.Fatalf("%s.Interface(0, 0): got %v, want nil", cfg, err)
 	}
 
 	if err := cfg.Close(); err == nil {
-		t.Fatalf("%s.Close(): got nil, want non nil, because the Interface was not released.", cfg)
+		t.Fatalf("%s.Close(): got nil, want non nil, because the Interfaces #1/2 was not released.", cfg)
 	}
 	if err := dev.Close(); err == nil {
 		t.Fatalf("%s.Close(): got nil, want non nil, because the Config was not released.", cfg)
@@ -136,7 +136,7 @@ func TestClaimAndRelease(t *testing.T) {
 
 	intf.Close()
 	if err := cfg.Close(); err == nil {
-		t.Fatalf("%s.Close(): got nil, want non nil, because the Interface was not released.", cfg)
+		t.Fatalf("%s.Close(): got nil, want non nil, because the Interface #2 was not released.", cfg)
 	}
 	if err := dev.Close(); err == nil {
 		t.Fatalf("%s.Close(): got nil, want non nil, because the Config was not released.", dev)
@@ -242,5 +242,63 @@ func TestAutoDetachFailure(t *testing.T) {
 	_, err = dev.Config(1)
 	if err == nil {
 		t.Fatalf("%s.Config(1) got nil, but want no nil because interface fails to detach", dev)
+	}
+}
+
+func TestInterface(t *testing.T) {
+	t.Parallel()
+	c := newContextWithImpl(newFakeLibusb())
+	defer func() {
+		if err := c.Close(); err != nil {
+			t.Errorf("Context.Close: %v", err)
+		}
+	}()
+
+	for _, tc := range []struct {
+		name                  string
+		vid, pid              ID
+		cfgNum, ifNum, altNum int
+	}{{
+		name:   "simple",
+		vid:    0x8888,
+		pid:    0x0002,
+		cfgNum: 1,
+		ifNum:  0,
+		altNum: 0,
+	}, {
+		name:   "alt_setting",
+		vid:    0x8888,
+		pid:    0x0002,
+		cfgNum: 1,
+		ifNum:  1,
+		altNum: 1,
+	}, {
+		name:   "noncontiguous_interfaces",
+		vid:    0x8888,
+		pid:    0x0002,
+		cfgNum: 1,
+		ifNum:  3,
+		altNum: 2,
+	}} {
+		t.Run(tc.name, func(t *testing.T) {
+			dev, err := c.OpenDeviceWithVIDPID(0x8888, 0x0002)
+			if err != nil {
+				t.Fatalf("OpenDeviceWithVIDPID(0x8888, 0x0002): %v", err)
+			}
+			if dev == nil {
+				t.Fatal("OpenDeviceWithVIDPID(0x8888, 0x0002): got nil device, need non-nil")
+			}
+			defer dev.Close()
+			cfg, err := dev.Config(tc.cfgNum)
+			if err != nil {
+				t.Fatalf("%s.Config(%d): %v", dev, tc.cfgNum, err)
+			}
+			defer cfg.Close()
+			intf, err := cfg.Interface(tc.ifNum, tc.altNum)
+			if err != nil {
+				t.Fatalf("%s.Interface(%d, %d): %v", cfg, tc.ifNum, tc.altNum, err)
+			}
+			intf.Close()
+		})
 	}
 }

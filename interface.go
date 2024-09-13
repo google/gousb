@@ -29,6 +29,17 @@ type InterfaceDesc struct {
 	AltSettings []InterfaceSetting
 }
 
+func (i *InterfaceDesc) altSetting(alt int) (*InterfaceSetting, error) {
+	alts := make([]int, len(i.AltSettings))
+	for a, s := range i.AltSettings {
+		if s.Alternate == alt {
+			return &s, nil
+		}
+		alts[a] = s.Alternate
+	}
+	return nil, fmt.Errorf("alternate setting %d not found for %s, available alt settings: %v", alt, i, alts)
+}
+
 // String returns a human-readable description of the interface descriptor and
 // its alternate settings.
 func (i InterfaceDesc) String() string {
