@@ -49,25 +49,17 @@ func (c ConfigDesc) String() string {
 	return fmt.Sprintf("Configuration %d", c.Number)
 }
 
-func (c ConfigDesc) intfDesc(num, alt int) (*InterfaceSetting, error) {
+func (c ConfigDesc) intfDesc(num int) (*InterfaceDesc, error) {
 	// In an ideal world, interfaces in the descriptor would be numbered
 	// contiguously starting from 0, as required by the specification. In the
 	// real world however the specification is sometimes ignored:
 	// https://github.com/google/gousb/issues/65
 	ifs := make([]int, len(c.Interfaces))
-	for i := range c.Interfaces {
-		ifs[i] = c.Interfaces[i].Number
-		if ifs[i] != num {
-			continue
+	for i, desc := range c.Interfaces {
+		if desc.Number == num {
+			return &desc, nil
 		}
-		alts := make([]int, len(c.Interfaces[i].AltSettings))
-		for a := range c.Interfaces[i].AltSettings {
-			alts[a] = c.Interfaces[i].AltSettings[a].Alternate
-			if alts[a] == alt {
-				return &c.Interfaces[i].AltSettings[a], nil
-			}
-		}
-		return nil, fmt.Errorf("alternate setting %d not found for %s, available alt settings: %v", alt, c.Interfaces[i], alts)
+		ifs[i] = desc.Number
 	}
 	return nil, fmt.Errorf("interface %d not found, available interface numbers: %v", num, ifs)
 }
@@ -120,9 +112,13 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 		return nil, fmt.Errorf("Interface(%d, %d) called on %s after Close", num, alt, c)
 	}
 
-	altInfo, err := c.Desc.intfDesc(num, alt)
+	intf, err := c.Desc.intfDesc(num)
 	if err != nil {
-		return nil, fmt.Errorf("descriptor of interface (%d, %d) in %s: %v", num, alt, c, err)
+		return nil, fmt.Errorf("descriptor of interface %d in %s: %v", num, c, err)
+	}
+	altInfo, err := intf.altSetting(alt)
+	if err != nil {
+		return nil, fmt.Errorf("descriptor of alternate setting %d of interface %d in %s: %v", alt, num, c, err)
 	}
 
 	c.mu.Lock()
@@ -137,7 +133,7 @@ func (c *Config) Interface(num, alt int) (*Interface, error) {
 	}
 
 	// Select an alternate setting if needed (device has multiple alternate settings).
-	if len(c.Desc.Interfaces[num].AltSettings) > 1 {
+	if len(intf.AltSettings) > 1 {
 		if err := c.dev.ctx.libusb.setAlt(c.dev.handle, uint8(num), uint8(alt)); err != nil {
 			c.dev.ctx.libusb.release(c.dev.handle, uint8(num))
 			return nil, fmt.Errorf("failed to set alternate config %d on interface %d of %s: %v", alt, num, c, err)
