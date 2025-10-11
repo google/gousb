@@ -212,7 +212,7 @@ func (d *Device) Control(rType, request uint8, val, idx uint16, data []byte) (in
 
 // DetachKernelDriver detaches the driver currently attached to the given
 // interface.
-func (d *Device) DetachKernelDriver(ifNumber int) (error) {
+func (d *Device) DetachKernelDriver(ifNumber int) error {
 	if d.handle == nil {
 		return fmt.Errorf("DetachKernelDriver(%d) called on %s after Close", ifNumber, d)
 	}
