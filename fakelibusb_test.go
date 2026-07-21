@@ -126,10 +126,27 @@ func (f *fakeLibusb) getDevice(handle *libusbDevHandle) *libusbDevice {
 	return f.handles[handle]
 }
 
-func (f *fakeLibusb) exit(*libusbContext) error {
+func (f *fakeLibusb) exit(ctx *libusbContext) error {
 	close(f.submitted)
-	if got := len(f.ts); got > 0 {
-		for t := range f.ts {
+	f.mu.Lock()
+	for d := range f.devices {
+		freeDevicePointer(d)
+		delete(f.devices, d)
+	}
+	for h := range f.handles {
+		freeDevHandlePointer(h)
+		delete(f.handles, h)
+	}
+	var remaining []*libusbTransfer
+	for t := range f.ts {
+		remaining = append(remaining, t)
+	}
+	f.mu.Unlock()
+
+	freeContextPointer(ctx)
+
+	if got := len(remaining); got > 0 {
+		for _, t := range remaining {
 			f.free(t)
 		}
 		return fmt.Errorf("fakeLibusb has %d remaining transfers that should have been freed", got)
@@ -156,7 +173,10 @@ func (f *fakeLibusb) open(d *libusbDevice) (*libusbDevHandle, error) {
 func (f *fakeLibusb) close(h *libusbDevHandle) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	delete(f.handles, h)
+	if _, ok := f.handles[h]; ok {
+		delete(f.handles, h)
+		freeDevHandlePointer(h)
+	}
 }
 func (f *fakeLibusb) reset(*libusbDevHandle) error { return nil }
 func (f *fakeLibusb) control(*libusbDevHandle, time.Duration, uint8, uint8, uint16, uint16, []byte) (int, error) {
@@ -274,7 +294,10 @@ func (f *fakeLibusb) data(t *libusbTransfer) (int, TransferStatus) {
 func (f *fakeLibusb) free(t *libusbTransfer) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	delete(f.ts, t)
+	if _, ok := f.ts[t]; ok {
+		delete(f.ts, t)
+		freeFakeTransferPointer(t)
+	}
 }
 func (f *fakeLibusb) setIsoPacketLengths(t *libusbTransfer, length uint32) {
 	f.mu.Lock()

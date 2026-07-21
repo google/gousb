@@ -566,3 +566,19 @@ func newContextPointer() *libusbContext {
 func newDevHandlePointer() *libusbDevHandle {
 	return (*libusbDevHandle)(unsafe.Pointer(C.malloc(1)))
 }
+
+func freeDevicePointer(d *libusbDevice) {
+	C.free(unsafe.Pointer(d))
+}
+
+func freeFakeTransferPointer(t *libusbTransfer) {
+	C.free(unsafe.Pointer(t))
+}
+
+func freeContextPointer(c *libusbContext) {
+	C.free(unsafe.Pointer(c))
+}
+
+func freeDevHandlePointer(h *libusbDevHandle) {
+	C.free(unsafe.Pointer(h))
+}
