@@ -25,6 +25,7 @@ import (
 
 /*
 #cgo pkg-config: libusb-1.0
+#include <stdlib.h>
 #include <libusb.h>
 
 int gousb_compact_iso_data(struct libusb_transfer *xfer, unsigned char *status);
@@ -550,7 +551,10 @@ func libusbSetDebug(c *libusbContext, lvl int) {
 	C.gousb_set_debug((*C.libusb_context)(c), C.int(lvl))
 }
 
-// for obtaining unique CGo pointers.
+// In tests, the code allocates some C pointers directly to obtain unique CGo
+// pointers, and it needs to be able to free them directly too. These helpers
+// are defined here because Go does not support cgo (import "C") in *_test.go
+// files.
 func newDevicePointer() *libusbDevice {
 	return (*libusbDevice)(unsafe.Pointer(C.malloc(1)))
 }
@@ -565,4 +569,22 @@ func newContextPointer() *libusbContext {
 
 func newDevHandlePointer() *libusbDevHandle {
 	return (*libusbDevHandle)(unsafe.Pointer(C.malloc(1)))
+}
+
+// In tests, the code allocates some C pointers directly, so it needs to be
+// able to free them directly too.
+func freeDevicePointer(d *libusbDevice) {
+	C.free(unsafe.Pointer(d))
+}
+
+func freeFakeTransferPointer(t *libusbTransfer) {
+	C.free(unsafe.Pointer(t))
+}
+
+func freeContextPointer(c *libusbContext) {
+	C.free(unsafe.Pointer(c))
+}
+
+func freeDevHandlePointer(h *libusbDevHandle) {
+	C.free(unsafe.Pointer(h))
 }
