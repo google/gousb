@@ -133,22 +133,28 @@ func (f *fakeLibusb) exit(ctx *libusbContext) error {
 		freeDevicePointer(d)
 		delete(f.devices, d)
 	}
+	var remainingHandles []*libusbDevHandle
 	for h := range f.handles {
-		freeDevHandlePointer(h)
-		delete(f.handles, h)
+		remainingHandles = append(remainingHandles, h)
 	}
-	var remaining []*libusbTransfer
+	var remainingTransfers []*libusbTransfer
 	for t := range f.ts {
-		remaining = append(remaining, t)
+		remainingTransfers = append(remainingTransfers, t)
 	}
 	f.mu.Unlock()
 
 	freeContextPointer(ctx)
 
-	if got := len(remaining); got > 0 {
-		for _, t := range remaining {
-			f.free(t)
-		}
+	for _, h := range remainingHandles {
+		f.close(h)
+	}
+	for _, t := range remainingTransfers {
+		f.free(t)
+	}
+	if got := len(remainingHandles); got > 0 {
+		return fmt.Errorf("fakeLibusb has %d remaining handles that should have been closed", got)
+	}
+	if got := len(remainingTransfers); got > 0 {
 		return fmt.Errorf("fakeLibusb has %d remaining transfers that should have been freed", got)
 	}
 	return nil
